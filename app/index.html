@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IncuVision — Smart Incubator & Vision Dashboard</title>
+    <meta name="description" content="Professional research dashboard for IncuVision automated egg incubation and YOLOv8 candling analysis.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-wrapper">
+        <!-- Top Navigation Bar -->
+        <header class="app-header">
+            <div class="brand-container">
+                <div class="brand-mark">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2C7.5 2 4 7 4 13a8 8 0 0 0 16 0c0-6-3.5-11-8-11z"/>
+                    </svg>
+                </div>
+                <div class="brand-details">
+                    <div class="brand-title">IncuVision <span class="version-tag">v1.0</span></div>
+                    <div class="brand-subtitle">Automated Incubation & Vision Analysis</div>
+                </div>
+            </div>
+
+            <div class="header-controls">
+                <button class="theme-toggle-btn" id="themeToggle" onclick="toggleTheme()" title="Toggle Light/Dark Theme">
+                    <svg id="themeIcon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                    <span id="themeText">Light</span>
+                </button>
+                <div class="status-indicator online" id="connectionBadge">
+                    <span class="status-dot"></span>
+                    <span id="connectionText">System Connected</span>
+                </div>
+                <div class="phase-pill" id="phaseBadge">Setting Phase</div>
+                <div class="day-counter" id="dayBadge">Day 01 <span class="total-days">/ 21</span></div>
+            </div>
+        </header>
+
+        <!-- Environmental Telemetry Metrics -->
+        <section class="metrics-grid">
+            <!-- Temperature Card -->
+            <div class="metric-card" id="tempCard">
+                <div class="metric-head">
+                    <span class="metric-label">Temperature</span>
+                    <span class="metric-status-tag tag-success" id="tempStatus">Optimal</span>
+                </div>
+                <div class="metric-body">
+                    <span class="metric-value" id="valTemp">37.5</span>
+                    <span class="metric-unit">°C</span>
+                </div>
+                <div class="metric-foot">
+                    <span class="foot-label">Target Setpoint</span>
+                    <span class="foot-val" id="targetTemp">37.5 °C</span>
+                </div>
+            </div>
+
+            <!-- Humidity Card -->
+            <div class="metric-card" id="rhCard">
+                <div class="metric-head">
+                    <span class="metric-label">Relative Humidity</span>
+                    <span class="metric-status-tag tag-success" id="rhStatus">Optimal</span>
+                </div>
+                <div class="metric-body">
+                    <span class="metric-value" id="valRH">58.0</span>
+                    <span class="metric-unit">%</span>
+                </div>
+                <div class="metric-foot">
+                    <span class="foot-label">Target Setpoint</span>
+                    <span class="foot-val" id="targetRH">58.0 %</span>
+                </div>
+            </div>
+
+            <!-- CO2 Card -->
+            <div class="metric-card" id="co2Card">
+                <div class="metric-head">
+                    <span class="metric-label">Carbon Dioxide (CO<sub>2</sub>)</span>
+                    <span class="metric-status-tag tag-neutral" id="co2Status">Normal</span>
+                </div>
+                <div class="metric-body">
+                    <span class="metric-value" id="valCO2">3,200</span>
+                    <span class="metric-unit">ppm</span>
+                </div>
+                <div class="metric-foot">
+                    <span class="foot-label">Max Allowable</span>
+                    <span class="foot-val" id="targetCO2">5,000 ppm</span>
+                </div>
+            </div>
+
+            <!-- Oxygen Card -->
+            <div class="metric-card" id="o2Card">
+                <div class="metric-head">
+                    <span class="metric-label">Oxygen (O<sub>2</sub>)</span>
+                    <span class="metric-status-tag tag-neutral" id="o2Status">Normal</span>
+                </div>
+                <div class="metric-body">
+                    <span class="metric-value" id="valO2">20.9</span>
+                    <span class="metric-unit">%</span>
+                </div>
+                <div class="metric-foot">
+                    <span class="foot-label">Min Threshold</span>
+                    <span class="foot-val">20.5 %</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Actuator State Strip -->
+        <section class="actuator-bar">
+            <div class="actuator-chip" id="actHeater">
+                <span class="chip-dot"></span>
+                <span class="chip-name">PTC Heater</span>
+            </div>
+            <div class="actuator-chip" id="actExhaust">
+                <span class="chip-dot"></span>
+                <span class="chip-name">Exhaust Fan</span>
+            </div>
+            <div class="actuator-chip active" id="actCirculate">
+                <span class="chip-dot"></span>
+                <span class="chip-name">Circulation Fan</span>
+            </div>
+            <div class="actuator-chip" id="actMotor">
+                <span class="chip-dot"></span>
+                <span class="chip-name">Turning Motor</span>
+            </div>
+            <div class="actuator-chip" id="actCandling">
+                <span class="chip-dot"></span>
+                <span class="chip-name">Candling Array</span>
+            </div>
+        </section>
+
+        <!-- Main Workspace Grid -->
+        <main class="workspace-layout">
+            <!-- Candling Vision Section -->
+            <section class="panel candling-panel">
+                <div class="panel-topbar">
+                    <div>
+                        <h2 class="panel-heading">56-Egg Candling Vision Matrix</h2>
+                        <p class="panel-subheading">7 × 8 Grid Layout &bull; YOLOv8 Multi-Egg Fertility & Vascular Analysis</p>
+                    </div>
+                    <div class="panel-btn-group">
+                        <button class="btn btn-action" id="btnTriggerCandling" onclick="triggerCandlingAudit()">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                            Run Candling Audit
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Audit Summary Stats -->
+                <div class="audit-summary-row">
+                    <div class="summary-stat-box">
+                        <div class="stat-meta">Total Capacity</div>
+                        <div class="stat-figure" id="sumTotal">56</div>
+                    </div>
+                    <div class="summary-stat-box stat-fertile">
+                        <div class="stat-meta">Fertile</div>
+                        <div class="stat-figure" id="sumFertile">--</div>
+                    </div>
+                    <div class="summary-stat-box stat-infertile">
+                        <div class="stat-meta">Infertile</div>
+                        <div class="stat-figure" id="sumInfertile">--</div>
+                    </div>
+                    <div class="summary-stat-box stat-rate">
+                        <div class="stat-meta">Fertility Rate</div>
+                        <div class="stat-figure accent" id="sumRate">--%</div>
+                    </div>
+                </div>
+
+                <!-- 7x8 Matrix Grid View -->
+                <div class="matrix-canvas">
+                    <div class="egg-matrix-grid" id="eggGrid">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Clean Legend -->
+                <div class="matrix-legend">
+                    <div class="legend-entry"><span class="legend-indicator fertile"></span> Fertile (Active Embryo & Vascular Network)</div>
+                    <div class="legend-entry"><span class="legend-indicator infertile"></span> Infertile / Non-Viable (Clear Yolk)</div>
+                    <div class="legend-entry"><span class="legend-indicator pending"></span> Standby / Unscanned</div>
+                </div>
+            </section>
+
+            <!-- Sidebar Controls -->
+            <aside class="sidebar-layout">
+                <!-- Incubation Controls -->
+                <div class="panel control-panel">
+                    <h3 class="side-heading">System Parameters</h3>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Active Incubation Day (1–21)</label>
+                        <div class="input-action-row">
+                            <input type="number" id="daySelect" min="1" max="21" value="1">
+                            <button class="btn btn-secondary" onclick="updateIncubationDay()">Set Day</button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Egg Turning Control</label>
+                        <button class="btn btn-outline full-width" onclick="manualEggTurn()">
+                            Rotate Tray (45° Tilt &bull; 15s)
+                        </button>
+                    </div>
+
+                    <hr class="section-divider">
+
+                    <h3 class="side-heading">Target Setpoints</h3>
+                    <div class="setpoints-vertical-form">
+                        <div class="form-field-row">
+                            <label>Temperature (°C)</label>
+                            <input type="number" id="inputTemp" step="0.1" value="37.5">
+                        </div>
+                        <div class="form-field-row">
+                            <label>Humidity (% RH)</label>
+                            <input type="number" id="inputRH" step="1" value="58">
+                        </div>
+                        <div class="form-field-row">
+                            <label>Max CO<sub>2</sub> (ppm)</label>
+                            <input type="number" id="inputCO2" step="100" value="5000">
+                        </div>
+                        <button class="btn btn-primary full-width" onclick="saveSetpoints()">Update Setpoints</button>
+                    </div>
+                </div>
+
+                <!-- Schedule Protocol -->
+                <div class="panel schedule-panel">
+                    <h3 class="side-heading">Protocol Milestones</h3>
+                    <div class="milestone-timeline">
+                        <div class="milestone-node" id="schedDay7">
+                            <div class="milestone-day">Day 07</div>
+                            <div class="milestone-text">
+                                <div class="milestone-title">Vascular Audit</div>
+                                <div class="milestone-desc">Spiderweb vessel formation</div>
+                            </div>
+                        </div>
+                        <div class="milestone-node" id="schedDay10">
+                            <div class="milestone-day">Day 10</div>
+                            <div class="milestone-text">
+                                <div class="milestone-title">Embryo Viability</div>
+                                <div class="milestone-desc">Active motion & eye pigmentation</div>
+                            </div>
+                        </div>
+                        <div class="milestone-node" id="schedDay18">
+                            <div class="milestone-day">Day 18</div>
+                            <div class="milestone-text">
+                                <div class="milestone-title">Pre-Hatching Audit</div>
+                                <div class="milestone-desc">Air cell expansion check</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <!-- Egg Detail Modal -->
+    <div class="modal-overlay" id="eggModal" onclick="closeModal(event)">
+        <div class="modal-card" onclick="event.stopPropagation()">
+            <div class="modal-top">
+                <h3 id="modalTitle">Egg Details</h3>
+                <button class="modal-close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-content-body" id="modalBody">
+                <!-- Dynamic Content -->
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

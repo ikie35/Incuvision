@@ -1,0 +1,170 @@
+================================================================================
+               INCUVISION: POST-UPLOAD TESTING & VERIFICATION GUIDE
+                       Raspberry Pi 5 Master Vision Engine
+================================================================================
+
+This guide provides step-by-step instructions to verify and test your IncuVision 
+system on the Raspberry Pi 5 immediately after uploading your files.
+
+--------------------------------------------------------------------------------
+STEP 1: VERIFY DEPENDENCIES & ONNX MODEL WEIGHTS
+--------------------------------------------------------------------------------
+Before starting the full server, run a quick one-line test in the terminal to 
+ensure Python, onnxruntime, and your trained ONNX weights load properly:
+
+    cd ~/IncuVision/vision
+    source venv/bin/activate
+    
+    python -c "
+    from ultralytics import YOLO
+    from config import YOLO_MODEL_PATH
+    print(f'Checking model at: {YOLO_MODEL_PATH}')
+    model = YOLO(str(YOLO_MODEL_PATH), task='classify')
+    print('SUCCESS: YOLOv8 ONNX model loaded successfully on Raspberry Pi!')
+    "
+
+EXPECTED OUTPUT:
+    Checking model at: /home/pi/IncuVision/yolov8ncandling.onnx
+    SUCCESS: YOLOv8 ONNX model loaded successfully on Raspberry Pi!
+
+NOTE: If onnxruntime is missing, install it with:
+    pip install onnxruntime
+
+--------------------------------------------------------------------------------
+STEP 2: TEST HARDWARE PERIPHERALS (CAMERA & I2C LCD)
+--------------------------------------------------------------------------------
+Verify that the Raspberry Pi 5 detects your hardware components:
+
+1. Test the Camera Ribbon Cable:
+    rpicam-hello -t 2000
+
+    * Expected: A 2-second camera preview will pop up (if in desktop / screen 
+      sharing) without error messages.
+
+2. Test the I2C 20x4 LCD Display:
+    i2cdetect -y 1
+
+    * Expected: In the address grid, you should see '27' or '3f' highlighted.
+
+--------------------------------------------------------------------------------
+STEP 3: VERIFY MOSQUITTO MQTT BROKER
+--------------------------------------------------------------------------------
+Ensure Mosquitto is active to handle communications with the ESP32:
+
+    sudo systemctl status mosquitto
+
+    * Expected: Output should show "active (running)".
+    * If stopped: Run "sudo systemctl start mosquitto"
+
+--------------------------------------------------------------------------------
+STEP 4: LAUNCH THE INCUVISION MASTER ENGINE
+--------------------------------------------------------------------------------
+Start the backend master service in your terminal:
+
+    cd ~/IncuVision/vision
+    source venv/bin/activate
+    python main.py
+
+EXPECTED TERMINAL LOGS:
+    ==================================================
+       INCUVISION: Raspberry Pi 5 Master Engine       
+       Vision, Coordinator & Web API Service          
+    ==================================================
+    [YOLOv8] Successfully loaded weights from .../yolov8ncandling.onnx
+    [MQTT] Connecting to broker at localhost:1883...
+    [MQTT] Connected to MQTT Broker successfully.
+    [LCD] 20x4 I2C LCD initialized at address 0x27.
+    [SERVER] Launching Web Dashboard & API at http://0.0.0.0:8000 ...
+    INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+
+--------------------------------------------------------------------------------
+STEP 5: ACCESS & VERIFY THE WEB DASHBOARD
+--------------------------------------------------------------------------------
+Open a browser and navigate to the dashboard:
+
+    - If on the Pi (Screen Sharing): http://localhost:8000/dashboard/
+    - If from your Laptop on the same Wi-Fi: http://<RASPBERRY_PI_IP>:8000/dashboard/
+      (Find your Pi IP by running: hostname -I)
+
+VERIFICATION CHECKLIST:
+    [ ] Header status pill displays green: "System Connected"
+    [ ] Clean clinical light theme is active
+    [ ] Theme Toggle button (Light / Dark) works properly
+    [ ] Summary stats row displays 4 clean boxes:
+        - Total Capacity (56)
+        - Fertile
+        - Infertile
+        - Fertility Rate (%)
+    [ ] 56-Egg Matrix grid displays all slots (#01 to #56)
+
+--------------------------------------------------------------------------------
+STEP 6: TEST THE YOLOV8 CANDLING VISION PIPELINE
+--------------------------------------------------------------------------------
+Perform an end-to-end candling test:
+
+1. Click the "Run Candling Audit" button (top-right of the 56-egg grid).
+2. Watch the terminal logs:
+    - Camera captures the tray image.
+    - Vision engine crops the 56 egg slots.
+    - YOLOv8 executes ONNX inference on each crop.
+    - Terminal prints:
+      [Candling] Day 1 audit complete. Fertile: X, Infertile: Y | Rate: Z%
+      [Logger] Candling audit logged to SQLite database.
+      [LCD] Updated 20x4 LCD with audit results.
+3. Check the Dashboard UI:
+    - The 56 egg slots will color-code into Green (Fertile) and Amber (Infertile).
+    - Click any egg slot (e.g. #01) to open the modal dialog and verify:
+      - Coordinate (Row, Column)
+      - Viability Status (Fertile / Infertile)
+      - Confidence Score (%)
+4. Inspect the Saved Annotated Photo:
+    - Check the directory: ~/IncuVision/vision/captures/
+    - View the generated .jpg file with bounding boxes and viability text banner.
+
+--------------------------------------------------------------------------------
+STEP 7: TEST ESP32 INTEGRATION (WHEN ESP32 IS POWERED ON)
+--------------------------------------------------------------------------------
+1. Power ON the ESP32 microcontroller (connected to the same Wi-Fi network).
+2. Verify MQTT telemetry reception in a separate terminal:
+    mosquitto_sub -t "incuvision/telemetry" -v
+
+3. Verify Live Dashboard Updates:
+    - Temperature (°C), Humidity (RH%), and CO2 (ppm) cards should update live.
+    - Click "Rotate Tray (45° Tilt • 15s)" on the dashboard and verify that the 
+      egg-turning motor relay activates on the ESP32.
+
+--------------------------------------------------------------------------------
+STEP 8: PERSISTENT BACKGROUND SERVICE (OPTIONAL AUTO-START ON BOOT)
+--------------------------------------------------------------------------------
+To keep IncuVision running even when you close your browser or terminal:
+
+1. Create a systemd service:
+    sudo tee /etc/systemd/system/incuvision.service << 'EOF'
+[Unit]
+Description=IncuVision Master Engine
+After=network.target mosquitto.service
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/IncuVision/vision
+ExecStart=/home/pi/IncuVision/vision/venv/bin/python main.py
+Restart=always
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+2. Enable and start:
+    sudo systemctl daemon-reload
+    sudo systemctl enable incuvision
+    sudo systemctl start incuvision
+
+3. Check logs:
+    journalctl -u incuvision -f
+
+================================================================================
+                        END OF INCUVISION TESTING GUIDE
+================================================================================

@@ -1,0 +1,28 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+
+# Deployment & temp archives
+deploy_pi/
+deploy_pi.zip
+*.tar.gz
+
+# Captures / runtime logs
+vision/captures/
+vision/incuvision.db
+*.log
+
+# Editor / IDE artifacts
+.vscode/
+.idea/
+.DS_Store
+
+# Research PDFs (optional, prevent bloat if desired)
+# *.pdf
