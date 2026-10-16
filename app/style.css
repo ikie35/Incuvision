@@ -600,10 +600,60 @@ body {
     letter-spacing: 0.04em;
 }
 
+/* Camera Mode Switcher & Controls */
+.camera-mode-tabs {
+    display: flex;
+    background: #EBDCA8;
+    border-radius: 12px;
+    padding: 4px;
+    gap: 4px;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.06);
+}
+
+.cam-tab-btn {
+    flex: 1;
+    border: none;
+    background: transparent;
+    border-radius: 9px;
+    padding: 7px 10px;
+    font-family: var(--font-heading);
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: #5D564C;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.cam-tab-btn.active {
+    background: #FFFFFF;
+    color: #1A1615;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.live-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #10B981;
+    display: inline-block;
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3);
+    animation: livePulse 1.8s infinite;
+}
+
+@keyframes livePulse {
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+    70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
 /* Central Camera Viewport */
 .camera-stage {
     width: 100%;
-    height: 250px;
+    height: 260px;
     background: #000000;
     border-radius: 14px;
     position: relative;
@@ -626,6 +676,33 @@ body {
     opacity: 0.85;
 }
 
+.camera-status-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: rgba(0, 0, 0, 0.7);
+    color: #10B981;
+    font-family: var(--font-heading);
+    font-size: 0.68rem;
+    font-weight: 800;
+    padding: 4px 8px;
+    border-radius: 8px;
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    letter-spacing: 0.04em;
+}
+
+.camera-status-badge.audit-mode {
+    color: #F59E0B;
+}
+
+.camera-status-badge.paused-mode {
+    color: #9CA3AF;
+}
+
 .camera-quick-bar {
     position: absolute;
     top: 10px;
@@ -635,18 +712,79 @@ body {
 }
 
 .cam-btn {
-    background: rgba(0, 0, 0, 0.65);
+    background: rgba(0, 0, 0, 0.7);
     color: #FFFFFF;
     border: 1px solid rgba(255, 255, 255, 0.25);
     border-radius: var(--radius-pill);
-    font-size: 0.72rem;
-    font-weight: 600;
-    padding: 4px 10px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 4px 9px;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    backdrop-filter: blur(4px);
+    transition: all 0.15s ease;
 }
 
 .cam-btn:active {
     background: rgba(255, 255, 255, 0.3);
+}
+
+.cam-btn.is-active-gold {
+    background: #F59E0B;
+    border-color: #FCD34D;
+    color: #1E1B18;
+    font-weight: 800;
+}
+
+.btn-return-live {
+    position: absolute;
+    bottom: 12px;
+    background: #10B981;
+    color: #FFFFFF;
+    border: none;
+    border-radius: var(--radius-pill);
+    padding: 7px 16px;
+    font-family: var(--font-heading);
+    font-size: 0.78rem;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.45);
+    display: none;
+    align-items: center;
+    gap: 6px;
+    transition: transform 0.12s ease;
+    z-index: 5;
+}
+
+.btn-return-live:active {
+    transform: scale(0.95);
+}
+
+.camera-paused-placeholder {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: #9CA3AF;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-align: center;
+    padding: 20px;
+}
+
+.cam-btn-resume {
+    margin-top: 4px;
+    background: #10B981;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 6px 14px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    cursor: pointer;
 }
 
 /* Fertility Scores Row */

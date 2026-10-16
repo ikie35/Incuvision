@@ -179,7 +179,7 @@ function handleIncomingTelemetry(data) {
 
     // Latest Candling Audit Data
     if (data.latest_audit) {
-        renderAuditScores(data.latest_audit);
+        renderAuditScores(data.latest_audit, false);
     }
 }
 
@@ -376,24 +376,133 @@ function evaluateSmartAlerts(temp, rh, o2, actuators) {
 // =============================================================================
 // EGG FERTILITY CHECKER (AI CANDLING & CAMERA)
 // =============================================================================
-function refreshLiveStream() {
-    const img = document.getElementById('fertilityCameraStream');
-    if (img) {
-        img.src = `/api/camera/stream?t=${Date.now()}`;
-        img.style.display = 'block';
+let isCameraOn = true;
+let currentCameraMode = 'live'; // 'live' or 'audit'
+let latestAuditImageUrl = null;
+
+function switchCameraView(mode) {
+    currentCameraMode = mode;
+    const tabLive = document.getElementById('tabLiveView');
+    const tabAudit = document.getElementById('tabAuditView');
+    const streamImg = document.getElementById('fertilityCameraStream');
+    const badge = document.getElementById('cameraStatusBadge');
+    const returnLiveBtn = document.getElementById('btnReturnLive');
+    const pausedScreen = document.getElementById('cameraPausedScreen');
+    const centerIcon = document.getElementById('camOverlayIcon');
+
+    if (centerIcon) centerIcon.style.display = 'none';
+
+    if (mode === 'live') {
+        if (tabLive) tabLive.classList.add('active');
+        if (tabAudit) tabAudit.classList.remove('active');
+        if (returnLiveBtn) returnLiveBtn.style.display = 'none';
+
+        if (isCameraOn) {
+            if (pausedScreen) pausedScreen.style.display = 'none';
+            if (streamImg) {
+                streamImg.src = `/api/camera/stream?t=${Date.now()}`;
+                streamImg.style.display = 'block';
+            }
+            if (badge) {
+                badge.className = 'camera-status-badge';
+                badge.innerHTML = '<span class="live-dot"></span> LIVE FEED';
+            }
+        } else {
+            showCameraPaused();
+        }
+    } else if (mode === 'audit') {
+        if (tabAudit) tabAudit.classList.add('active');
+        if (tabLive) tabLive.classList.remove('active');
+        if (returnLiveBtn) returnLiveBtn.style.display = 'flex';
+        if (pausedScreen) pausedScreen.style.display = 'none';
+
+        if (streamImg) {
+            if (latestAuditImageUrl) {
+                streamImg.src = `${latestAuditImageUrl}?t=${Date.now()}`;
+            }
+            streamImg.style.display = 'block';
+        }
+        if (badge) {
+            badge.className = 'camera-status-badge audit-mode';
+            badge.innerText = '🎯 AI AUDIT SCAN';
+        }
     }
-    const overlay = document.getElementById('camOverlayIcon');
-    if (overlay) overlay.style.display = 'none';
+}
+
+function toggleCameraPower(forceOn = null) {
+    if (forceOn !== null) {
+        isCameraOn = forceOn;
+    } else {
+        isCameraOn = !isCameraOn;
+    }
+
+    const btnPower = document.getElementById('btnCameraPower');
+
+    if (isCameraOn) {
+        if (btnPower) {
+            btnPower.innerHTML = '⏹️ Cam OFF';
+            btnPower.style.background = 'rgba(0, 0, 0, 0.7)';
+        }
+        switchCameraView(currentCameraMode);
+    } else {
+        if (btnPower) {
+            btnPower.innerHTML = '▶️ Cam ON';
+            btnPower.style.background = '#10B981';
+        }
+        showCameraPaused();
+    }
+}
+
+function showCameraPaused() {
+    const streamImg = document.getElementById('fertilityCameraStream');
+    const pausedScreen = document.getElementById('cameraPausedScreen');
+    const badge = document.getElementById('cameraStatusBadge');
+    const returnLiveBtn = document.getElementById('btnReturnLive');
+
+    if (streamImg) {
+        streamImg.src = ''; // Halt MJPEG stream to stop bandwidth & CPU
+        streamImg.style.display = 'none';
+    }
+    if (pausedScreen) pausedScreen.style.display = 'flex';
+    if (returnLiveBtn) returnLiveBtn.style.display = 'none';
+    if (badge) {
+        badge.className = 'camera-status-badge paused-mode';
+        badge.innerText = '⏸️ CAMERA OFF';
+    }
+}
+
+function refreshLiveStream() {
+    if (!isCameraOn) {
+        toggleCameraPower(true);
+        return;
+    }
+    switchCameraView('live');
 }
 
 function onCameraStreamError() {
-    // If live stream is idle, show camera center icon
+    if (!isCameraOn) return;
     const overlay = document.getElementById('camOverlayIcon');
-    if (overlay) overlay.style.display = 'block';
+    if (overlay && currentCameraMode === 'live') {
+        overlay.style.display = 'block';
+    }
 }
 
 async function toggleCandlingLight() {
     candlingLightState = !candlingLightState;
+    const btnLight = document.getElementById('btnCamLight');
+    if (btnLight) {
+        if (candlingLightState) {
+            btnLight.classList.add('is-active-gold');
+            btnLight.innerText = '💡 Light: ON';
+        } else {
+            btnLight.classList.remove('is-active-gold');
+            btnLight.innerText = '💡 Light';
+        }
+    }
+
+    // Also update home actuator status pill if present
+    updatePillState('pillLed', candlingLightState);
+
     try {
         await fetch('/api/control/candling_light', {
             method: 'POST',
@@ -422,7 +531,7 @@ async function triggerCandlingAudit() {
     }
 }
 
-function renderAuditScores(audit) {
+function renderAuditScores(audit, switchToAudit = true) {
     if (!audit) return;
 
     const fertileScore = document.getElementById('scoreFertile');
@@ -434,11 +543,11 @@ function renderAuditScores(audit) {
         infertileScore.innerText = `${infertileRate}%`;
     }
 
-    // Switch camera viewport to the annotated scan photo
+    // Save and optionally switch camera viewport to the annotated scan photo
     if (audit.annotated_image_url) {
-        const cam = document.getElementById('fertilityCameraStream');
-        if (cam) {
-            cam.src = `${audit.annotated_image_url}?t=${Date.now()}`;
+        latestAuditImageUrl = audit.annotated_image_url;
+        if (switchToAudit) {
+            switchCameraView('audit');
         }
     }
 
