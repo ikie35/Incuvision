@@ -393,14 +393,7 @@ body {
     line-height: 1.2;
 }
 
-/* 4. Temperature Mini-Preview Card */
-.card-temp-preview {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 14px 20px;
-    cursor: pointer;
-}
+
 
 .btn-pill-gold {
     background: var(--btn-gold);
