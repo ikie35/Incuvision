@@ -2,343 +2,429 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IncuVision — Smart Incubator & Vision Dashboard</title>
-    <meta name="description" content="Professional research dashboard for IncuVision automated egg incubation and YOLOv8 candling analysis.">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>IncuVision - Smart Egg Incubator</title>
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Poppins:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="app-wrapper">
-        <!-- Top Navigation Bar -->
+    <div class="mobile-app-wrapper">
+        <!-- Top App Bar -->
         <header class="app-header">
-            <div class="brand-container">
-                <div class="brand-mark">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 2C7.5 2 4 7 4 13a8 8 0 0 0 16 0c0-6-3.5-11-8-11z"/>
+            <div class="brand-group" onclick="switchNav('home')">
+                <!-- Cute Chick Logo SVG matching research mockup -->
+                <div class="brand-chick-icon">
+                    <svg viewBox="0 0 100 100" width="46" height="46">
+                        <!-- Cracked Egg Shell Bottom -->
+                        <path d="M 12,62 C 12,85 30,96 50,96 C 70,96 88,85 88,62 C 88,52 80,48 74,54 C 68,58 60,48 50,54 C 40,48 32,58 26,54 C 20,48 12,52 12,62 Z" fill="#FBAE36" stroke="#221B1A" stroke-width="3" stroke-linejoin="round"/>
+                        <!-- White Chick Body -->
+                        <path d="M 28,52 C 26,34 36,18 52,18 C 66,18 76,28 76,42 C 76,48 74,52 70,54 C 64,52 58,46 50,46 C 42,46 36,52 28,52 Z" fill="#FFFFFF" stroke="#221B1A" stroke-width="3" stroke-linejoin="round"/>
+                        <!-- Chick Beak -->
+                        <polygon points="74,36 84,40 74,44" fill="#F87A1E" stroke="#221B1A" stroke-width="2.5" stroke-linejoin="round"/>
+                        <!-- Chick Eye -->
+                        <circle cx="64" cy="32" r="3.5" fill="#221B1A"/>
+                        <!-- Embryo Swirl on Shell/Chest -->
+                        <path d="M 48,60 C 38,62 34,72 42,78 C 50,84 62,78 60,68 C 58,60 48,64 48,70 C 48,74 54,74 54,72" fill="none" stroke="#7A1D16" stroke-width="3" stroke-linecap="round"/>
                     </svg>
                 </div>
-                <div class="brand-details">
-                    <div class="brand-title">IncuVision <span class="version-tag">v1.0</span></div>
-                    <div class="brand-subtitle">Automated Incubation & Vision Analysis</div>
-                </div>
+                <h1 class="brand-title">IncuVision</h1>
             </div>
 
-            <div class="header-controls">
-                <button class="theme-toggle-btn" id="themeToggle" onclick="toggleTheme()" title="Toggle Light/Dark Theme">
-                    <svg id="themeIcon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="5"></circle>
-                        <line x1="12" y1="1" x2="12" y2="3"></line>
-                        <line x1="12" y1="21" x2="12" y2="23"></line>
-                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-                        <line x1="1" y1="12" x2="3" y2="12"></line>
-                        <line x1="21" y1="12" x2="23" y2="12"></line>
-                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-                    </svg>
-                    <span id="themeText">Light</span>
-                </button>
-                <div class="status-indicator online" id="connectionBadge">
-                    <span class="status-dot"></span>
-                    <span id="connectionText">System Connected</span>
-                </div>
-                <div class="phase-pill" id="phaseBadge">Setting Phase</div>
-                <div class="day-counter" id="dayBadge">Day 01 <span class="total-days">/ 21</span></div>
-            </div>
+            <!-- Notification Bell Icon with Badge -->
+            <button class="header-bell-btn" id="btnHeaderBell" onclick="switchNav('alerts')" aria-label="Notifications">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="#7A1D16">
+                    <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
+                </svg>
+                <span class="bell-alert-dot" id="bellDot"></span>
+            </button>
         </header>
 
-        <!-- Environmental Telemetry Metrics -->
-        <section class="metrics-grid">
-            <!-- Temperature Card -->
-            <div class="metric-card" id="tempCard">
-                <div class="metric-head">
-                    <span class="metric-label">Temperature</span>
-                    <span class="metric-status-tag tag-success" id="tempStatus">Optimal</span>
-                </div>
-                <div class="metric-body">
-                    <span class="metric-value" id="valTemp">37.5</span>
-                    <span class="metric-unit">°C</span>
-                </div>
-                <div class="metric-foot">
-                    <span class="foot-label">Target Setpoint</span>
-                    <span class="foot-val" id="targetTemp">37.5 °C</span>
-                </div>
-            </div>
-
-            <!-- Humidity Card -->
-            <div class="metric-card" id="rhCard">
-                <div class="metric-head">
-                    <span class="metric-label">Relative Humidity</span>
-                    <span class="metric-status-tag tag-success" id="rhStatus">Optimal</span>
-                </div>
-                <div class="metric-body">
-                    <span class="metric-value" id="valRH">58.0</span>
-                    <span class="metric-unit">%</span>
-                </div>
-                <div class="metric-foot">
-                    <span class="foot-label">Target Setpoint</span>
-                    <span class="foot-val" id="targetRH">58.0 %</span>
-                </div>
-            </div>
-
-            <!-- CO2 Card -->
-            <div class="metric-card" id="co2Card">
-                <div class="metric-head">
-                    <span class="metric-label">Carbon Dioxide (CO<sub>2</sub>)</span>
-                    <span class="metric-status-tag tag-neutral" id="co2Status">Normal</span>
-                </div>
-                <div class="metric-body">
-                    <span class="metric-value" id="valCO2">3,200</span>
-                    <span class="metric-unit">ppm</span>
-                </div>
-                <div class="metric-foot">
-                    <span class="foot-label">Max Allowable</span>
-                    <span class="foot-val" id="targetCO2">5,000 ppm</span>
-                </div>
-            </div>
-
-            <!-- Oxygen Card -->
-            <div class="metric-card" id="o2Card">
-                <div class="metric-head">
-                    <span class="metric-label">Oxygen (O<sub>2</sub>)</span>
-                    <span class="metric-status-tag tag-neutral" id="o2Status">Normal</span>
-                </div>
-                <div class="metric-body">
-                    <span class="metric-value" id="valO2">20.9</span>
-                    <span class="metric-unit">%</span>
-                </div>
-                <div class="metric-foot">
-                    <span class="foot-label">Min Threshold</span>
-                    <span class="foot-val">20.5 %</span>
-                </div>
-            </div>
-        </section>
-
-        <!-- Actuator State Strip -->
-        <section class="actuator-bar">
-            <div class="actuator-chip" id="actHeater">
-                <span class="chip-dot"></span>
-                <span class="chip-name">PTC Heater</span>
-            </div>
-            <div class="actuator-chip" id="actExhaust">
-                <span class="chip-dot"></span>
-                <span class="chip-name">Exhaust Fan</span>
-            </div>
-            <div class="actuator-chip active" id="actCirculate">
-                <span class="chip-dot"></span>
-                <span class="chip-name">Circulation Fan</span>
-            </div>
-            <div class="actuator-chip" id="actMotor">
-                <span class="chip-dot"></span>
-                <span class="chip-name">Turning Motor</span>
-            </div>
-            <div class="actuator-chip" id="actCandling">
-                <span class="chip-dot"></span>
-                <span class="chip-name">Candling Array</span>
-            </div>
-        </section>
-
-        <!-- Main Workspace Grid -->
-        <main class="workspace-layout">
-            <!-- Candling Vision Section -->
-            <section class="panel candling-panel">
-                <div class="panel-topbar">
-                    <div>
-                        <h2 class="panel-heading" id="panelHeading">56-Egg Candling Vision Matrix</h2>
-                        <p class="panel-subheading" id="panelSubheading">7 × 8 Grid Layout &bull; YOLOv8 Multi-Egg Fertility & Vascular Analysis</p>
+        <!-- Main Screen View Container -->
+        <main class="app-body">
+            
+            <!-- ==========================================================
+                 SCREEN 1: HOME (Main Dashboard)
+                 ========================================================== -->
+            <section id="screenHome" class="app-screen active">
+                <!-- 1. Countdown Days Left Card -->
+                <div class="card card-countdown">
+                    <div class="clock-icon-bubble">
+                        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#A82820" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
                     </div>
-                    <div class="panel-btn-group">
-                        <button class="btn btn-action" id="btnTriggerCandling" onclick="triggerCandlingAudit()">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <polyline points="12 6 12 12 16 14"></polyline>
+                    <div class="countdown-text">
+                        <span id="homeDaysLeft">12 Days Left</span>
+                    </div>
+                </div>
+
+                <!-- 2. The 4 Big Metric Square Cards (2x2 Grid) -->
+                <div class="metrics-grid">
+                    <!-- Temperature Card (Green Highlight) -->
+                    <div class="metric-box box-temp active-green" id="cardTemp">
+                        <div class="metric-icon-wrap">
+                            <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="#A82820" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"></path>
+                                <line x1="17" y1="6" x2="20" y2="6"></line>
+                                <line x1="17" y1="9" x2="20" y2="9"></line>
+                                <line x1="17" y1="12" x2="20" y2="12"></line>
                             </svg>
-                            Run Candling Audit
-                        </button>
+                        </div>
+                        <div class="metric-content">
+                            <span class="metric-val" id="valTemp">37.5°C</span>
+                            <span class="metric-lbl">TEMPERATURE</span>
+                        </div>
+                    </div>
+
+                    <!-- Humidity Card -->
+                    <div class="metric-box box-rh" id="cardRH">
+                        <div class="metric-icon-wrap">
+                            <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="#A82820" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
+                                <text x="10" y="17" font-size="7" font-weight="bold" fill="#A82820" stroke="none">%</text>
+                            </svg>
+                        </div>
+                        <div class="metric-content">
+                            <span class="metric-val" id="valRH">58.0%</span>
+                            <span class="metric-lbl">HUMIDITY</span>
+                        </div>
+                    </div>
+
+                    <!-- Carbon Dioxide Card -->
+                    <div class="metric-box box-co2" id="cardCO2">
+                        <div class="metric-icon-wrap">
+                            <span class="text-icon">CO<sub>2</sub></span>
+                        </div>
+                        <div class="metric-content">
+                            <span class="metric-val" id="valCO2">3,200</span>
+                            <span class="metric-lbl">ppm (Max 5,000)</span>
+                        </div>
+                    </div>
+
+                    <!-- Oxygen Card -->
+                    <div class="metric-box box-o2" id="cardO2">
+                        <div class="metric-icon-wrap">
+                            <span class="text-icon italic">O<sub>2</sub></span>
+                        </div>
+                        <div class="metric-content">
+                            <span class="metric-val" id="valO2">20.9%</span>
+                            <span class="metric-lbl">OXYGEN</span>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Navigation Tabs between Views -->
-                <div class="vision-view-tabs">
-                    <button class="vision-tab-btn active" id="tabGrid" onclick="switchVisionView('grid')">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-                        56-Egg Matrix
-                    </button>
-                    <button class="vision-tab-btn" id="tabCandlingPhoto" onclick="switchVisionView('candling')">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
-                        AI Candling Scan Photo
-                    </button>
-                    <button class="vision-tab-btn" id="tabLiveCam" onclick="switchVisionView('live')">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
-                        Live Chamber Camera
-                    </button>
-                </div>
-
-                <!-- 1. 56-Egg Matrix View -->
-                <div id="viewGrid" class="vision-view-content active">
-                    <!-- Audit Summary Stats -->
-                    <div class="audit-summary-row">
-                        <div class="summary-stat-box">
-                            <div class="stat-meta">Total Capacity</div>
-                            <div class="stat-figure" id="sumTotal">56</div>
-                        </div>
-                        <div class="summary-stat-box stat-fertile">
-                            <div class="stat-meta">Fertile</div>
-                            <div class="stat-figure" id="sumFertile">--</div>
-                        </div>
-                        <div class="summary-stat-box stat-infertile">
-                            <div class="stat-meta">Infertile</div>
-                            <div class="stat-figure" id="sumInfertile">--</div>
-                        </div>
-                        <div class="summary-stat-box stat-rate">
-                            <div class="stat-meta">Fertility Rate</div>
-                            <div class="stat-figure accent" id="sumRate">--%</div>
-                        </div>
+                <!-- 3. Actuator Control Bar (Warm Yellow Container with 3 White Cards) -->
+                <div class="card card-actuators-panel">
+                    <!-- Exhaust Fan -->
+                    <div class="actuator-slot">
+                        <span class="actuator-name">Exhaust Fan</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="toggleExhaust" onchange="toggleRelay('exhaust', this.checked)">
+                            <span class="toggle-slider"></span>
+                        </label>
                     </div>
 
-                    <!-- 7x8 Matrix Grid View -->
-                    <div class="matrix-canvas">
-                        <div class="egg-matrix-grid" id="eggGrid">
-                            <!-- Populated by JavaScript -->
-                        </div>
+                    <!-- Circulation Fan -->
+                    <div class="actuator-slot">
+                        <span class="actuator-name">Circulation<br>Fan</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="toggleCirculate" checked onchange="toggleRelay('circulate', this.checked)">
+                            <span class="toggle-slider"></span>
+                        </label>
                     </div>
 
-                    <!-- Clean Legend -->
-                    <div class="matrix-legend">
-                        <div class="legend-entry"><span class="legend-indicator fertile"></span> Fertile (Active Embryo & Vascular Network)</div>
-                        <div class="legend-entry"><span class="legend-indicator infertile"></span> Infertile / Non-Viable (Clear Yolk)</div>
-                        <div class="legend-entry"><span class="legend-indicator pending"></span> Standby / Unscanned</div>
+                    <!-- PTC Heater -->
+                    <div class="actuator-slot">
+                        <span class="actuator-name">PTC Heater</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="toggleHeater" onchange="toggleRelay('heater', this.checked)">
+                            <span class="toggle-slider"></span>
+                        </label>
                     </div>
                 </div>
 
-                <!-- 2. AI Candling Scan Photo View -->
-                <div id="viewCandlingPhoto" class="vision-view-content" style="display: none;">
-                    <div class="camera-display-container">
-                        <div class="camera-toolbar">
-                            <span class="camera-badge" id="candlingPhotoBadge">Latest YOLOv8 Scan</span>
-                            <div class="camera-actions">
-                                <a id="btnDownloadScan" href="#" target="_blank" class="btn btn-outline btn-sm">Open Full Photo</a>
+                <!-- 4. Temperature Mini-Preview Card (Tap to View Analytics) -->
+                <div class="card card-temp-preview" onclick="switchNav('analytics')">
+                    <button class="btn-pill-gold">TEMPERATURE</button>
+                    <div class="gauge-preview-mini">
+                        <svg viewBox="0 0 100 55" width="60" height="33">
+                            <path d="M 10 50 A 40 40 0 0 1 50 10" fill="none" stroke="#22C55E" stroke-width="12" />
+                            <path d="M 50 10 A 40 40 0 0 1 90 50" fill="none" stroke="#DC2626" stroke-width="12" />
+                            <polygon points="50,48 48,16 52,16" fill="#1E293B" />
+                            <circle cx="50" cy="48" r="4" fill="#1E293B" />
+                        </svg>
+                    </div>
+                </div>
+            </section>
+
+
+            <!-- ==========================================================
+                 SCREEN 2: TEMPERATURE ANALYTICS & EGG TURNING
+                 ========================================================== -->
+            <section id="screenAnalytics" class="app-screen">
+                <!-- Large Temperature & Wave Chart Card -->
+                <div class="card card-analytics-main">
+                    <div class="analytics-header-row">
+                        <div class="btn-pill-gold">TEMPERATURE</div>
+                        <div class="gauge-status-block">
+                            <!-- Gauge -->
+                            <svg viewBox="0 0 100 55" width="80" height="44">
+                                <path d="M 10 50 A 40 40 0 0 1 50 10" fill="none" stroke="#22C55E" stroke-width="13" />
+                                <path d="M 50 10 A 40 40 0 0 1 90 50" fill="none" stroke="#DC2626" stroke-width="13" />
+                                <polygon points="50,48 48,15 52,15" fill="#1E293B" />
+                                <circle cx="50" cy="48" r="4.5" fill="#1E293B" />
+                            </svg>
+                            <div class="pill-temp-current" id="analyticsTempPill">37.5°</div>
+                            <span class="label-status">Current status</span>
+                        </div>
+                    </div>
+
+                    <!-- Temperature Curve Wave Chart -->
+                    <div class="chart-container">
+                        <canvas id="tempWaveChart" width="340" height="190"></canvas>
+                        <!-- Y-Axis labels (38° down to 30°) -->
+                        <div class="chart-y-axis">
+                            <span>38°</span>
+                            <span>37°</span>
+                            <span>36°</span>
+                            <span>35°</span>
+                            <span>34°</span>
+                            <span>33°</span>
+                            <span>32°</span>
+                            <span>31°</span>
+                            <span>30°</span>
+                        </div>
+                        <!-- X-Axis Days -->
+                        <div class="chart-x-axis">
+                            <span>Day 1</span>
+                            <span>Day 2</span>
+                            <span>Day 3</span>
+                            <span>Day 4</span>
+                            <span>Day 5</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2 Bottom Information Cards -->
+                <div class="analytics-bottom-row">
+                    <!-- Type of Egg Card -->
+                    <div class="card card-sub-info">
+                        <span class="sub-info-val">CHICKEN EGG</span>
+                        <span class="sub-info-lbl">Type of Egg</span>
+                    </div>
+
+                    <!-- Egg Turning Countdown Card -->
+                    <div class="card card-sub-info" onclick="manualEggTurn()" title="Tap to trigger egg turning">
+                        <span class="sub-info-val text-digits" id="turningCountdown">30:09</span>
+                        <span class="sub-info-lbl">Egg Turning</span>
+                    </div>
+                </div>
+            </section>
+
+
+            <!-- ==========================================================
+                 SCREEN 3: SMART ALERTS & LOGS
+                 ========================================================== -->
+            <section id="screenAlerts" class="app-screen">
+                <div class="card card-alerts-container">
+                    <div class="alerts-scroll-area" id="alertsList">
+                        <!-- Dynamic Smart Alerts -->
+                        <div class="alert-time-group">
+                            <span class="time-header">10:00 AM</span>
+                            
+                            <div class="alert-box">
+                                <span class="alert-warn-badge">⚠️</span>
+                                <p class="alert-msg">OXYGEN LEVEL IS 22%, IT'S ABOVE NORMAL. EXHAUST FAN IS TURNED ON.</p>
+                            </div>
+
+                            <div class="alert-box">
+                                <span class="alert-warn-badge">⚠️</span>
+                                <p class="alert-msg">TEMPERATURE IS 35°, IT'S BELOW NORMAL. PTC HEATER IS TURNED ON.</p>
                             </div>
                         </div>
-                        <div class="camera-viewport">
-                            <img id="imgCandlingScan" src="" alt="AI Candling Annotated Scan" style="display:none;" />
-                            <div class="camera-placeholder" id="candlingPlaceholder">
-                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
-                                <p>No candling scan has been executed yet.</p>
-                                <button class="btn btn-action" onclick="triggerCandlingAudit()">Run Candling Audit Now</button>
-                            </div>
-                        </div>
-                        <div class="camera-footer-info">
-                            <span>Image annotated with bounding boxes, egg index (#01–#56), and viability tags.</span>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- 3. Live Chamber Camera View -->
-                <div id="viewLiveCam" class="vision-view-content" style="display: none;">
-                    <div class="camera-display-container">
-                        <div class="camera-toolbar">
-                            <span class="camera-badge badge-live"><span class="live-dot"></span> LIVE CHAMBER FEED</span>
-                            <div class="camera-actions">
-                                <button class="btn btn-outline btn-sm" onclick="toggleCandlingLight()">Toggle Candling Light</button>
-                                <button class="btn btn-outline btn-sm" onclick="refreshLiveStream()">Refresh Stream</button>
+                        <div class="alert-time-group">
+                            <span class="time-header">10:15 AM</span>
+                            
+                            <div class="alert-box">
+                                <span class="alert-warn-badge">⚠️</span>
+                                <p class="alert-msg">OXYGEN LEVEL IS STILL 22%, IT'S ABOVE NORMAL. MANUAL INTERVENTION IS NEEDED!</p>
                             </div>
-                        </div>
-                        <div class="camera-viewport">
-                            <img id="imgLiveStream" src="/api/camera/stream" alt="Live Incubator Video Stream" />
-                        </div>
-                        <div class="camera-footer-info">
-                            <span>Real-time visual monitoring of egg tray, mechanical turning position, and heater array.</span>
+
+                            <div class="alert-box">
+                                <span class="alert-warn-badge">⚠️</span>
+                                <p class="alert-msg">TEMPERATURE IS NOW 37.5°, IT'S NORMAL. PTC HEATER IS TURNED OFF.</p>
+                            </div>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <!-- Sidebar Controls -->
-            <aside class="sidebar-layout">
-                <!-- Incubation Controls -->
-                <div class="panel control-panel">
-                    <h3 class="side-heading">System Parameters</h3>
+
+            <!-- ==========================================================
+                 SCREEN 4: EGG FERTILITY CHECKER (AI CANDLING & CAMERA)
+                 ========================================================== -->
+            <section id="screenFertility" class="app-screen">
+                <!-- Title Header Banner -->
+                <div class="fertility-title-banner">
+                    <h2>EGG FERTILITY CHECKER</h2>
+                </div>
+
+                <!-- Central Camera Viewport -->
+                <div class="camera-stage">
+                    <img id="fertilityCameraStream" src="/api/camera/stream" alt="Live Incubator Camera Feed" class="camera-stream-img" onerror="onCameraStreamError()" />
                     
-                    <div class="form-group">
-                        <label class="form-label">Active Incubation Day (1–21)</label>
-                        <div class="input-action-row">
-                            <input type="number" id="daySelect" min="1" max="21" value="1">
-                            <button class="btn btn-secondary" onclick="updateIncubationDay()">Set Day</button>
-                        </div>
+                    <div class="camera-overlay-center" id="camOverlayIcon">
+                        <svg viewBox="0 0 24 24" width="48" height="48" fill="#B91C1C">
+                            <path d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4z"/>
+                            <path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/>
+                        </svg>
                     </div>
 
-                    <div class="form-group">
-                        <label class="form-label">Egg Turning Control</label>
-                        <button class="btn btn-outline full-width" onclick="manualEggTurn()">
-                            Rotate Tray (45° Tilt &bull; 15s)
-                        </button>
-                    </div>
-
-                    <hr class="section-divider">
-
-                    <h3 class="side-heading">Target Setpoints</h3>
-                    <div class="setpoints-vertical-form">
-                        <div class="form-field-row">
-                            <label>Temperature (°C)</label>
-                            <input type="number" id="inputTemp" step="0.1" value="37.5">
-                        </div>
-                        <div class="form-field-row">
-                            <label>Humidity (% RH)</label>
-                            <input type="number" id="inputRH" step="1" value="58">
-                        </div>
-                        <div class="form-field-row">
-                            <label>Max CO<sub>2</sub> (ppm)</label>
-                            <input type="number" id="inputCO2" step="100" value="5000">
-                        </div>
-                        <button class="btn btn-primary full-width" onclick="saveSetpoints()">Update Setpoints</button>
+                    <!-- Quick Toolbar on Camera -->
+                    <div class="camera-quick-bar">
+                        <button class="cam-btn" onclick="toggleCandlingLight()">💡 Light</button>
+                        <button class="cam-btn" onclick="refreshLiveStream()">🔄 Refresh</button>
                     </div>
                 </div>
 
-                <!-- Schedule Protocol -->
-                <div class="panel schedule-panel">
-                    <h3 class="side-heading">Protocol Milestones</h3>
-                    <div class="milestone-timeline">
-                        <div class="milestone-node" id="schedDay7">
-                            <div class="milestone-day">Day 07</div>
-                            <div class="milestone-text">
-                                <div class="milestone-title">Vascular Audit</div>
-                                <div class="milestone-desc">Spiderweb vessel formation</div>
-                            </div>
-                        </div>
-                        <div class="milestone-node" id="schedDay10">
-                            <div class="milestone-day">Day 10</div>
-                            <div class="milestone-text">
-                                <div class="milestone-title">Embryo Viability</div>
-                                <div class="milestone-desc">Active motion & eye pigmentation</div>
-                            </div>
-                        </div>
-                        <div class="milestone-node" id="schedDay18">
-                            <div class="milestone-day">Day 18</div>
-                            <div class="milestone-text">
-                                <div class="milestone-title">Pre-Hatching Audit</div>
-                                <div class="milestone-desc">Air cell expansion check</div>
-                            </div>
-                        </div>
+                <!-- Fertile vs Infertile Result Cards -->
+                <div class="fertility-scores-row">
+                    <!-- Fertile Box -->
+                    <div class="card score-box">
+                        <span class="score-title fertile-text">FERTILE (%):</span>
+                        <span class="score-number fertile-text" id="scoreFertile">--</span>
+                    </div>
+
+                    <!-- Infertile Box -->
+                    <div class="card score-box">
+                        <span class="score-title infertile-text">INFERTILE (%):</span>
+                        <span class="score-number infertile-text" id="scoreInfertile">--</span>
                     </div>
                 </div>
-            </aside>
+
+                <!-- Set Candling Schedule / Run Candling Audit Button Card -->
+                <div class="card card-action-calendar" onclick="triggerCandlingAudit()">
+                    <div class="calendar-icon">
+                        <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="#A82820" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                            <rect x="7" y="14" width="2" height="2" fill="#A82820"></rect>
+                            <rect x="11" y="14" width="2" height="2" fill="#A82820"></rect>
+                            <rect x="15" y="14" width="2" height="2" fill="#A82820"></rect>
+                        </svg>
+                    </div>
+                    <span class="calendar-btn-label" id="btnCandlingLabel">Run AI Candling Audit</span>
+                </div>
+
+                <!-- 56-Egg Matrix Toggle for Inspection -->
+                <div class="matrix-collapsible-container">
+                    <button class="btn-matrix-toggle" onclick="toggleMatrixDrawer()">
+                        <span>Inspect 56-Egg Tray Matrix (7×8)</span>
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    </button>
+                    <div class="matrix-drawer" id="matrixDrawer">
+                        <div class="egg-matrix-grid" id="eggGrid"></div>
+                    </div>
+                </div>
+            </section>
+
+
+            <!-- ==========================================================
+                 SCREEN 5: MENU / PROTOCOL SETTINGS
+                 ========================================================== -->
+            <section id="screenMenu" class="app-screen">
+                <div class="card card-menu-settings">
+                    <h3 class="menu-heading">Incubation Protocol Settings</h3>
+
+                    <div class="form-row">
+                        <label>Active Incubation Day</label>
+                        <div class="input-btn-group">
+                            <input type="number" id="menuDayInput" min="1" max="21" value="1">
+                            <button class="btn-pill-gold" onclick="setIncubationDayFromMenu()">Save Day</button>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <label>Target Temperature (°C)</label>
+                        <input type="number" id="menuTempInput" step="0.1" value="37.5">
+                    </div>
+
+                    <div class="form-row">
+                        <label>Target Humidity (% RH)</label>
+                        <input type="number" id="menuRHInput" step="1" value="58">
+                    </div>
+
+                    <div class="form-row">
+                        <label>Max CO<sub>2</sub> (ppm)</label>
+                        <input type="number" id="menuCO2Input" step="100" value="5000">
+                    </div>
+
+                    <button class="btn-primary-action" onclick="saveMenuSetpoints()">Update All Setpoints</button>
+                    
+                    <hr class="divider">
+
+                    <button class="btn-secondary-action" onclick="manualEggTurn()">
+                        Rotate Egg Tray Now (15s)
+                    </button>
+                </div>
+            </section>
+
         </main>
+
+        <!-- Bottom Navigation Bar -->
+        <nav class="app-bottom-nav">
+            <!-- Menu Tab -->
+            <button class="nav-tab" id="navMenu" onclick="switchNav('menu')">
+                <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                    <line x1="4" y1="6" x2="20" y2="6"></line>
+                    <line x1="4" y1="12" x2="20" y2="12"></line>
+                    <line x1="4" y1="18" x2="20" y2="18"></line>
+                </svg>
+                <span>Menu</span>
+            </button>
+
+            <!-- Home Tab (Default Active) -->
+            <button class="nav-tab active" id="navHome" onclick="switchNav('home')">
+                <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor">
+                    <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+                </svg>
+                <span>Home</span>
+            </button>
+
+            <!-- Fertility Tab (AI Candling) -->
+            <button class="nav-tab" id="navFertility" onclick="switchNav('fertility')">
+                <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2a5 5 0 0 0-5 5c0 4 5 10 5 10s5-6 5-10a5 5 0 0 0-5-5z"></path>
+                    <circle cx="12" cy="7" r="1.5"></circle>
+                </svg>
+                <span>Fertility</span>
+            </button>
+
+            <!-- Profile / Settings Tab -->
+            <button class="nav-tab" id="navProfile" onclick="switchNav('analytics')">
+                <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor">
+                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                </svg>
+                <span>Analytics</span>
+            </button>
+        </nav>
     </div>
 
-    <!-- Egg Detail Modal -->
-    <div class="modal-overlay" id="eggModal" onclick="closeModal(event)">
-        <div class="modal-card" onclick="event.stopPropagation()">
-            <div class="modal-top">
-                <h3 id="modalTitle">Egg Details</h3>
-                <button class="modal-close-btn" onclick="closeModal()">&times;</button>
+    <!-- Egg Detail Modal (for individual egg clicks) -->
+    <div class="modal-backdrop" id="eggModal" onclick="closeModal(event)">
+        <div class="modal-box" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 id="modalEggTitle">Egg Slot #01</h3>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
             </div>
-            <div class="modal-content-body" id="modalBody">
-                <!-- Dynamic Content -->
-            </div>
+            <div class="modal-body" id="modalEggBody"></div>
         </div>
     </div>
 

@@ -1,85 +1,78 @@
-// IncuVision Professional Dashboard Controller
+// IncuVision Mobile-First Dashboard Controller
+// Connected to Raspberry Pi 5 Master Vision & Coordinator Engine
 
 let ws = null;
 let currentDay = 1;
-let eggData = [];
-let isLocalFileMode = window.location.protocol === 'file:';
+let currentTelemetry = {
+    temp: 37.5,
+    rh: 58.0,
+    co2: 3200,
+    o2: 20.9,
+    actuators: {
+        heater: false,
+        exhaust: false,
+        circulate: true,
+        motor: false,
+        candling: false
+    }
+};
+
+let eggMatrixData = [];
+let turningSecondsLeft = 30 * 60 + 9; // 30:09 countdown default
+let candlingLightState = false;
 
 document.addEventListener('DOMContentLoaded', () => {
-    initTheme();
-    initEggGrid();
-    if (!isLocalFileMode) {
-        initWebSocket();
-        fetchInitialData();
-    } else {
-        // Standalone preview mode: Show clean status & load sample simulation
-        setConnectionStatus(true, "Offline Preview Mode");
-        loadSampleAuditData();
-    }
+    initWebSocket();
+    fetchInitialData();
+    init56EggGrid();
+    startTurningCountdown();
+    drawTempWaveChart();
 });
 
-// Theme Management
-function initTheme() {
-    const savedTheme = localStorage.getItem('incuvision_theme') || 'light';
-    applyTheme(savedTheme);
-}
+// =============================================================================
+// NAVIGATION & SCREEN SWITCHING
+// =============================================================================
+function switchNav(screenId) {
+    const screens = {
+        'home': document.getElementById('screenHome'),
+        'analytics': document.getElementById('screenAnalytics'),
+        'alerts': document.getElementById('screenAlerts'),
+        'fertility': document.getElementById('screenFertility'),
+        'menu': document.getElementById('screenMenu')
+    };
 
-function toggleTheme() {
-    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    const nextTheme = isDark ? 'light' : 'dark';
-    applyTheme(nextTheme);
-    localStorage.setItem('incuvision_theme', nextTheme);
-}
+    const tabs = {
+        'home': document.getElementById('navHome'),
+        'analytics': document.getElementById('navProfile'),
+        'fertility': document.getElementById('navFertility'),
+        'menu': document.getElementById('navMenu')
+    };
 
-function applyTheme(theme) {
-    const themeText = document.getElementById('themeText');
-    const themeIcon = document.getElementById('themeIcon');
+    // Hide all screens
+    Object.values(screens).forEach(s => s && s.classList.remove('active'));
+    // Deactivate all nav tabs
+    Object.values(tabs).forEach(t => t && t.classList.remove('active'));
 
-    if (theme === 'dark') {
-        document.documentElement.setAttribute('data-theme', 'dark');
-        if (themeText) themeText.innerText = 'Dark';
-        if (themeIcon) {
-            themeIcon.innerHTML = `<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>`;
-        }
-    } else {
-        document.documentElement.removeAttribute('data-theme');
-        if (themeText) themeText.innerText = 'Light';
-        if (themeIcon) {
-            themeIcon.innerHTML = `
-                <circle cx="12" cy="12" r="5"></circle>
-                <line x1="12" y1="1" x2="12" y2="3"></line>
-                <line x1="12" y1="21" x2="12" y2="23"></line>
-                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-                <line x1="1" y1="12" x2="3" y2="12"></line>
-                <line x1="21" y1="12" x2="23" y2="12"></line>
-                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-            `;
-        }
+    // Activate selected screen
+    if (screens[screenId]) {
+        screens[screenId].classList.add('active');
+    }
+    // Activate nav tab
+    if (tabs[screenId]) {
+        tabs[screenId].classList.add('active');
+    }
+
+    // Screen specific triggers
+    if (screenId === 'analytics') {
+        setTimeout(drawTempWaveChart, 50);
+    } else if (screenId === 'fertility') {
+        refreshLiveStream();
     }
 }
 
-// Render 56-egg grid (7 rows x 8 cols)
-function initEggGrid() {
-    const grid = document.getElementById('eggGrid');
-    if (!grid) return;
-    grid.innerHTML = '';
-
-    for (let i = 1; i <= 56; i++) {
-        const slot = document.createElement('div');
-        slot.className = 'egg-unit';
-        slot.id = `egg-${i}`;
-        slot.innerHTML = `
-            <span class="egg-unit-index">#${i.toString().padStart(2, '0')}</span>
-            <span class="egg-unit-label">---</span>
-        `;
-        slot.onclick = () => openEggModal(i);
-        grid.appendChild(slot);
-    }
-}
-
-// WebSocket Live Telemetry Link
+// =============================================================================
+// WEBSOCKET & BACKEND TELEMETRY
+// =============================================================================
 function initWebSocket() {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = `${protocol}//${window.location.host}/ws`;
@@ -88,35 +81,25 @@ function initWebSocket() {
         ws = new WebSocket(wsUrl);
 
         ws.onopen = () => {
-            setConnectionStatus(true, "System Connected");
+            console.log("[WS] Connected to IncuVision Master Engine");
         };
 
         ws.onmessage = (event) => {
             try {
                 const data = JSON.parse(event.data);
-                updateDashboard(data);
+                handleIncomingTelemetry(data);
             } catch (e) {
-                console.error("WS Parse error:", e);
+                console.error("[WS] Parse error:", e);
             }
         };
 
         ws.onclose = () => {
-            setConnectionStatus(false, "Reconnecting...");
             setTimeout(initWebSocket, 3000);
         };
     } catch (e) {
-        console.warn("WebSocket init fallback to polling:", e);
+        console.warn("[WS] Fallback to polling:", e);
         setInterval(fetchInitialData, 3000);
     }
-}
-
-function setConnectionStatus(isOnline, text) {
-    const badge = document.getElementById('connectionBadge');
-    const label = document.getElementById('connectionText');
-    if (!badge || !label) return;
-
-    badge.className = `status-indicator ${isOnline ? 'online' : 'offline'}`;
-    label.innerText = text;
 }
 
 async function fetchInitialData() {
@@ -124,353 +107,245 @@ async function fetchInitialData() {
         const res = await fetch('/api/telemetry');
         if (res.ok) {
             const data = await res.json();
-            updateDashboard(data);
+            handleIncomingTelemetry(data);
         }
     } catch (e) {
-        // Backend not active yet
+        // Backend connecting
     }
 }
 
-// Update UI with telemetry data
-function updateDashboard(data) {
+function handleIncomingTelemetry(data) {
     if (!data) return;
 
-    currentDay = data.day || 1;
-    document.getElementById('dayBadge').innerHTML = `Day ${currentDay.toString().padStart(2, '0')} <span class="total-days">/ 21</span>`;
-    document.getElementById('daySelect').value = currentDay;
-
-    const phase = data.phase || 'SETTING';
-    document.getElementById('phaseBadge').innerText = `${phase} Phase`;
-
-    // Highlight timeline milestone nodes
-    updateTimelineMilestones(currentDay);
-
-    const telem = data.telemetry || {};
-    
-    // Telemetry Figures
-    if (telem.temp !== undefined) document.getElementById('valTemp').innerText = Number(telem.temp).toFixed(1);
-    if (telem.rh !== undefined) document.getElementById('valRH').innerText = Number(telem.rh).toFixed(1);
-    if (telem.co2 !== undefined) document.getElementById('valCO2').innerText = Number(telem.co2).toLocaleString();
-    if (telem.o2 !== undefined) document.getElementById('valO2').innerText = Number(telem.o2).toFixed(1);
-
-    // Actuators
-    const act = telem.actuators || {};
-    setChipState('actHeater', act.heater);
-    setChipState('actExhaust', act.exhaust);
-    setChipState('actCirculate', act.circulate !== undefined ? act.circulate : true);
-    setChipState('actMotor', act.motor);
-    setChipState('actCandling', act.candling);
-
-    // Auditing Button State
-    const btn = document.getElementById('btnTriggerCandling');
-    if (data.is_auditing) {
-        btn.disabled = true;
-        btn.innerText = "YOLOv8 Scanning...";
-    } else {
-        btn.disabled = false;
-        btn.innerText = "Run Candling Audit";
+    // Day & Phase
+    if (data.day) {
+        currentDay = data.day;
+        const daysLeft = Math.max(0, 21 - currentDay);
+        const dayEl = document.getElementById('homeDaysLeft');
+        if (dayEl) dayEl.innerText = `${daysLeft} Days Left`;
+        
+        const menuDay = document.getElementById('menuDayInput');
+        if (menuDay) menuDay.value = currentDay;
     }
 
-    if (data.latest_audit) {
-        renderAuditResults(data.latest_audit);
-    }
-}
+    const telem = data.telemetry;
+    if (telem) {
+        currentTelemetry = telem;
 
-function updateTimelineMilestones(day) {
-    const d7 = document.getElementById('schedDay7');
-    const d10 = document.getElementById('schedDay10');
-    const d18 = document.getElementById('schedDay18');
-    if (d7) d7.className = `milestone-node ${day >= 7 ? 'active' : ''}`;
-    if (d10) d10.className = `milestone-node ${day >= 10 ? 'active' : ''}`;
-    if (d18) d18.className = `milestone-node ${day >= 18 ? 'active' : ''}`;
-}
+        // 1. Temperature
+        const temp = parseFloat(telem.temp || 37.5);
+        const valTempEl = document.getElementById('valTemp');
+        const cardTemp = document.getElementById('cardTemp');
+        const pillTemp = document.getElementById('analyticsTempPill');
+        
+        if (valTempEl) valTempEl.innerText = `${temp.toFixed(1)}°C`;
+        if (pillTemp) pillTemp.innerText = `${temp.toFixed(1)}°`;
 
-function setChipState(id, isActive) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    if (isActive) {
-        el.classList.add('active');
-    } else {
-        el.classList.remove('active');
-    }
-}
-
-function renderAuditResults(audit) {
-    if (!audit || !audit.matrix) return;
-
-    const sumFertileEl = document.getElementById('sumFertile');
-    const sumInfertileEl = document.getElementById('sumInfertile');
-    const sumDeadEl = document.getElementById('sumDead');
-    const sumRateEl = document.getElementById('sumRate');
-
-    if (sumFertileEl) sumFertileEl.innerText = audit.fertile;
-    if (sumInfertileEl) sumInfertileEl.innerText = audit.infertile;
-    if (sumDeadEl) sumDeadEl.innerText = audit.early_dead || 0;
-    if (sumRateEl) sumRateEl.innerText = `${audit.fertility_rate}%`;
-
-    eggData = [];
-
-    audit.matrix.forEach(row => {
-        row.forEach(egg => {
-            eggData.push(egg);
-            const slot = document.getElementById(`egg-${egg.index}`);
-            if (slot) {
-                slot.className = `egg-unit ${egg.status}`;
-                slot.innerHTML = `
-                    <span class="egg-unit-index">#${egg.index.toString().padStart(2, '0')}</span>
-                    <span class="egg-unit-label">${egg.status.replace('_', ' ')}</span>
-                `;
-            }
-        });
-    });
-
-    // Update Annotated Camera Image View if available
-    const imgScan = document.getElementById('imgCandlingScan');
-    const placeholder = document.getElementById('candlingPlaceholder');
-    const badge = document.getElementById('candlingPhotoBadge');
-    const btnDownload = document.getElementById('btnDownloadScan');
-
-    if (audit.annotated_image_url && imgScan) {
-        imgScan.src = `${audit.annotated_image_url}?t=${Date.now()}`;
-        imgScan.style.display = 'block';
-        if (placeholder) placeholder.style.display = 'none';
-        if (btnDownload) btnDownload.href = audit.annotated_image_url;
-        if (badge) {
-            badge.innerText = `Day ${audit.day || currentDay} YOLOv8 Scan (${audit.fertility_rate}% Fertile)`;
-        }
-    }
-}
-
-// User Actions
-async function triggerCandlingAudit() {
-    const btn = document.getElementById('btnTriggerCandling');
-    btn.disabled = true;
-    btn.innerHTML = `Analyzing YOLOv8...`;
-
-    if (isLocalFileMode) {
-        // Simulate immediate preview audit
-        setTimeout(() => {
-            loadSampleAuditData();
-            btn.disabled = false;
-            btn.innerHTML = `
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <polyline points="12 6 12 12 16 14"></polyline>
-                </svg>
-                Run Candling Audit
-            `;
-        }, 500);
-        return;
-    }
-
-    try {
-        const res = await fetch('/api/candling/trigger', { method: 'POST' });
-        const data = await res.json();
-        if (data.status === 'success' && data.result) {
-            renderAuditResults(data.result);
-        }
-    } catch (e) {
-        alert('Could not trigger backend audit: ' + e);
-    } finally {
-        btn.disabled = false;
-        btn.innerHTML = `
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"></circle>
-                <polyline points="12 6 12 12 16 14"></polyline>
-            </svg>
-            Run Candling Audit
-        `;
-    }
-}
-
-function loadSampleAuditData() {
-    let fertile = 0, infertile = 0;
-    const matrix = [];
-
-    for (let r = 0; r < 7; r++) {
-        const row = [];
-        for (let c = 0; c < 8; c++) {
-            const index = r * 8 + c + 1;
-            const seed = (r * 13 + c * 19 + currentDay * 7) % 100;
-            let status = "fertile";
-            let conf = 0.88 + (seed % 10) * 0.01;
-
-            if (seed >= 86) {
-                status = "infertile";
-                infertile++;
+        // Highlight Green if in safe range (36.8 - 38.0°C)
+        if (cardTemp) {
+            if (temp >= 36.8 && temp <= 38.0) {
+                cardTemp.classList.add('active-green');
             } else {
-                fertile++;
+                cardTemp.classList.remove('active-green');
             }
-
-            row.push({
-                index: index,
-                row: r + 1,
-                col: c + 1,
-                status: status,
-                confidence: conf
-            });
         }
-        matrix.push(row);
+
+        // 2. Humidity
+        const rh = parseFloat(telem.rh || 58.0);
+        const valRHEl = document.getElementById('valRH');
+        if (valRHEl) valRHEl.innerText = `${rh.toFixed(1)}%`;
+
+        // 3. CO2
+        const co2 = parseInt(telem.co2 || 3200);
+        const valCO2El = document.getElementById('valCO2');
+        if (valCO2El) valCO2El.innerText = co2.toLocaleString();
+
+        // 4. Oxygen
+        const o2 = parseFloat(telem.o2 || 20.9);
+        const valO2El = document.getElementById('valO2');
+        if (valO2El) valO2El.innerText = `${o2.toFixed(1)}%`;
+
+        // 5. Actuator Toggles sync
+        if (telem.actuators) {
+            const tExhaust = document.getElementById('toggleExhaust');
+            const tCirculate = document.getElementById('toggleCirculate');
+            const tHeater = document.getElementById('toggleHeater');
+
+            if (tExhaust && !tExhaust.matches(':focus')) tExhaust.checked = !!telem.actuators.exhaust;
+            if (tCirculate && !tCirculate.matches(':focus')) tCirculate.checked = !!telem.actuators.circulate;
+            if (tHeater && !tHeater.matches(':focus')) tHeater.checked = !!telem.actuators.heater;
+        }
+
+        // Generate dynamic smart alerts based on thresholds
+        evaluateSmartAlerts(temp, rh, o2, telem.actuators);
     }
 
-    const total = 56;
-    const rate = ((fertile / total) * 100).toFixed(1);
-
-    renderAuditResults({
-        total_eggs: total,
-        fertile: fertile,
-        infertile: infertile,
-        early_dead: 0,
-        fertility_rate: rate,
-        matrix: matrix
-    });
+    // Latest Candling Audit Data
+    if (data.latest_audit) {
+        renderAuditScores(data.latest_audit);
+    }
 }
 
-async function updateIncubationDay() {
-    const day = parseInt(document.getElementById('daySelect').value);
-    currentDay = day;
-    document.getElementById('dayBadge').innerHTML = `Day ${currentDay.toString().padStart(2, '0')} <span class="total-days">/ 21</span>`;
-    updateTimelineMilestones(day);
-
-    if (isLocalFileMode) {
-        loadSampleAuditData();
-        return;
-    }
-
+// =============================================================================
+// ACTUATOR CONTROLS
+// =============================================================================
+async function toggleRelay(actuator, state) {
     try {
-        await fetch('/api/control/day', {
+        await fetch('/api/control/relay', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ day: day })
+            body: JSON.stringify({ actuator: actuator, state: state })
         });
     } catch (e) {
-        alert('Error: ' + e);
+        console.warn("Could not toggle relay:", e);
     }
 }
 
 async function manualEggTurn() {
-    if (isLocalFileMode) {
-        setChipState('actMotor', true);
-        setTimeout(() => setChipState('actMotor', false), 2000);
-        return;
-    }
+    const turningEl = document.getElementById('turningCountdown');
+    if (turningEl) turningEl.innerText = "TURNING...";
+    turningSecondsLeft = 3600; // Reset to 60 mins
 
     try {
         await fetch('/api/control/egg_turning', { method: 'POST' });
     } catch (e) {
-        alert('Error: ' + e);
+        console.warn("Egg turn error:", e);
     }
 }
 
-async function saveSetpoints() {
-    const temp = parseFloat(document.getElementById('inputTemp').value);
-    const rh = parseFloat(document.getElementById('inputRH').value);
-    const co2 = parseInt(document.getElementById('inputCO2').value);
+function startTurningCountdown() {
+    setInterval(() => {
+        if (turningSecondsLeft > 0) {
+            turningSecondsLeft--;
+            const mins = Math.floor(turningSecondsLeft / 60).toString().padStart(2, '0');
+            const secs = (turningSecondsLeft % 60).toString().padStart(2, '0');
+            const el = document.getElementById('turningCountdown');
+            if (el && el.innerText !== "TURNING...") {
+                el.innerText = `${mins}:${secs}`;
+            }
+        } else {
+            turningSecondsLeft = 3600;
+        }
+    }, 1000);
+}
 
-    document.getElementById('targetTemp').innerText = `${temp.toFixed(1)} °C`;
-    document.getElementById('targetRH').innerText = `${rh.toFixed(1)} %`;
-    document.getElementById('targetCO2').innerText = `${co2.toLocaleString()} ppm`;
+// =============================================================================
+// TEMPERATURE WAVE CHART CANVAS
+// =============================================================================
+function drawTempWaveChart() {
+    const canvas = document.getElementById('tempWaveChart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width;
+    const h = canvas.height;
 
-    if (isLocalFileMode) return;
+    ctx.clearRect(0, 0, w, h);
 
-    try {
-        await fetch('/api/control/setpoints', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ temp, rh, co2 })
-        });
-    } catch (e) {
-        alert('Error: ' + e);
+    // Draw vertical dashed day separator lines
+    const dayCols = 5;
+    ctx.setLineDash([4, 4]);
+    ctx.strokeStyle = '#F5C754';
+    ctx.lineWidth = 1.5;
+
+    for (let i = 1; i < dayCols; i++) {
+        const x = (w / dayCols) * i;
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, h);
+        ctx.stroke();
+    }
+    ctx.setLineDash([]); // Reset line dash
+
+    // Generate smooth wave curve matching mockup
+    // Y-axis spans 30° to 38°
+    const wavePoints = [
+        { x: 0,   y: 80 },
+        { x: 25,  y: 105 },
+        { x: 45,  y: 92 },
+        { x: 68,  y: 120 },
+        { x: 90,  y: 135 },
+        { x: 110, y: 100 },
+        { x: 135, y: 145 },
+        { x: 160, y: 108 },
+        { x: 180, y: 115 },
+        { x: 205, y: 95 },
+        { x: 230, y: 118 },
+        { x: 255, y: 88 },
+        { x: 280, y: 112 },
+        { x: 305, y: 92 },
+        { x: 320, y: 65 },
+        { x: 340, y: 100 }
+    ];
+
+    // Smooth bezier curve
+    ctx.beginPath();
+    ctx.moveTo(wavePoints[0].x, wavePoints[0].y);
+    for (let i = 0; i < wavePoints.length - 1; i++) {
+        const xc = (wavePoints[i].x + wavePoints[i + 1].x) / 2;
+        const yc = (wavePoints[i].y + wavePoints[i + 1].y) / 2;
+        ctx.quadraticCurveTo(wavePoints[i].x, wavePoints[i].y, xc, yc);
+    }
+    ctx.lineTo(wavePoints[wavePoints.length - 1].x, wavePoints[wavePoints.length - 1].y);
+    ctx.strokeStyle = '#E09930';
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+
+    // Fill soft gradient under curve
+    ctx.lineTo(w, h);
+    ctx.lineTo(0, h);
+    ctx.closePath();
+    const grad = ctx.createLinearGradient(0, 0, 0, h);
+    grad.addColorStop(0, 'rgba(250, 217, 128, 0.45)');
+    grad.addColorStop(1, 'rgba(255, 255, 255, 0.05)');
+    ctx.fillStyle = grad;
+    ctx.fill();
+}
+
+// =============================================================================
+// SMART ALERTS & LOGS
+// =============================================================================
+let alertLogCache = [];
+
+function evaluateSmartAlerts(temp, rh, o2, actuators) {
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const bellDot = document.getElementById('bellDot');
+
+    // Check conditions
+    let hasAlert = false;
+    if (o2 > 21.8) {
+        hasAlert = true;
+    }
+    if (temp < 36.5 || temp > 38.5) {
+        hasAlert = true;
+    }
+
+    if (bellDot) {
+        bellDot.style.display = hasAlert ? 'block' : 'none';
     }
 }
 
-// Modal Details
-function openEggModal(index) {
-    const egg = eggData.find(e => e.index === index);
-    const modal = document.getElementById('eggModal');
-    const title = document.getElementById('modalTitle');
-    const body = document.getElementById('modalBody');
-
-    title.innerText = `Egg Slot #${index.toString().padStart(2, '0')}`;
-    
-    if (egg) {
-        const statusClass = egg.status === 'fertile' ? 'tag-success' : 'tag-warning';
-        body.innerHTML = `
-            <div style="display:flex; flex-direction:column; gap:10px; font-size:0.85rem;">
-                <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border-subtle); padding-bottom:8px;">
-                    <span style="color:var(--text-secondary);">Grid Coordinate</span>
-                    <span style="font-family:var(--font-digits); font-weight:600; color:var(--text-primary);">Row ${egg.row}, Col ${egg.col}</span>
-                </div>
-                <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border-subtle); padding-bottom:8px;">
-                    <span style="color:var(--text-secondary);">Viability Status</span>
-                    <span class="metric-status-tag ${statusClass}" style="text-transform:uppercase;">${egg.status.replace('_', ' ')}</span>
-                </div>
-                <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border-subtle); padding-bottom:8px;">
-                    <span style="color:var(--text-secondary);">Confidence Score</span>
-                    <span style="font-family:var(--font-digits); color:var(--brand-accent); font-weight:700;">${(egg.confidence * 100).toFixed(1)}%</span>
-                </div>
-                <p style="font-size:0.75rem; color:var(--text-muted); margin-top:4px; line-height:1.4;">
-                    Embryo development verified using YOLOv8 candling vision analysis.
-                </p>
-            </div>
-        `;
-    } else {
-        body.innerHTML = `<p style="color:var(--text-muted); font-size:0.8rem;">No scan data for this slot yet.</p>`;
-    }
-
-    modal.classList.add('open');
-}
-
-function closeModal(e) {
-    document.getElementById('eggModal').classList.remove('open');
-}
-
-// Vision Tab Switcher (Matrix vs AI Candling Photo vs Live Camera)
-function switchVisionView(mode) {
-    const tabGrid = document.getElementById('tabGrid');
-    const tabCandlingPhoto = document.getElementById('tabCandlingPhoto');
-    const tabLiveCam = document.getElementById('tabLiveCam');
-
-    const viewGrid = document.getElementById('viewGrid');
-    const viewCandlingPhoto = document.getElementById('viewCandlingPhoto');
-    const viewLiveCam = document.getElementById('viewLiveCam');
-
-    const heading = document.getElementById('panelHeading');
-    const subheading = document.getElementById('panelSubheading');
-
-    [tabGrid, tabCandlingPhoto, tabLiveCam].forEach(t => t && t.classList.remove('active'));
-    [viewGrid, viewCandlingPhoto, viewLiveCam].forEach(v => v && (v.style.display = 'none'));
-
-    if (mode === 'grid') {
-        if (tabGrid) tabGrid.classList.add('active');
-        if (viewGrid) viewGrid.style.display = 'block';
-        if (heading) heading.innerText = '56-Egg Candling Vision Matrix';
-        if (subheading) subheading.innerText = '7 × 8 Grid Layout • YOLOv8 Multi-Egg Fertility & Vascular Analysis';
-    } else if (mode === 'candling') {
-        if (tabCandlingPhoto) tabCandlingPhoto.classList.add('active');
-        if (viewCandlingPhoto) viewCandlingPhoto.style.display = 'block';
-        if (heading) heading.innerText = 'AI Candling High-Res Photo';
-        if (subheading) subheading.innerText = 'YOLOv8 Full-Frame Detection with Viability Bounding Boxes & Confidence Labels';
-    } else if (mode === 'live') {
-        if (tabLiveCam) tabLiveCam.classList.add('active');
-        if (viewLiveCam) viewLiveCam.style.display = 'block';
-        if (heading) heading.innerText = 'Live Incubator Chamber Feed';
-        if (subheading) subheading.innerText = 'Real-Time Camera Monitoring of Egg Tray, Turning Mechanism & Interior Environment';
-        refreshLiveStream();
-    }
-}
-
+// =============================================================================
+// EGG FERTILITY CHECKER (AI CANDLING & CAMERA)
+// =============================================================================
 function refreshLiveStream() {
-    const img = document.getElementById('imgLiveStream');
+    const img = document.getElementById('fertilityCameraStream');
     if (img) {
         img.src = `/api/camera/stream?t=${Date.now()}`;
+        img.style.display = 'block';
     }
+    const overlay = document.getElementById('camOverlayIcon');
+    if (overlay) overlay.style.display = 'none';
 }
 
-let candlingLightState = false;
+function onCameraStreamError() {
+    // If live stream is idle, show camera center icon
+    const overlay = document.getElementById('camOverlayIcon');
+    if (overlay) overlay.style.display = 'block';
+}
+
 async function toggleCandlingLight() {
     candlingLightState = !candlingLightState;
-    setChipState('actCandling', candlingLightState);
     try {
         await fetch('/api/control/candling_light', {
             method: 'POST',
@@ -478,6 +353,157 @@ async function toggleCandlingLight() {
             body: JSON.stringify({ state: candlingLightState })
         });
     } catch (e) {
-        console.warn("Could not toggle candling light via API:", e);
+        console.warn("Light toggle error:", e);
+    }
+}
+
+async function triggerCandlingAudit() {
+    const btnLabel = document.getElementById('btnCandlingLabel');
+    if (btnLabel) btnLabel.innerText = "Running YOLOv8 Audit...";
+
+    try {
+        const res = await fetch('/api/candling/trigger', { method: 'POST' });
+        const data = await res.json();
+        if (data.status === 'success' && data.result) {
+            renderAuditScores(data.result);
+        }
+    } catch (e) {
+        alert("Candling audit error: " + e);
+    } finally {
+        if (btnLabel) btnLabel.innerText = "Run AI Candling Audit";
+    }
+}
+
+function renderAuditScores(audit) {
+    if (!audit) return;
+
+    const fertileScore = document.getElementById('scoreFertile');
+    const infertileScore = document.getElementById('scoreInfertile');
+
+    if (fertileScore) fertileScore.innerText = `${audit.fertility_rate || 0}%`;
+    if (infertileScore) {
+        const infertileRate = (100 - (audit.fertility_rate || 0)).toFixed(1);
+        infertileScore.innerText = `${infertileRate}%`;
+    }
+
+    // Switch camera viewport to the annotated scan photo
+    if (audit.annotated_image_url) {
+        const cam = document.getElementById('fertilityCameraStream');
+        if (cam) {
+            cam.src = `${audit.annotated_image_url}?t=${Date.now()}`;
+        }
+    }
+
+    // Update 56-Egg Matrix
+    if (audit.matrix) {
+        eggMatrixData = [];
+        audit.matrix.forEach(row => {
+            row.forEach(egg => {
+                eggMatrixData.push(egg);
+                const slot = document.getElementById(`eggSlot-${egg.index}`);
+                if (slot) {
+                    slot.className = `egg-slot-pill ${egg.status}`;
+                }
+            });
+        });
+    }
+}
+
+// 56-Egg Matrix Drawer
+function init56EggGrid() {
+    const grid = document.getElementById('eggGrid');
+    if (!grid) return;
+    grid.innerHTML = '';
+
+    for (let i = 1; i <= 56; i++) {
+        const slot = document.createElement('div');
+        slot.className = 'egg-slot-pill';
+        slot.id = `eggSlot-${i}`;
+        slot.innerText = `#${i.toString().padStart(2, '0')}`;
+        slot.onclick = () => openEggDetail(i);
+        grid.appendChild(slot);
+    }
+}
+
+function toggleMatrixDrawer() {
+    const drawer = document.getElementById('matrixDrawer');
+    if (drawer) {
+        drawer.classList.toggle('open');
+    }
+}
+
+function openEggDetail(index) {
+    const egg = eggMatrixData.find(e => e.index === index);
+    const modal = document.getElementById('eggModal');
+    const title = document.getElementById('modalEggTitle');
+    const body = document.getElementById('modalEggBody');
+
+    title.innerText = `Egg Slot #${index.toString().padStart(2, '0')}`;
+    
+    if (egg) {
+        const statusColor = egg.status === 'fertile' ? '#15803D' : '#B91C1C';
+        body.innerHTML = `
+            <div style="display:flex; flex-direction:column; gap:10px; font-size:0.85rem;">
+                <div style="display:flex; justify-content:space-between; border-bottom:1px solid #E5E7EB; padding-bottom:8px;">
+                    <span style="color:#6B7280;">Tray Coordinate</span>
+                    <span style="font-weight:700;">Row ${egg.row}, Col ${egg.col}</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; border-bottom:1px solid #E5E7EB; padding-bottom:8px;">
+                    <span style="color:#6B7280;">Fertility Classification</span>
+                    <span style="font-weight:800; color:${statusColor}; text-transform:uppercase;">${egg.status}</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; border-bottom:1px solid #E5E7EB; padding-bottom:8px;">
+                    <span style="color:#6B7280;">YOLOv8 Confidence</span>
+                    <span style="font-weight:800; font-family:var(--font-mono);">${(egg.confidence * 100).toFixed(1)}%</span>
+                </div>
+            </div>
+        `;
+    } else {
+        body.innerHTML = `<p style="color:#6B7280; font-size:0.85rem;">No AI candling scan recorded for this slot yet. Run Candling Audit to scan.</p>`;
+    }
+
+    modal.classList.add('open');
+}
+
+function closeModal(e) {
+    const modal = document.getElementById('eggModal');
+    if (modal) modal.classList.remove('open');
+}
+
+// =============================================================================
+// MENU SETPOINTS & PROTOCOL
+// =============================================================================
+async function setIncubationDayFromMenu() {
+    const day = parseInt(document.getElementById('menuDayInput').value);
+    currentDay = day;
+    const daysLeft = Math.max(0, 21 - currentDay);
+    document.getElementById('homeDaysLeft').innerText = `${daysLeft} Days Left`;
+
+    try {
+        await fetch('/api/control/day', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ day: day })
+        });
+        alert(`Day set to ${day}. Protocol updated.`);
+    } catch (e) {
+        alert("Error saving day: " + e);
+    }
+}
+
+async function saveMenuSetpoints() {
+    const temp = parseFloat(document.getElementById('menuTempInput').value);
+    const rh = parseFloat(document.getElementById('menuRHInput').value);
+    const co2 = parseInt(document.getElementById('menuCO2Input').value);
+
+    try {
+        await fetch('/api/control/setpoints', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ temp, rh, co2 })
+        });
+        alert("Setpoints sent to ESP32 incubator controller.");
+    } catch (e) {
+        alert("Error updating setpoints: " + e);
     }
 }
