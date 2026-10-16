@@ -105,6 +105,7 @@ void CommManager::publishTelemetry(const SensorData& sData, const ActuatorState&
     act["motor"] = aState.eggMotor;
     act["candling"] = aState.candlingLed;
     act["alarm"] = aState.alarmActive;
+    act["manual"] = aState.manualOverride;
 
     doc["phase"] = (actuators.getPhase() == PHASE_SETTING) ? "SETTING" : "HATCHING";
     doc["target_temp"] = serialized(String(actuators.getTargetTemp(), 2));
@@ -142,7 +143,19 @@ void CommManager::parseCommand(const char* payload) {
         const char* cmd = doc["cmd"];
         Serial.printf("[COMM] Received command: %s\n", cmd);
 
-        if (strcmp(cmd, "CANDLING_ON") == 0 || strcmp(cmd, "START_CANDLING") == 0) {
+        if (strcmp(cmd, "SET_RELAY") == 0) {
+            const char* act = doc["actuator"] | "";
+            bool st = doc["state"] | false;
+            actuators.setRelayByName(act, st);
+            publishStatus("RELAY_UPDATED");
+        }
+        else if (strcmp(cmd, "SET_MODE") == 0) {
+            const char* mode = doc["mode"] | "AUTO";
+            bool manual = (strcmp(mode, "MANUAL") == 0 || strcmp(mode, "manual") == 0);
+            actuators.setManualOverride(manual);
+            publishStatus(manual ? "MODE_MANUAL" : "MODE_AUTO");
+        }
+        else if (strcmp(cmd, "CANDLING_ON") == 0 || strcmp(cmd, "START_CANDLING") == 0) {
             actuators.setCandlingLed(true);
             publishStatus("CANDLING_LIGHT_READY");
         } 

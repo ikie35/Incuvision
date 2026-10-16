@@ -4,8 +4,9 @@
 ActuatorManager actuators;
 
 ActuatorManager::ActuatorManager() {
-    state = {false, false, false, false, false, false};
+    state = {false, false, false, false, false, false, false};
     currentPhase = PHASE_SETTING;
+    manualOverride = false;
     targetTemp = DEFAULT_TEMP_SETTING;
     targetRH = DEFAULT_RH_SETTING;
     targetCO2 = DEFAULT_CO2_MAX_SETTING;
@@ -142,6 +143,11 @@ void ActuatorManager::updateControl(const SensorData& data) {
     setRelay(PIN_RELAY_CIRCULATE, true);
     state.circulationFan = true;
 
+    // In manual override mode, do not let automatic loops overwrite relay states
+    if (manualOverride) {
+        return;
+    }
+
     if (data.temperature > 5.0f && data.temperature < 60.0f) {
         processHeating(data.temperature);
     }
@@ -150,10 +156,47 @@ void ActuatorManager::updateControl(const SensorData& data) {
     processEggTurning();
 }
 
+void ActuatorManager::setHeater(bool active) {
+    setRelay(PIN_RELAY_HEATER, active);
+    state.heater = active;
+    Serial.printf("[ACTUATORS] PTC Heater relay: %s\n", active ? "ON" : "OFF");
+}
+
+void ActuatorManager::setExhaustFan(bool active) {
+    setRelay(PIN_RELAY_EXHAUST, active);
+    state.exhaustFan = active;
+    Serial.printf("[ACTUATORS] Exhaust Fan relay: %s\n", active ? "ON" : "OFF");
+}
+
+void ActuatorManager::setEggMotor(bool active) {
+    setRelay(PIN_RELAY_MOTOR, active);
+    state.eggMotor = active;
+    isTurningNow = active;
+    if (active) turnStartTimestamp = millis();
+    Serial.printf("[ACTUATORS] Egg Turner relay: %s\n", active ? "ON" : "OFF");
+}
+
 void ActuatorManager::setCandlingLed(bool active) {
     setRelay(PIN_RELAY_CANDLING, active);
     state.candlingLed = active;
-    Serial.printf("[ACTUATORS] Candling LED array turned %s.\n", active ? "ON" : "OFF");
+    Serial.printf("[ACTUATORS] Candling LED array: %s\n", active ? "ON" : "OFF");
+}
+
+void ActuatorManager::setRelayByName(const char* name, bool active) {
+    if (strcmp(name, "heater") == 0) {
+        setHeater(active);
+    } else if (strcmp(name, "exhaust") == 0 || strcmp(name, "fan") == 0) {
+        setExhaustFan(active);
+    } else if (strcmp(name, "motor") == 0 || strcmp(name, "turner") == 0) {
+        setEggMotor(active);
+    } else if (strcmp(name, "candling") == 0 || strcmp(name, "led") == 0) {
+        setCandlingLed(active);
+    } else if (strcmp(name, "circulate") == 0) {
+        setRelay(PIN_RELAY_CIRCULATE, active);
+        state.circulationFan = active;
+    } else {
+        Serial.printf("[ACTUATORS] Unknown relay identifier: %s\n", name);
+    }
 }
 
 void ActuatorManager::triggerEggTurnManual(uint32_t durationSec) {

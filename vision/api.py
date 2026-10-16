@@ -46,6 +46,9 @@ class DayPayload(BaseModel):
 class CandlingLightPayload(BaseModel):
     state: bool
 
+class ModePayload(BaseModel):
+    mode: str  # "AUTO" or "MANUAL"
+
 @app.get("/")
 def root():
     return RedirectResponse(url="/dashboard/")
@@ -159,6 +162,16 @@ def control_relay(payload: RelayCommandPayload):
         "state": payload.state
     })
     return {"status": "success", "actuator": payload.actuator, "state": payload.state}
+
+@app.post("/api/control/mode")
+def set_control_mode(payload: ModePayload):
+    if not mqtt_bridge:
+        raise HTTPException(status_code=503, detail="MQTT not ready")
+    mqtt_bridge.send_command({
+        "cmd": "SET_MODE",
+        "mode": payload.mode
+    })
+    return {"status": "success", "mode": payload.mode}
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):

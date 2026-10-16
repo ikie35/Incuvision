@@ -16,6 +16,7 @@ struct ActuatorState {
     bool eggMotor;
     bool candlingLed;
     bool alarmActive;
+    bool manualOverride;
 };
 
 class ActuatorManager {
@@ -26,11 +27,17 @@ public:
     // Closed-loop regulation update
     void updateControl(const SensorData& data);
     
-    // Manual & Trigger Overrides
+    // Manual & Direct Relay Overrides
+    void setHeater(bool state);
+    void setExhaustFan(bool state);
+    void setEggMotor(bool state);
     void setCandlingLed(bool state);
+    void setRelayByName(const char* name, bool state);
     void triggerEggTurnManual(uint32_t durationSec = 15);
     void setPhase(IncubationPhase phase);
     void setCustomSetpoints(float targetTemp, float targetRH, uint16_t maxCO2);
+    void setManualOverride(bool enable) { manualOverride = enable; }
+    bool isManualOverride() const { return manualOverride; }
     
     const ActuatorState& getState() const { return state; }
     IncubationPhase getPhase() const { return currentPhase; }
@@ -41,6 +48,7 @@ public:
 private:
     ActuatorState state;
     IncubationPhase currentPhase;
+    bool manualOverride;
     
     float targetTemp;
     float targetRH;

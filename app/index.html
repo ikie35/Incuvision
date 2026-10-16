@@ -66,15 +66,20 @@ body { background-color: #E2CA85; font-family: var(--font-body); color: var(--te
 .metric-content { display: flex; flex-direction: column; align-items: center; gap: 2px; }
 .metric-val { font-family: var(--font-heading); font-size: 1.25rem; font-weight: 800; color: #1A1615; }
 .metric-lbl { font-size: 0.68rem; font-weight: 700; color: var(--text-muted); letter-spacing: 0.04em; text-transform: uppercase; }
-.card-actuators-panel { background: var(--card-accent-gold); padding: 14px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-.actuator-slot { background: var(--card-bg); border-radius: 14px; padding: 12px 6px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; gap: 10px; min-height: 95px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04); }
-.actuator-name { font-size: 0.72rem; font-weight: 700; color: #1A1615; text-align: center; line-height: 1.2; }
-.toggle-switch { position: relative; display: inline-block; width: 48px; height: 24px; cursor: pointer; }
-.toggle-switch input { opacity: 0; width: 0; height: 0; }
-.toggle-slider { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--switch-inactive); border-radius: var(--radius-pill); transition: 0.25s ease; }
-.toggle-slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; border-radius: 50%; transition: 0.25s ease; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2); }
-input:checked + .toggle-slider { background-color: var(--switch-track); }
-input:checked + .toggle-slider:before { transform: translateX(24px); background-color: #FFF2D6; }
+.card-actuators-panel { background: var(--card-accent-gold); border-radius: 20px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.actuator-panel-header { display: flex; justify-content: space-between; align-items: center; }
+.actuator-panel-title { font-family: var(--font-heading); font-size: 0.92rem; font-weight: 800; color: #1E1B18; letter-spacing: 0.04em; }
+.badge-mode-pill { background: #FFFFFF; font-family: var(--font-heading); font-size: 0.68rem; font-weight: 800; color: #8A4E08; padding: 3px 12px; border-radius: var(--radius-pill); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06); }
+.actuators-2x2-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.actuator-card { background: var(--card-bg); border-radius: 16px; padding: 14px 12px; display: flex; flex-direction: column; align-items: flex-start; gap: 7px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03); cursor: pointer; transition: transform 0.12s ease; }
+.actuator-card:active { transform: scale(0.96); }
+.actuator-icon-bubble { width: 38px; height: 38px; border-radius: 12px; background: #F8F9FA; display: flex; align-items: center; justify-content: center; color: #4B5563; }
+.actuator-title { font-family: var(--font-heading); font-size: 0.88rem; font-weight: 800; color: #1A1615; }
+.status-pill-toggle { display: inline-flex; align-items: center; gap: 6px; background: #E5E7EB; padding: 3px 12px; border-radius: var(--radius-pill); font-size: 0.72rem; font-weight: 800; color: #6B7280; font-family: var(--font-heading); transition: all 0.2s ease; }
+.status-dot { width: 7px; height: 7px; border-radius: 50%; background: #9CA3AF; transition: background-color 0.2s ease; }
+.status-pill-toggle.is-on { background: #DCFCE7; color: #15803D; }
+.status-pill-toggle.is-on .status-dot { background: #22C55E; box-shadow: 0 0 6px #22C55E; }
+.actuator-sub { font-size: 0.68rem; color: #9CA3AF; font-weight: 600; line-height: 1.2; }
 .card-temp-preview { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; cursor: pointer; }
 .btn-pill-gold { background: var(--btn-gold); color: #FFFFFF; font-family: var(--font-heading); font-size: 0.82rem; font-weight: 800; letter-spacing: 0.05em; padding: 8px 18px; border-radius: var(--radius-pill); border: none; box-shadow: 0 2px 4px rgba(180, 110, 0, 0.15); cursor: pointer; }
 .card-analytics-main { padding: 20px 16px; display: flex; flex-direction: column; gap: 16px; }
@@ -254,33 +259,74 @@ input:checked + .toggle-slider:before { transform: translateX(24px); background-
                     </div>
                 </div>
 
-                <!-- 3. Actuator Control Bar (Warm Yellow Container with 3 White Cards) -->
+                <!-- 3. ACTUATOR STATUS Panel (2x2 Grid matching research mockup) -->
                 <div class="card card-actuators-panel">
-                    <!-- Exhaust Fan -->
-                    <div class="actuator-slot">
-                        <span class="actuator-name">Exhaust Fan</span>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="toggleExhaust" onchange="toggleRelay('exhaust', this.checked)">
-                            <span class="toggle-slider"></span>
-                        </label>
+                    <div class="actuator-panel-header">
+                        <span class="actuator-panel-title">ACTUATOR STATUS</span>
+                        <span class="badge-mode-pill" id="badgeActuatorMode" onclick="toggleActuatorMode()" style="cursor: pointer;" title="Toggle Automatic / Manual Control">AUTOMATIC</span>
                     </div>
 
-                    <!-- Circulation Fan -->
-                    <div class="actuator-slot">
-                        <span class="actuator-name">Circulation<br>Fan</span>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="toggleCirculate" checked onchange="toggleRelay('circulate', this.checked)">
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
+                    <div class="actuators-2x2-grid">
+                        <!-- 1. PTC Heater -->
+                        <div class="actuator-card" id="actCardHeater" onclick="toggleRelayByName('heater')">
+                            <div class="actuator-icon-bubble">
+                                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path>
+                                </svg>
+                            </div>
+                            <span class="actuator-title">PTC Heater</span>
+                            <div class="status-pill-toggle" id="pillHeater">
+                                <span class="status-dot"></span>
+                                <span class="status-text">OFF</span>
+                            </div>
+                            <span class="actuator-sub">Temperature control</span>
+                        </div>
 
-                    <!-- PTC Heater -->
-                    <div class="actuator-slot">
-                        <span class="actuator-name">PTC Heater</span>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="toggleHeater" onchange="toggleRelay('heater', this.checked)">
-                            <span class="toggle-slider"></span>
-                        </label>
+                        <!-- 2. Egg Turner -->
+                        <div class="actuator-card" id="actCardTurner" onclick="toggleRelayByName('motor')">
+                            <div class="actuator-icon-bubble">
+                                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+                                </svg>
+                            </div>
+                            <span class="actuator-title">Egg Turner</span>
+                            <div class="status-pill-toggle" id="pillTurner">
+                                <span class="status-dot"></span>
+                                <span class="status-text">OFF</span>
+                            </div>
+                            <span class="actuator-sub">Automatic egg turning</span>
+                        </div>
+
+                        <!-- 3. Exhaust Fan -->
+                        <div class="actuator-card" id="actCardExhaust" onclick="toggleRelayByName('exhaust')">
+                            <div class="actuator-icon-bubble">
+                                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M10.827 16.379a6.082 6.082 0 0 1-8.618-7.002l5.412 1.45a2.027 2.027 0 0 0 2.426-2.426L8.597 2.99a6.082 6.082 0 0 1 7.002 8.618l-1.45-5.412a2.027 2.027 0 0 0-2.426 2.426l1.45 5.412a6.082 6.082 0 0 1-7.002-8.618l5.412 1.45a2.027 2.027 0 0 0 2.426-2.426l-1.45-5.412z"/>
+                                    <circle cx="12" cy="12" r="2"/>
+                                </svg>
+                            </div>
+                            <span class="actuator-title">Exhaust Fan</span>
+                            <div class="status-pill-toggle" id="pillExhaust">
+                                <span class="status-dot"></span>
+                                <span class="status-text">OFF</span>
+                            </div>
+                            <span class="actuator-sub">Air exchange</span>
+                        </div>
+
+                        <!-- 4. LED Light -->
+                        <div class="actuator-card" id="actCardLed" onclick="toggleRelayByName('candling')">
+                            <div class="actuator-icon-bubble">
+                                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-7 7c0 2.6 1.4 4.8 3.5 6h7c2.1-1.2 3.5-3.4 3.5-6a7 7 0 0 0-7-7z"/>
+                                </svg>
+                            </div>
+                            <span class="actuator-title">LED Light</span>
+                            <div class="status-pill-toggle" id="pillLed">
+                                <span class="status-dot"></span>
+                                <span class="status-text">OFF</span>
+                            </div>
+                            <span class="actuator-sub">Candling illumination</span>
+                        </div>
                     </div>
                 </div>
 

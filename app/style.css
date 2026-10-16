@@ -277,78 +277,120 @@ body {
 }
 
 /* 3. Actuator Control Bar (Warm Yellow Container with 3 White Cards) */
+/* 3. Actuator Control Bar (2x2 ACTUATOR STATUS Grid) */
 .card-actuators-panel {
     background: var(--card-accent-gold);
-    padding: 14px;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    border-radius: 20px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
     gap: 12px;
 }
 
-.actuator-slot {
+.actuator-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.actuator-panel-title {
+    font-family: var(--font-heading);
+    font-size: 0.92rem;
+    font-weight: 800;
+    color: #1E1B18;
+    letter-spacing: 0.04em;
+}
+
+.badge-mode-pill {
+    background: #FFFFFF;
+    font-family: var(--font-heading);
+    font-size: 0.68rem;
+    font-weight: 800;
+    color: #8A4E08;
+    padding: 3px 12px;
+    border-radius: var(--radius-pill);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.actuators-2x2-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.actuator-card {
     background: var(--card-bg);
-    border-radius: 14px;
-    padding: 12px 6px;
+    border-radius: 16px;
+    padding: 14px 12px;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    min-height: 95px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
-}
-
-.actuator-name {
-    font-size: 0.72rem;
-    font-weight: 700;
-    color: #1A1615;
-    text-align: center;
-    line-height: 1.2;
-}
-
-/* High-Fidelity Custom Toggle Switch */
-.toggle-switch {
-    position: relative;
-    display: inline-block;
-    width: 48px;
-    height: 24px;
+    align-items: flex-start;
+    gap: 7px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
     cursor: pointer;
+    transition: transform 0.12s ease;
 }
 
-.toggle-switch input {
-    opacity: 0;
-    width: 0;
-    height: 0;
+.actuator-card:active {
+    transform: scale(0.96);
 }
 
-.toggle-slider {
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background-color: var(--switch-inactive);
+.actuator-icon-bubble {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    background: #F8F9FA;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #4B5563;
+}
+
+.actuator-title {
+    font-family: var(--font-heading);
+    font-size: 0.88rem;
+    font-weight: 800;
+    color: #1A1615;
+}
+
+/* Dot + ON/OFF Status Pill matching research mockup */
+.status-pill-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #E5E7EB;
+    padding: 3px 12px;
     border-radius: var(--radius-pill);
-    transition: 0.25s ease;
+    font-size: 0.72rem;
+    font-weight: 800;
+    color: #6B7280;
+    font-family: var(--font-heading);
+    transition: all 0.2s ease;
 }
 
-.toggle-slider:before {
-    position: absolute;
-    content: "";
-    height: 18px;
-    width: 18px;
-    left: 3px;
-    bottom: 3px;
-    background-color: white;
+.status-dot {
+    width: 7px;
+    height: 7px;
     border-radius: 50%;
-    transition: 0.25s ease;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    background: #9CA3AF;
+    transition: background-color 0.2s ease;
 }
 
-input:checked + .toggle-slider {
-    background-color: var(--switch-track);
+.status-pill-toggle.is-on {
+    background: #DCFCE7;
+    color: #15803D;
 }
 
-input:checked + .toggle-slider:before {
-    transform: translateX(24px);
-    background-color: #FFF2D6;
+.status-pill-toggle.is-on .status-dot {
+    background: #22C55E;
+    box-shadow: 0 0 6px #22C55E;
+}
+
+.actuator-sub {
+    font-size: 0.68rem;
+    color: #9CA3AF;
+    font-weight: 600;
+    line-height: 1.2;
 }
 
 /* 4. Temperature Mini-Preview Card */

@@ -165,15 +165,12 @@ function handleIncomingTelemetry(data) {
         const valO2El = document.getElementById('valO2');
         if (valO2El) valO2El.innerText = `${o2.toFixed(1)}%`;
 
-        // 5. Actuator Toggles sync
+        // 5. 2x2 Actuator Status Pills sync (Heater, Turner, Exhaust, LED Light)
         if (telem.actuators) {
-            const tExhaust = document.getElementById('toggleExhaust');
-            const tCirculate = document.getElementById('toggleCirculate');
-            const tHeater = document.getElementById('toggleHeater');
-
-            if (tExhaust && !tExhaust.matches(':focus')) tExhaust.checked = !!telem.actuators.exhaust;
-            if (tCirculate && !tCirculate.matches(':focus')) tCirculate.checked = !!telem.actuators.circulate;
-            if (tHeater && !tHeater.matches(':focus')) tHeater.checked = !!telem.actuators.heater;
+            updatePillState('pillHeater', !!telem.actuators.heater);
+            updatePillState('pillTurner', !!telem.actuators.motor);
+            updatePillState('pillExhaust', !!telem.actuators.exhaust);
+            updatePillState('pillLed', !!telem.actuators.candling);
         }
 
         // Generate dynamic smart alerts based on thresholds
@@ -187,17 +184,68 @@ function handleIncomingTelemetry(data) {
 }
 
 // =============================================================================
-// ACTUATOR CONTROLS
+// ACTUATOR CONTROLS (PTC Heater, Egg Turner, Exhaust Fan, LED Light)
 // =============================================================================
-async function toggleRelay(actuator, state) {
+function updatePillState(elementId, isOn) {
+    const pill = document.getElementById(elementId);
+    if (!pill) return;
+    const textSpan = pill.querySelector('.status-text');
+    if (isOn) {
+        pill.classList.add('is-on');
+        if (textSpan) textSpan.innerText = 'ON';
+    } else {
+        pill.classList.remove('is-on');
+        if (textSpan) textSpan.innerText = 'OFF';
+    }
+}
+
+async function toggleRelayByName(actuatorName) {
+    if (!currentTelemetry.actuators) {
+        currentTelemetry.actuators = {};
+    }
+    const isCurrentlyOn = !!currentTelemetry.actuators[actuatorName];
+    const newState = !isCurrentlyOn;
+    currentTelemetry.actuators[actuatorName] = newState;
+
+    const pillMap = {
+        'heater': 'pillHeater',
+        'motor': 'pillTurner',
+        'exhaust': 'pillExhaust',
+        'candling': 'pillLed'
+    };
+    if (pillMap[actuatorName]) {
+        updatePillState(pillMap[actuatorName], newState);
+    }
+
     try {
         await fetch('/api/control/relay', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ actuator: actuator, state: state })
+            body: JSON.stringify({ actuator: actuatorName, state: newState })
         });
     } catch (e) {
         console.warn("Could not toggle relay:", e);
+    }
+}
+
+let isManualMode = false;
+async function toggleActuatorMode() {
+    isManualMode = !isManualMode;
+    const modeStr = isManualMode ? 'MANUAL' : 'AUTOMATIC';
+    const badge = document.getElementById('badgeActuatorMode');
+    if (badge) {
+        badge.innerText = modeStr;
+        badge.style.background = isManualMode ? '#FEE2E2' : '#FDE68A';
+        badge.style.color = isManualMode ? '#DC2626' : '#78350F';
+    }
+    try {
+        await fetch('/api/control/mode', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mode: isManualMode ? 'MANUAL' : 'AUTO' })
+        });
+    } catch (e) {
+        console.warn("Could not toggle mode:", e);
     }
 }
 
