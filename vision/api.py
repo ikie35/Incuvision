@@ -4,7 +4,7 @@ from pathlib import Path
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import StreamingResponse, Response
+from fastapi.responses import StreamingResponse, Response, RedirectResponse, FileResponse
 from pydantic import BaseModel
 
 from config import PROJECT_ROOT, CAPTURES_DIR
@@ -48,7 +48,19 @@ class CandlingLightPayload(BaseModel):
 
 @app.get("/")
 def root():
-    return {"message": "IncuVision API is running. Access dashboard at /dashboard/"}
+    return RedirectResponse(url="/dashboard/")
+
+@app.get("/dashboard")
+def redirect_dashboard():
+    return RedirectResponse(url="/dashboard/")
+
+@app.get("/style.css")
+def root_style():
+    return FileResponse(str(app_dir / "style.css"), media_type="text/css")
+
+@app.get("/app.js")
+def root_app():
+    return FileResponse(str(app_dir / "app.js"), media_type="application/javascript")
 
 @app.get("/api/telemetry")
 def get_telemetry():
