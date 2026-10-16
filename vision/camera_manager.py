@@ -1,35 +1,60 @@
+import os
 import time
 import cv2
 import numpy as np
 from datetime import datetime
 
+# Suppress noisy OpenCV / V4L2 stderr logs on Linux
+os.environ["OPENCV_LOG_LEVEL"] = "OFF"
+os.environ["OPENCV_VIDEOIO_DEBUG"] = "0"
+
 class CameraManager:
     """
-    Manages live camera capture for Raspberry Pi 5 (Picamera2 / OpenCV fallback)
-    for both live chamber monitoring and AI candling scans.
+    Manages camera capture for Raspberry Pi 5 (Picamera2 / USB / Synthetic fallback)
+    for both live chamber monitoring and YOLOv8 AI candling scans.
     """
     def __init__(self):
         self._picam2 = None
         self._use_picam = False
+        self._opencv_device_index = None
         self._init_camera()
 
     def _init_camera(self):
+        # 1. Try native Raspberry Pi Camera (Picamera2 on Raspberry Pi 5)
         try:
-            from picam2 import Picamera2
+            from picamera2 import Picamera2
             self._picam2 = Picamera2()
             config = self._picam2.create_video_configuration(main={"size": (1280, 720)})
             self._picam2.configure(config)
             self._picam2.start()
-            time.sleep(0.5)
+            time.sleep(0.3)
             self._use_picam = True
-            print("[CAMERA] Picamera2 initialized successfully for live video.")
+            print("[CAMERA] SUCCESS: Native Raspberry Pi Camera (Picamera2) initialized!")
+            return
         except Exception as e:
             self._picam2 = None
             self._use_picam = False
-            print(f"[CAMERA] Picamera2 not available ({e}). Using OpenCV / Synthetic fallback.")
+
+        # 2. Try USB Webcam via OpenCV only if a video node is explicitly functional
+        for dev_idx in [0, 1, 2]:
+            try:
+                # Open with CAP_V4L2 silently
+                cap = cv2.VideoCapture(dev_idx, cv2.CAP_V4L2)
+                if cap.isOpened():
+                    ret, test_frame = cap.read()
+                    cap.release()
+                    if ret and test_frame is not None and test_frame.size > 0:
+                        self._opencv_device_index = dev_idx
+                        print(f"[CAMERA] SUCCESS: USB Camera detected on /dev/video{dev_idx}")
+                        return
+            except Exception:
+                pass
+
+        print("[CAMERA] Note: Physical camera not detected or busy. Using high-fidelity incubator simulation.")
 
     def capture_raw_frame(self) -> np.ndarray:
         """Captures a single BGR frame from the camera or generates a realistic incubator frame."""
+        # 1. Picamera2
         if self._use_picam and self._picam2:
             try:
                 frame = self._picam2.capture_array()
@@ -37,18 +62,19 @@ class CameraManager:
             except Exception as e:
                 print(f"[CAMERA] Picamera2 capture error: {e}")
 
-        # Fallback 1: OpenCV VideoCapture
-        try:
-            cap = cv2.VideoCapture(0)
-            if cap.isOpened():
-                ret, frame = cap.read()
-                cap.release()
-                if ret and frame is not None:
-                    return frame
-        except Exception:
-            pass
+        # 2. USB Camera via OpenCV
+        if self._opencv_device_index is not None:
+            try:
+                cap = cv2.VideoCapture(self._opencv_device_index, cv2.CAP_V4L2)
+                if cap.isOpened():
+                    ret, frame = cap.read()
+                    cap.release()
+                    if ret and frame is not None:
+                        return frame
+            except Exception:
+                pass
 
-        # Fallback 2: Realistic Incubator Chamber Simulation Frame
+        # 3. High-fidelity Realistic 56-Egg Incubator Chamber Simulation Frame
         return self._generate_interior_simulation()
 
     def _generate_interior_simulation(self) -> np.ndarray:
@@ -78,11 +104,18 @@ class CameraManager:
             for c in range(8):
                 cx = 180 + int((c + 0.5) * (920 / 8))
                 cy = 120 + int((r + 0.5) * (500 / 7))
-                # Egg body
-                cv2.ellipse(frame, (cx, cy), (32, 22), 90, 0, 360, (140, 175, 210), -1)
-                cv2.ellipse(frame, (cx, cy), (32, 22), 90, 0, 360, (110, 145, 180), 2)
+                # Seeded egg viability appearance
+                seed = (r * 13 + c * 19) % 100
+                is_infertile = (seed >= 86)
+                if is_infertile:
+                    shell_color = (130, 160, 200) # Clear/pale
+                else:
+                    shell_color = (80, 140, 230)  # Warm reddish embryonic glow
 
-        # Water reservoir and heater glow at the back
+                cv2.ellipse(frame, (cx, cy), (32, 22), 90, 0, 360, shell_color, -1)
+                cv2.ellipse(frame, (cx, cy), (32, 22), 90, 0, 360, (70, 100, 150), 2)
+
+        # Top heater array banner
         cv2.rectangle(frame, (250, 40), (1030, 95), (20, 25, 30), -1)
         cv2.putText(frame, "HEATER ARRAY [ACTIVE]", (520, 75), 
                     cv2.FONT_HERSHEY_SIMPLEX, 0.55, (40, 120, 255), 2, cv2.LINE_AA)
@@ -94,7 +127,6 @@ class CameraManager:
         frame = self.capture_raw_frame().copy()
         h, w = frame.shape[:2]
 
-        # Top banner with timestamp and system telemetry
         now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         cv2.rectangle(frame, (0, 0), (w, 42), (15, 18, 22), -1)
         
@@ -108,7 +140,6 @@ class CameraManager:
         cv2.putText(frame, info_text, (20, 28), 
                     cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 240, 255), 2, cv2.LINE_AA)
 
-        # Bottom status pill
         cv2.putText(frame, "STATUS: OK (LIVE)", (w - 180, h - 20),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 120), 2, cv2.LINE_AA)
 
@@ -122,6 +153,6 @@ class CameraManager:
             jpeg_bytes = self.get_snapshot_jpeg(overlay_telemetry=telem)
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + jpeg_bytes + b'\r\n')
-            time.sleep(0.1)  # ~10 FPS for efficient network streaming
+            time.sleep(0.1)
 
 camera_mgr = CameraManager()

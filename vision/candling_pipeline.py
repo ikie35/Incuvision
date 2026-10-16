@@ -75,8 +75,10 @@ class CandlingVisionPipeline:
         annotated_frame = raw_frame.copy()
         h, w = raw_frame.shape[:2]
 
-        tray_x, tray_y = 200, 100
-        tray_w, tray_h = 1520, 880
+        tray_x = int(w * 0.12)
+        tray_y = int(h * 0.14)
+        tray_w = int(w * 0.76)
+        tray_h = int(h * 0.72)
         cell_w = tray_w // GRID_COLS
         cell_h = tray_h // GRID_ROWS
 
