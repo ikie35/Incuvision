@@ -165,6 +165,12 @@ function handleIncomingTelemetry(data) {
         const valO2El = document.getElementById('valO2');
         if (valO2El) valO2El.innerText = `${o2.toFixed(1)}%`;
 
+        // Update active Graph reading pill
+        const graphPill = document.getElementById('graphCurrentValPill');
+        if (graphPill && metricConfigs[currentGraphMetric]) {
+            graphPill.innerText = metricConfigs[currentGraphMetric].pillText();
+        }
+
         // 5. 2x2 Actuator Status Pills sync (Heater, Turner, Exhaust, LED Light)
         if (telem.actuators) {
             updatePillState('pillHeater', !!telem.actuators.heater);
@@ -278,9 +284,107 @@ function startTurningCountdown() {
 }
 
 // =============================================================================
-// TEMPERATURE WAVE CHART CANVAS
+// SENSOR GRAPH & MULTI-METRIC WAVE CHART
 // =============================================================================
-function drawTempWaveChart() {
+let currentGraphMetric = 'temp';
+
+const metricConfigs = {
+    temp: {
+        title: 'TEMPERATURE',
+        tabId: 'gTabTemp',
+        pillText: () => `${parseFloat(currentTelemetry.temp || 37.5).toFixed(1)}°C`,
+        targetText: 'Target: 37.5°C (Setting)',
+        strokeColor: '#E09930',
+        gradTop: 'rgba(250, 217, 128, 0.45)',
+        yLabels: ['39°', '38°', '37°', '36°', '35°', '34°', '33°', '32°', '31°', '30°'],
+        wavePoints: [
+            { x: 0,   y: 80 }, { x: 25,  y: 105 }, { x: 45,  y: 92 }, { x: 68,  y: 120 },
+            { x: 90,  y: 135 }, { x: 110, y: 100 }, { x: 135, y: 145 }, { x: 160, y: 108 },
+            { x: 180, y: 115 }, { x: 205, y: 95 }, { x: 230, y: 118 }, { x: 255, y: 88 },
+            { x: 280, y: 112 }, { x: 305, y: 92 }, { x: 320, y: 65 }, { x: 340, y: 100 }
+        ]
+    },
+    rh: {
+        title: 'HUMIDITY',
+        tabId: 'gTabRH',
+        pillText: () => `${parseFloat(currentTelemetry.rh || 58.0).toFixed(1)}%`,
+        targetText: 'Target: 58.0% (Setting)',
+        strokeColor: '#0284C7',
+        gradTop: 'rgba(186, 230, 253, 0.55)',
+        yLabels: ['80%', '75%', '70%', '65%', '60%', '55%', '50%', '45%', '40%'],
+        wavePoints: [
+            { x: 0,   y: 95 }, { x: 30,  y: 75 }, { x: 60,  y: 110 }, { x: 90,  y: 85 },
+            { x: 120, y: 125 }, { x: 150, y: 90 }, { x: 180, y: 105 }, { x: 210, y: 80 },
+            { x: 240, y: 115 }, { x: 270, y: 95 }, { x: 300, y: 120 }, { x: 340, y: 85 }
+        ]
+    },
+    co2: {
+        title: 'CO₂ LEVEL',
+        tabId: 'gTabCO2',
+        pillText: () => `${parseInt(currentTelemetry.co2 || 3200).toLocaleString()} ppm`,
+        targetText: 'Safe Threshold: <5,000 ppm',
+        strokeColor: '#059669',
+        gradTop: 'rgba(167, 243, 208, 0.55)',
+        yLabels: ['6k', '5k', '4k', '3k', '2k', '1k', '0'],
+        wavePoints: [
+            { x: 0,   y: 130 }, { x: 35,  y: 115 }, { x: 70,  y: 140 }, { x: 105, y: 95 },
+            { x: 140, y: 110 }, { x: 175, y: 85 }, { x: 210, y: 120 }, { x: 245, y: 100 },
+            { x: 280, y: 135 }, { x: 315, y: 90 }, { x: 340, y: 115 }
+        ]
+    },
+    o2: {
+        title: 'OXYGEN',
+        tabId: 'gTabO2',
+        pillText: () => `${parseFloat(currentTelemetry.o2 || 20.9).toFixed(1)}%`,
+        targetText: 'Min Threshold: >20.5%',
+        strokeColor: '#7C3AED',
+        gradTop: 'rgba(233, 213, 255, 0.55)',
+        yLabels: ['23%', '22%', '21.5%', '21%', '20.5%', '20%', '19%'],
+        wavePoints: [
+            { x: 0,   y: 100 }, { x: 40,  y: 120 }, { x: 80,  y: 90 }, { x: 120, y: 105 },
+            { x: 160, y: 85 }, { x: 200, y: 110 }, { x: 240, y: 95 }, { x: 280, y: 115 },
+            { x: 310, y: 80 }, { x: 340, y: 105 }
+        ]
+    }
+};
+
+function goToMetricGraph(metricType) {
+    switchScreen('analytics');
+    setGraphMetric(metricType);
+}
+
+function setGraphMetric(metricType) {
+    if (!metricConfigs[metricType]) return;
+    currentGraphMetric = metricType;
+
+    // 1. Update tab active states
+    ['gTabTemp', 'gTabRH', 'gTabCO2', 'gTabO2'].forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) btn.classList.remove('active');
+    });
+    const activeBtn = document.getElementById(metricConfigs[metricType].tabId);
+    if (activeBtn) activeBtn.classList.add('active');
+
+    // 2. Update Header Title & Target Label
+    const titleEl = document.getElementById('graphMetricTitle');
+    const pillEl = document.getElementById('graphCurrentValPill');
+    const targetEl = document.getElementById('graphTargetLabel');
+
+    if (titleEl) titleEl.innerText = metricConfigs[metricType].title;
+    if (pillEl) pillEl.innerText = metricConfigs[metricType].pillText();
+    if (targetEl) targetEl.innerText = metricConfigs[metricType].targetText;
+
+    // 3. Update Y-Axis labels
+    const yAxisEl = document.getElementById('chartYAxis');
+    if (yAxisEl) {
+        yAxisEl.innerHTML = metricConfigs[metricType].yLabels.map(lbl => `<span>${lbl}</span>`).join('');
+    }
+
+    // 4. Redraw chart
+    drawWaveChart();
+}
+
+function drawWaveChart() {
     const canvas = document.getElementById('tempWaveChart');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -288,6 +392,8 @@ function drawTempWaveChart() {
     const h = canvas.height;
 
     ctx.clearRect(0, 0, w, h);
+
+    const cfg = metricConfigs[currentGraphMetric] || metricConfigs.temp;
 
     // Draw vertical dashed day separator lines
     const dayCols = 5;
@@ -305,25 +411,7 @@ function drawTempWaveChart() {
     ctx.setLineDash([]); // Reset line dash
 
     // Generate smooth wave curve matching mockup
-    // Y-axis spans 30° to 38°
-    const wavePoints = [
-        { x: 0,   y: 80 },
-        { x: 25,  y: 105 },
-        { x: 45,  y: 92 },
-        { x: 68,  y: 120 },
-        { x: 90,  y: 135 },
-        { x: 110, y: 100 },
-        { x: 135, y: 145 },
-        { x: 160, y: 108 },
-        { x: 180, y: 115 },
-        { x: 205, y: 95 },
-        { x: 230, y: 118 },
-        { x: 255, y: 88 },
-        { x: 280, y: 112 },
-        { x: 305, y: 92 },
-        { x: 320, y: 65 },
-        { x: 340, y: 100 }
-    ];
+    const wavePoints = cfg.wavePoints;
 
     // Smooth bezier curve
     ctx.beginPath();
@@ -334,7 +422,7 @@ function drawTempWaveChart() {
         ctx.quadraticCurveTo(wavePoints[i].x, wavePoints[i].y, xc, yc);
     }
     ctx.lineTo(wavePoints[wavePoints.length - 1].x, wavePoints[wavePoints.length - 1].y);
-    ctx.strokeStyle = '#E09930';
+    ctx.strokeStyle = cfg.strokeColor;
     ctx.lineWidth = 2.5;
     ctx.stroke();
 
@@ -343,10 +431,15 @@ function drawTempWaveChart() {
     ctx.lineTo(0, h);
     ctx.closePath();
     const grad = ctx.createLinearGradient(0, 0, 0, h);
-    grad.addColorStop(0, 'rgba(250, 217, 128, 0.45)');
+    grad.addColorStop(0, cfg.gradTop);
     grad.addColorStop(1, 'rgba(255, 255, 255, 0.05)');
     ctx.fillStyle = grad;
     ctx.fill();
+}
+
+// Alias for backward compatibility
+function drawTempWaveChart() {
+    drawWaveChart();
 }
 
 // =============================================================================

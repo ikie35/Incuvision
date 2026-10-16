@@ -55,8 +55,9 @@ body { background-color: #E2CA85; font-family: var(--font-body); color: var(--te
 .clock-icon-bubble { width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; }
 .countdown-text span { font-family: var(--font-heading); font-size: 1.45rem; font-weight: 800; color: #1A1615; }
 .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-.metric-box { background: var(--card-bg); border-radius: var(--radius-card); box-shadow: var(--shadow-card); padding: 18px 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; min-height: 125px; gap: 10px; transition: transform 0.15s ease; }
-.metric-box:active { transform: scale(0.97); }
+.metric-box { background: var(--card-bg); border-radius: var(--radius-card); box-shadow: var(--shadow-card); padding: 18px 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; min-height: 125px; gap: 10px; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease; }
+.metric-box:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); }
+.metric-box:active { transform: scale(0.96); }
 .metric-box.active-green { background: var(--color-green-active); }
 .metric-box.active-green .metric-icon-wrap svg { stroke: var(--brand-red); }
 .metric-box.active-green .metric-val, .metric-box.active-green .metric-lbl { color: #0E4210; }
@@ -82,14 +83,17 @@ body { background-color: #E2CA85; font-family: var(--font-body); color: var(--te
 .actuator-sub { font-size: 0.68rem; color: #9CA3AF; font-weight: 600; line-height: 1.2; }
 .card-temp-preview { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; cursor: pointer; }
 .btn-pill-gold { background: var(--btn-gold); color: #FFFFFF; font-family: var(--font-heading); font-size: 0.82rem; font-weight: 800; letter-spacing: 0.05em; padding: 8px 18px; border-radius: var(--radius-pill); border: none; box-shadow: 0 2px 4px rgba(180, 110, 0, 0.15); cursor: pointer; }
-.card-analytics-main { padding: 20px 16px; display: flex; flex-direction: column; gap: 16px; }
-.analytics-header-row { display: flex; justify-content: space-between; align-items: flex-start; }
-.gauge-status-block { display: flex; flex-direction: column; align-items: center; gap: 4px; }
-.pill-temp-current { background: var(--btn-gold); color: #FFFFFF; font-family: var(--font-heading); font-size: 0.85rem; font-weight: 800; padding: 4px 14px; border-radius: var(--radius-pill); }
+.card-analytics-main { padding: 20px 16px; display: flex; flex-direction: column; gap: 14px; }
+.analytics-header-row { display: flex; justify-content: space-between; align-items: center; }
+.metric-reading-badge-block { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.pill-metric-current { background: var(--btn-gold); color: #FFFFFF; font-family: var(--font-heading); font-size: 0.95rem; font-weight: 800; padding: 5px 14px; border-radius: var(--radius-pill); box-shadow: 0 2px 5px rgba(0,0,0,0.06); }
 .label-status { font-size: 0.68rem; font-weight: 700; color: #D97706; }
-.chart-container { position: relative; width: 100%; height: 200px; background: #FFFFFF; border-bottom: 3px solid #F5C754; margin-top: 10px; }
+.graph-metric-tabs { display: flex; background: #F5E8C3; border-radius: 12px; padding: 3px; gap: 4px; box-shadow: inset 0 1px 2px rgba(0,0,0,0.06); }
+.g-tab-btn { flex: 1; border: none; background: transparent; border-radius: 9px; padding: 7px 4px; font-family: var(--font-heading); font-size: 0.74rem; font-weight: 800; color: #786C5A; cursor: pointer; transition: all 0.15s ease; text-align: center; }
+.g-tab-btn.active { background: #FFFFFF; color: #1A1615; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+.chart-container { position: relative; width: 100%; height: 200px; background: #FFFFFF; border-bottom: 3px solid #F5C754; margin-top: 6px; }
 #tempWaveChart { width: 100%; height: 100%; display: block; }
-.chart-y-axis { position: absolute; left: -2px; top: 4px; bottom: 4px; display: flex; flex-direction: column; justify-content: space-between; font-size: 0.72rem; font-weight: 800; color: #D97706; }
+.chart-y-axis { position: absolute; left: 0px; top: 4px; bottom: 4px; display: flex; flex-direction: column; justify-content: space-between; font-size: 0.7rem; font-weight: 800; color: #D97706; }
 .chart-x-axis { display: flex; justify-content: space-around; padding-top: 6px; font-size: 0.72rem; font-weight: 800; color: #D97706; }
 .analytics-bottom-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .card-sub-info { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px 10px; gap: 6px; cursor: pointer; }
@@ -220,7 +224,7 @@ body { background-color: #E2CA85; font-family: var(--font-body); color: var(--te
                 <!-- 2. The 4 Big Metric Square Cards (2x2 Grid) -->
                 <div class="metrics-grid">
                     <!-- Temperature Card (Green Highlight) -->
-                    <div class="metric-box box-temp active-green" id="cardTemp">
+                    <div class="metric-box box-temp active-green" id="cardTemp" onclick="goToMetricGraph('temp')" title="View Temperature Curve">
                         <div class="metric-icon-wrap">
                             <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="#A82820" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"></path>
@@ -236,7 +240,7 @@ body { background-color: #E2CA85; font-family: var(--font-body); color: var(--te
                     </div>
 
                     <!-- Humidity Card -->
-                    <div class="metric-box box-rh" id="cardRH">
+                    <div class="metric-box box-rh" id="cardRH" onclick="goToMetricGraph('rh')" title="View Humidity Curve">
                         <div class="metric-icon-wrap">
                             <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="#A82820" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
@@ -250,7 +254,7 @@ body { background-color: #E2CA85; font-family: var(--font-body); color: var(--te
                     </div>
 
                     <!-- Carbon Dioxide Card -->
-                    <div class="metric-box box-co2" id="cardCO2">
+                    <div class="metric-box box-co2" id="cardCO2" onclick="goToMetricGraph('co2')" title="View CO2 Trend">
                         <div class="metric-icon-wrap">
                             <span class="text-icon">CO<sub>2</sub></span>
                         </div>
@@ -261,7 +265,7 @@ body { background-color: #E2CA85; font-family: var(--font-body); color: var(--te
                     </div>
 
                     <!-- Oxygen Card -->
-                    <div class="metric-box box-o2" id="cardO2">
+                    <div class="metric-box box-o2" id="cardO2" onclick="goToMetricGraph('o2')" title="View Oxygen Trend">
                         <div class="metric-icon-wrap">
                             <span class="text-icon italic">O<sub>2</sub></span>
                         </div>
@@ -365,25 +369,27 @@ body { background-color: #E2CA85; font-family: var(--font-body); color: var(--te
                 <!-- Large Temperature & Wave Chart Card -->
                 <div class="card card-analytics-main">
                     <div class="analytics-header-row">
-                        <div class="btn-pill-gold">TEMPERATURE</div>
-                        <div class="gauge-status-block">
-                            <!-- Gauge -->
-                            <svg viewBox="0 0 100 55" width="80" height="44">
-                                <path d="M 10 50 A 40 40 0 0 1 50 10" fill="none" stroke="#22C55E" stroke-width="13" />
-                                <path d="M 50 10 A 40 40 0 0 1 90 50" fill="none" stroke="#DC2626" stroke-width="13" />
-                                <polygon points="50,48 48,15 52,15" fill="#1E293B" />
-                                <circle cx="50" cy="48" r="4.5" fill="#1E293B" />
-                            </svg>
-                            <div class="pill-temp-current" id="analyticsTempPill">37.5°</div>
-                            <span class="label-status">Current status</span>
+                        <div class="btn-pill-gold" id="graphMetricTitle">TEMPERATURE</div>
+                        <div class="metric-reading-badge-block">
+                            <div class="pill-metric-current" id="graphCurrentValPill">37.5°C</div>
+                            <span class="label-status" id="graphTargetLabel">Target: 37.5°C</span>
                         </div>
+                    </div>
+
+                    <!-- 4-Sensor Metric Switcher Tabs -->
+                    <div class="graph-metric-tabs">
+                        <button class="g-tab-btn active" id="gTabTemp" onclick="setGraphMetric('temp')">🌡️ Temp</button>
+                        <button class="g-tab-btn" id="gTabRH" onclick="setGraphMetric('rh')">💧 Humidity</button>
+                        <button class="g-tab-btn" id="gTabCO2" onclick="setGraphMetric('co2')">☁️ CO₂</button>
+                        <button class="g-tab-btn" id="gTabO2" onclick="setGraphMetric('o2')">🫧 O₂</button>
                     </div>
 
                     <!-- Temperature Curve Wave Chart -->
                     <div class="chart-container">
                         <canvas id="tempWaveChart" width="340" height="190"></canvas>
-                        <!-- Y-Axis labels (38° down to 30°) -->
-                        <div class="chart-y-axis">
+                        <!-- Y-Axis labels (Dynamic per metric) -->
+                        <div class="chart-y-axis" id="chartYAxis">
+                            <span>39°</span>
                             <span>38°</span>
                             <span>37°</span>
                             <span>36°</span>

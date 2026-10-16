@@ -423,36 +423,67 @@ body {
     padding: 20px 16px;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 14px;
 }
 
 .analytics-header-row {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
 }
 
-.gauge-status-block {
+.metric-reading-badge-block {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 4px;
+    align-items: flex-end;
+    gap: 2px;
 }
 
-.pill-temp-current {
+.pill-metric-current {
     background: var(--btn-gold);
     color: #FFFFFF;
     font-family: var(--font-heading);
-    font-size: 0.85rem;
+    font-size: 0.95rem;
     font-weight: 800;
-    padding: 4px 14px;
+    padding: 5px 14px;
     border-radius: var(--radius-pill);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.06);
 }
 
 .label-status {
     font-size: 0.68rem;
     font-weight: 700;
     color: #D97706;
+}
+
+.graph-metric-tabs {
+    display: flex;
+    background: #F5E8C3;
+    border-radius: 12px;
+    padding: 3px;
+    gap: 4px;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.g-tab-btn {
+    flex: 1;
+    border: none;
+    background: transparent;
+    border-radius: 9px;
+    padding: 7px 4px;
+    font-family: var(--font-heading);
+    font-size: 0.74rem;
+    font-weight: 800;
+    color: #786C5A;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-align: center;
+}
+
+.g-tab-btn.active {
+    background: #FFFFFF;
+    color: #1A1615;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
 /* Chart Canvas & Axes */
