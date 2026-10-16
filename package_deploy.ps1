@@ -23,6 +23,7 @@ Copy-Item -Path (Join-Path $Root "yolov8ncandling.onnx") -Destination $DeployDir
 $RuntimeScripts = @(
     "main.py",
     "api.py",
+    "camera_manager.py",
     "candling_pipeline.py",
     "image_enhancer.py",
     "coordinator.py",

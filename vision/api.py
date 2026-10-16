@@ -4,10 +4,12 @@ from pathlib import Path
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import StreamingResponse, Response
 from pydantic import BaseModel
 
 from config import PROJECT_ROOT, CAPTURES_DIR
 from logger import logger
+from camera_manager import camera_mgr
 
 app = FastAPI(title="IncuVision Smart Incubator API", version="1.0.0")
 
@@ -41,6 +43,9 @@ class RelayCommandPayload(BaseModel):
 class DayPayload(BaseModel):
     day: int
 
+class CandlingLightPayload(BaseModel):
+    state: bool
+
 @app.get("/")
 def root():
     return {"message": "IncuVision API is running. Access dashboard at /dashboard/"}
@@ -66,6 +71,30 @@ def get_history(limit: int = 60):
 @app.get("/api/audits")
 def get_audits():
     return logger.get_all_audits()
+
+@app.get("/api/camera/snapshot")
+def get_camera_snapshot():
+    telem = mqtt_bridge.latest_telemetry if mqtt_bridge else None
+    jpeg_bytes = camera_mgr.get_snapshot_jpeg(overlay_telemetry=telem)
+    return Response(content=jpeg_bytes, media_type="image/jpeg")
+
+@app.get("/api/camera/stream")
+def get_camera_stream():
+    def get_telem():
+        return mqtt_bridge.latest_telemetry if mqtt_bridge else None
+    return StreamingResponse(
+        camera_mgr.generate_mjpeg_stream(get_telemetry_fn=get_telem),
+        media_type="multipart/x-mixed-replace; boundary=frame"
+    )
+
+@app.get("/api/candling/latest")
+def get_latest_candling():
+    if not coordinator:
+        raise HTTPException(status_code=503, detail="Coordinator not ready")
+    return {
+        "status": "success",
+        "latest_audit": coordinator.latest_audit_result
+    }
 
 @app.post("/api/candling/trigger")
 def trigger_candling():
@@ -98,6 +127,13 @@ def trigger_egg_turning(duration: int = 15):
         raise HTTPException(status_code=503, detail="MQTT not ready")
     mqtt_bridge.trigger_egg_turning(duration)
     return {"status": "success", "message": f"Egg turning triggered for {duration}s"}
+
+@app.post("/api/control/candling_light")
+def toggle_candling_light(payload: CandlingLightPayload):
+    if not mqtt_bridge:
+        raise HTTPException(status_code=503, detail="MQTT not ready")
+    mqtt_bridge.set_candling_light(payload.state)
+    return {"status": "success", "candling_light": payload.state}
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):

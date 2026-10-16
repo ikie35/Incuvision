@@ -9,6 +9,7 @@ from config import (
     CLASS_LABELS
 )
 from models.yolov8s_candling import YOLOv8CandlingModel
+from camera_manager import camera_mgr
 
 class CandlingVisionPipeline:
     def __init__(self):
@@ -16,32 +17,10 @@ class CandlingVisionPipeline:
         self.cam = None
 
     def _capture_frame(self) -> np.ndarray:
-        """Captures a frame using Pi Camera Module 3 (via Picamera2) or OpenCV fallback."""
-        try:
-            # Try Picamera2 first (Native for Raspberry Pi 5)
-            from picam2 import Picamera2
-            picam2 = Picamera2()
-            config = picam2.create_still_configuration(main={"size": (1920, 1080)})
-            picam2.configure(config)
-            picam2.start()
-            time.sleep(0.5) # allow auto-focus and auto-exposure to settle
-            frame = picam2.capture_array()
-            picam2.stop()
-            picam2.close()
-            # Convert RGB to BGR for OpenCV
-            return cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-        except Exception as e:
-            # Fallback to standard OpenCV VideoCapture
-            cap = cv2.VideoCapture(0)
-            if cap.isOpened():
-                cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
-                cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
-                ret, frame = cap.read()
-                cap.release()
-                if ret and frame is not None:
-                    return frame
-
-        # Synthetic Realistic 56-Egg Candling Image Generator (when running on host or camera detached)
+        """Captures a frame using shared CameraManager."""
+        frame = camera_mgr.capture_raw_frame()
+        if frame is not None:
+            return frame
         return self._generate_synthetic_tray_frame()
 
     def _generate_synthetic_tray_frame(self) -> np.ndarray:

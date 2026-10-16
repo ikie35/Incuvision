@@ -147,8 +147,8 @@
             <section class="panel candling-panel">
                 <div class="panel-topbar">
                     <div>
-                        <h2 class="panel-heading">56-Egg Candling Vision Matrix</h2>
-                        <p class="panel-subheading">7 × 8 Grid Layout &bull; YOLOv8 Multi-Egg Fertility & Vascular Analysis</p>
+                        <h2 class="panel-heading" id="panelHeading">56-Egg Candling Vision Matrix</h2>
+                        <p class="panel-subheading" id="panelSubheading">7 × 8 Grid Layout &bull; YOLOv8 Multi-Egg Fertility & Vascular Analysis</p>
                     </div>
                     <div class="panel-btn-group">
                         <button class="btn btn-action" id="btnTriggerCandling" onclick="triggerCandlingAudit()">
@@ -161,38 +161,99 @@
                     </div>
                 </div>
 
-                <!-- Audit Summary Stats -->
-                <div class="audit-summary-row">
-                    <div class="summary-stat-box">
-                        <div class="stat-meta">Total Capacity</div>
-                        <div class="stat-figure" id="sumTotal">56</div>
+                <!-- Navigation Tabs between Views -->
+                <div class="vision-view-tabs">
+                    <button class="vision-tab-btn active" id="tabGrid" onclick="switchVisionView('grid')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                        56-Egg Matrix
+                    </button>
+                    <button class="vision-tab-btn" id="tabCandlingPhoto" onclick="switchVisionView('candling')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                        AI Candling Scan Photo
+                    </button>
+                    <button class="vision-tab-btn" id="tabLiveCam" onclick="switchVisionView('live')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
+                        Live Chamber Camera
+                    </button>
+                </div>
+
+                <!-- 1. 56-Egg Matrix View -->
+                <div id="viewGrid" class="vision-view-content active">
+                    <!-- Audit Summary Stats -->
+                    <div class="audit-summary-row">
+                        <div class="summary-stat-box">
+                            <div class="stat-meta">Total Capacity</div>
+                            <div class="stat-figure" id="sumTotal">56</div>
+                        </div>
+                        <div class="summary-stat-box stat-fertile">
+                            <div class="stat-meta">Fertile</div>
+                            <div class="stat-figure" id="sumFertile">--</div>
+                        </div>
+                        <div class="summary-stat-box stat-infertile">
+                            <div class="stat-meta">Infertile</div>
+                            <div class="stat-figure" id="sumInfertile">--</div>
+                        </div>
+                        <div class="summary-stat-box stat-rate">
+                            <div class="stat-meta">Fertility Rate</div>
+                            <div class="stat-figure accent" id="sumRate">--%</div>
+                        </div>
                     </div>
-                    <div class="summary-stat-box stat-fertile">
-                        <div class="stat-meta">Fertile</div>
-                        <div class="stat-figure" id="sumFertile">--</div>
+
+                    <!-- 7x8 Matrix Grid View -->
+                    <div class="matrix-canvas">
+                        <div class="egg-matrix-grid" id="eggGrid">
+                            <!-- Populated by JavaScript -->
+                        </div>
                     </div>
-                    <div class="summary-stat-box stat-infertile">
-                        <div class="stat-meta">Infertile</div>
-                        <div class="stat-figure" id="sumInfertile">--</div>
-                    </div>
-                    <div class="summary-stat-box stat-rate">
-                        <div class="stat-meta">Fertility Rate</div>
-                        <div class="stat-figure accent" id="sumRate">--%</div>
+
+                    <!-- Clean Legend -->
+                    <div class="matrix-legend">
+                        <div class="legend-entry"><span class="legend-indicator fertile"></span> Fertile (Active Embryo & Vascular Network)</div>
+                        <div class="legend-entry"><span class="legend-indicator infertile"></span> Infertile / Non-Viable (Clear Yolk)</div>
+                        <div class="legend-entry"><span class="legend-indicator pending"></span> Standby / Unscanned</div>
                     </div>
                 </div>
 
-                <!-- 7x8 Matrix Grid View -->
-                <div class="matrix-canvas">
-                    <div class="egg-matrix-grid" id="eggGrid">
-                        <!-- Populated by JavaScript -->
+                <!-- 2. AI Candling Scan Photo View -->
+                <div id="viewCandlingPhoto" class="vision-view-content" style="display: none;">
+                    <div class="camera-display-container">
+                        <div class="camera-toolbar">
+                            <span class="camera-badge" id="candlingPhotoBadge">Latest YOLOv8 Scan</span>
+                            <div class="camera-actions">
+                                <a id="btnDownloadScan" href="#" target="_blank" class="btn btn-outline btn-sm">Open Full Photo</a>
+                            </div>
+                        </div>
+                        <div class="camera-viewport">
+                            <img id="imgCandlingScan" src="" alt="AI Candling Annotated Scan" style="display:none;" />
+                            <div class="camera-placeholder" id="candlingPlaceholder">
+                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                                <p>No candling scan has been executed yet.</p>
+                                <button class="btn btn-action" onclick="triggerCandlingAudit()">Run Candling Audit Now</button>
+                            </div>
+                        </div>
+                        <div class="camera-footer-info">
+                            <span>Image annotated with bounding boxes, egg index (#01–#56), and viability tags.</span>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Clean Legend -->
-                <div class="matrix-legend">
-                    <div class="legend-entry"><span class="legend-indicator fertile"></span> Fertile (Active Embryo & Vascular Network)</div>
-                    <div class="legend-entry"><span class="legend-indicator infertile"></span> Infertile / Non-Viable (Clear Yolk)</div>
-                    <div class="legend-entry"><span class="legend-indicator pending"></span> Standby / Unscanned</div>
+                <!-- 3. Live Chamber Camera View -->
+                <div id="viewLiveCam" class="vision-view-content" style="display: none;">
+                    <div class="camera-display-container">
+                        <div class="camera-toolbar">
+                            <span class="camera-badge badge-live"><span class="live-dot"></span> LIVE CHAMBER FEED</span>
+                            <div class="camera-actions">
+                                <button class="btn btn-outline btn-sm" onclick="toggleCandlingLight()">Toggle Candling Light</button>
+                                <button class="btn btn-outline btn-sm" onclick="refreshLiveStream()">Refresh Stream</button>
+                            </div>
+                        </div>
+                        <div class="camera-viewport">
+                            <img id="imgLiveStream" src="/api/camera/stream" alt="Live Incubator Video Stream" />
+                        </div>
+                        <div class="camera-footer-info">
+                            <span>Real-time visual monitoring of egg tray, mechanical turning position, and heater array.</span>
+                        </div>
+                    </div>
                 </div>
             </section>
 

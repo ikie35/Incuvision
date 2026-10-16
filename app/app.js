@@ -223,6 +223,22 @@ function renderAuditResults(audit) {
             }
         });
     });
+
+    // Update Annotated Camera Image View if available
+    const imgScan = document.getElementById('imgCandlingScan');
+    const placeholder = document.getElementById('candlingPlaceholder');
+    const badge = document.getElementById('candlingPhotoBadge');
+    const btnDownload = document.getElementById('btnDownloadScan');
+
+    if (audit.annotated_image_url && imgScan) {
+        imgScan.src = `${audit.annotated_image_url}?t=${Date.now()}`;
+        imgScan.style.display = 'block';
+        if (placeholder) placeholder.style.display = 'none';
+        if (btnDownload) btnDownload.href = audit.annotated_image_url;
+        if (badge) {
+            badge.innerText = `Day ${audit.day || currentDay} YOLOv8 Scan (${audit.fertility_rate}% Fertile)`;
+        }
+    }
 }
 
 // User Actions
@@ -407,4 +423,61 @@ function openEggModal(index) {
 
 function closeModal(e) {
     document.getElementById('eggModal').classList.remove('open');
+}
+
+// Vision Tab Switcher (Matrix vs AI Candling Photo vs Live Camera)
+function switchVisionView(mode) {
+    const tabGrid = document.getElementById('tabGrid');
+    const tabCandlingPhoto = document.getElementById('tabCandlingPhoto');
+    const tabLiveCam = document.getElementById('tabLiveCam');
+
+    const viewGrid = document.getElementById('viewGrid');
+    const viewCandlingPhoto = document.getElementById('viewCandlingPhoto');
+    const viewLiveCam = document.getElementById('viewLiveCam');
+
+    const heading = document.getElementById('panelHeading');
+    const subheading = document.getElementById('panelSubheading');
+
+    [tabGrid, tabCandlingPhoto, tabLiveCam].forEach(t => t && t.classList.remove('active'));
+    [viewGrid, viewCandlingPhoto, viewLiveCam].forEach(v => v && (v.style.display = 'none'));
+
+    if (mode === 'grid') {
+        if (tabGrid) tabGrid.classList.add('active');
+        if (viewGrid) viewGrid.style.display = 'block';
+        if (heading) heading.innerText = '56-Egg Candling Vision Matrix';
+        if (subheading) subheading.innerText = '7 × 8 Grid Layout • YOLOv8 Multi-Egg Fertility & Vascular Analysis';
+    } else if (mode === 'candling') {
+        if (tabCandlingPhoto) tabCandlingPhoto.classList.add('active');
+        if (viewCandlingPhoto) viewCandlingPhoto.style.display = 'block';
+        if (heading) heading.innerText = 'AI Candling High-Res Photo';
+        if (subheading) subheading.innerText = 'YOLOv8 Full-Frame Detection with Viability Bounding Boxes & Confidence Labels';
+    } else if (mode === 'live') {
+        if (tabLiveCam) tabLiveCam.classList.add('active');
+        if (viewLiveCam) viewLiveCam.style.display = 'block';
+        if (heading) heading.innerText = 'Live Incubator Chamber Feed';
+        if (subheading) subheading.innerText = 'Real-Time Camera Monitoring of Egg Tray, Turning Mechanism & Interior Environment';
+        refreshLiveStream();
+    }
+}
+
+function refreshLiveStream() {
+    const img = document.getElementById('imgLiveStream');
+    if (img) {
+        img.src = `/api/camera/stream?t=${Date.now()}`;
+    }
+}
+
+let candlingLightState = false;
+async function toggleCandlingLight() {
+    candlingLightState = !candlingLightState;
+    setChipState('actCandling', candlingLightState);
+    try {
+        await fetch('/api/control/candling_light', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ state: candlingLightState })
+        });
+    } catch (e) {
+        console.warn("Could not toggle candling light via API:", e);
+    }
 }
