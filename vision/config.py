@@ -22,6 +22,11 @@ TOPIC_COMMANDS = "incuvision/commands"
 TOPIC_STATUS = "incuvision/status"
 TOPIC_SETPOINTS = "incuvision/setpoints"
 
+# Serial / USB Bridge Settings (Auto-fallback to USB when ESP32 is plugged into Pi)
+SERIAL_PORT = os.getenv("SERIAL_PORT", "/dev/ttyUSB0")
+SERIAL_BAUDRATE = int(os.getenv("SERIAL_BAUD", 115200))
+ENABLE_SERIAL_BRIDGE = True
+
 # Hardware / LCD Settings
 I2C_BUS = 1
 LCD_I2C_ADDR = 0x27  # Common I2C backpack address (or 0x3F)
