@@ -176,11 +176,18 @@ class MQTTBridge:
         """Parses telemetry from the ESP32 serial output (CSV, text headers, or JSON)."""
         updated = False
 
-        # 1. Parse CSV format: DATA,day,dht_temp,dht_rh,scd_temp,scd_rh,scd_co2,o2,heater,exhaust,turner
+        # 1. Parse CSV format from ESP32 sketch:
+        # DATA,incubationDay,dhtTemp,dhtRH,scdTemp,scdRH,co2,oxygenPercent,warmupComplete,turnerRunning,ledState
         if line.startswith("DATA"):
             parts = [p.strip() for p in line.split(",")]
             if len(parts) >= 8:
                 try:
+                    if len(parts) >= 2:
+                        try:
+                            self.latest_telemetry["day"] = int(float(parts[1]))
+                        except Exception:
+                            pass
+
                     # Index 2: DHT Temp, Index 3: DHT RH
                     # Index 4: SCD Temp, Index 5: SCD RH
                     # Index 6: SCD CO2,  Index 7: O2
@@ -198,10 +205,22 @@ class MQTTBridge:
                     if 0 <= o2 <= 100:
                         self.latest_telemetry["o2"] = round(o2, 2)
 
+                    # Index 8: warmupComplete (1 or 0)
+                    if len(parts) >= 9:
+                        self.latest_telemetry["warmup"] = (parts[8] == "1")
+
+                    # Index 9: turnerRunning (1 or 0) -> Egg Turner Motor
+                    if len(parts) >= 10:
+                        self.latest_telemetry["actuators"]["motor"] = (parts[9] == "1")
+
+                    # Index 10: ledState (1 or 0) -> Candling LED
                     if len(parts) >= 11:
-                        self.latest_telemetry["actuators"]["heater"] = parts[8] in ("1", "ON", "on", "True")
-                        self.latest_telemetry["actuators"]["exhaust"] = parts[9] in ("1", "ON", "on", "True")
-                        self.latest_telemetry["actuators"]["motor"] = parts[10] in ("1", "ON", "on", "True")
+                        self.latest_telemetry["actuators"]["candling"] = (parts[10] == "1")
+
+                    # If extended columns exist for heater & exhaust:
+                    if len(parts) >= 13:
+                        self.latest_telemetry["actuators"]["heater"] = (parts[11] == "1")
+                        self.latest_telemetry["actuators"]["exhaust"] = (parts[12] == "1")
 
                     updated = True
                 except Exception:
@@ -283,7 +302,30 @@ class MQTTBridge:
         # Also write directly over USB Serial
         if self.serial_conn and self.serial_conn.is_open:
             try:
+                # 1. Send JSON payload
                 self.serial_conn.write((payload + "\n").encode("utf-8"))
+
+                # 2. Send plain text command for ESP32 Arduino sketch
+                cmd = cmd_dict.get("cmd", "")
+                if cmd in ("CANDLING_ON", "START_CANDLING"):
+                    self.serial_conn.write(b"LED ON\n")
+                elif cmd in ("CANDLING_OFF", "STOP_CANDLING"):
+                    self.serial_conn.write(b"LED OFF\n")
+                elif cmd == "SET_RELAY":
+                    act = cmd_dict.get("actuator", "")
+                    st = cmd_dict.get("state", False)
+                    if act in ("candling", "led"):
+                        self.serial_conn.write(b"LED ON\n" if st else b"LED OFF\n")
+                    elif act == "heater":
+                        self.serial_conn.write(b"HEATER ON\n" if st else b"HEATER OFF\n")
+                    elif act in ("exhaust", "fan"):
+                        self.serial_conn.write(b"EXHAUST ON\n" if st else b"EXHAUST OFF\n")
+                    elif act in ("motor", "turner"):
+                        self.serial_conn.write(b"TURN ON\n" if st else b"TURN OFF\n")
+                elif cmd in ("SET_DAY", "DAY"):
+                    d = cmd_dict.get("day", 1)
+                    self.serial_conn.write(f"DAY {d}\n".encode("utf-8"))
+
                 print(f"[SERIAL] Command sent to ESP32: {payload}")
             except Exception as e:
                 print(f"[SERIAL] Error sending command over serial: {e}")

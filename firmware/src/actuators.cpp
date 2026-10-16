@@ -21,20 +21,16 @@ void ActuatorManager::begin() {
     Serial.println("[ACTUATORS] Initializing Relay GPIO outputs...");
     pinMode(PIN_RELAY_HEATER, OUTPUT);
     pinMode(PIN_RELAY_EXHAUST, OUTPUT);
-    pinMode(PIN_RELAY_CIRCULATE, OUTPUT);
     pinMode(PIN_RELAY_MOTOR, OUTPUT);
     pinMode(PIN_RELAY_CANDLING, OUTPUT);
-    pinMode(PIN_BUZZER, OUTPUT);
     pinMode(PIN_STATUS_LED, OUTPUT);
 
     // Relays are Active LOW: turn all OFF initially (HIGH = OFF)
     setRelay(PIN_RELAY_HEATER, false);
     setRelay(PIN_RELAY_EXHAUST, false);
-    setRelay(PIN_RELAY_CIRCULATE, true);  // Circulation fan runs continuously by default
     setRelay(PIN_RELAY_MOTOR, false);
     setRelay(PIN_RELAY_CANDLING, false);
     
-    digitalWrite(PIN_BUZZER, LOW);
     digitalWrite(PIN_STATUS_LED, HIGH);
 
     lastTurnTimestamp = millis();
@@ -54,19 +50,14 @@ void ActuatorManager::processHeating(float currentTemp) {
         // Turn ON Exhaust Fan immediately to vent excess heat
         setRelay(PIN_RELAY_EXHAUST, true);
         state.exhaustFan = true;
-
-        // Sound emergency alarm
-        digitalWrite(PIN_BUZZER, HIGH);
         state.alarmActive = true;
         return;
     }
 
     // Critical Under-temperature Alarm
     if (currentTemp <= CRITICAL_TEMP_MIN && currentTemp > 5.0f) {
-        digitalWrite(PIN_BUZZER, HIGH);
         state.alarmActive = true;
     } else {
-        digitalWrite(PIN_BUZZER, LOW);
         state.alarmActive = false;
     }
 
@@ -139,8 +130,7 @@ void ActuatorManager::processEggTurning() {
 }
 
 void ActuatorManager::updateControl(const SensorData& data) {
-    // Always keep circulation fan running for uniform temperature
-    setRelay(PIN_RELAY_CIRCULATE, true);
+    // Circulation fan is continuously powered on 12V/AC rail
     state.circulationFan = true;
 
     // In manual override mode, do not let automatic loops overwrite relay states
@@ -191,9 +181,6 @@ void ActuatorManager::setRelayByName(const char* name, bool active) {
         setEggMotor(active);
     } else if (strcmp(name, "candling") == 0 || strcmp(name, "led") == 0) {
         setCandlingLed(active);
-    } else if (strcmp(name, "circulate") == 0) {
-        setRelay(PIN_RELAY_CIRCULATE, active);
-        state.circulationFan = active;
     } else {
         Serial.printf("[ACTUATORS] Unknown relay identifier: %s\n", name);
     }

@@ -8,20 +8,18 @@
 // ==========================================
 
 // Sensors
-#define PIN_DHT22             4     // DHT22 Temperature & Humidity (Single-wire)
-#define PIN_SCD30_SDA        21     // SCD30 CO2 I2C Data
-#define PIN_SCD30_SCL        22     // SCD30 CO2 I2C Clock
-#define PIN_DFROBOT_O2_ADC   34     // DFRobot Oxygen Analog Input (ADC1_CH6)
+#define PIN_DHT22            13     // DHT22 Temperature & Humidity (Single-wire)
+#define PIN_I2C_SDA          21     // SCD30 CO2 + O2 + LCD I2C Data
+#define PIN_I2C_SCL          22     // SCD30 CO2 + O2 + LCD I2C Clock
 
 // Actuators (Relay Module: Active LOW)
-#define PIN_RELAY_HEATER     18     // PTC Heating Element
-#define PIN_RELAY_EXHAUST    19     // 12V DC Exhaust Fan
-#define PIN_RELAY_CIRCULATE  23     // AC Internal Circulation Fan
 #define PIN_RELAY_MOTOR      25     // Kinematic Egg Turning AC Motor
+#define PIN_RELAY_EXHAUST    27     // 12V DC Exhaust Fan
 #define PIN_RELAY_CANDLING   26     // High-Intensity Candling LED Array
+#define PIN_RELAY_HEATER     14     // PTC Heating Element
+// Circulation fan is continuously powered (not relay controlled)
 
 // Indicators & Alarms
-#define PIN_BUZZER           27     // Warning Buzzer / Alarm
 #define PIN_STATUS_LED        2     // On-board Status LED (GPIO 2)
 
 // ==========================================
