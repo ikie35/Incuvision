@@ -481,9 +481,11 @@ function switchCameraView(mode) {
     const badge = document.getElementById('cameraStatusBadge');
     const returnLiveBtn = document.getElementById('btnReturnLive');
     const pausedScreen = document.getElementById('cameraPausedScreen');
+    const offlineScreen = document.getElementById('cameraOfflineScreen');
     const centerIcon = document.getElementById('camOverlayIcon');
 
     if (centerIcon) centerIcon.style.display = 'none';
+    if (offlineScreen) offlineScreen.style.display = 'none';
 
     if (mode === 'live') {
         if (tabLive) tabLive.classList.add('active');
@@ -508,6 +510,7 @@ function switchCameraView(mode) {
         if (tabLive) tabLive.classList.remove('active');
         if (returnLiveBtn) returnLiveBtn.style.display = 'flex';
         if (pausedScreen) pausedScreen.style.display = 'none';
+        if (offlineScreen) offlineScreen.style.display = 'none';
 
         if (streamImg) {
             if (latestAuditImageUrl) {
@@ -517,7 +520,7 @@ function switchCameraView(mode) {
         }
         if (badge) {
             badge.className = 'camera-status-badge audit-mode';
-            badge.innerText = '🎯 AI AUDIT SCAN';
+            badge.innerHTML = '<span class="audit-dot"></span> CANDLING AUDIT';
         }
     }
 }
@@ -529,17 +532,18 @@ function toggleCameraPower(forceOn = null) {
         isCameraOn = !isCameraOn;
     }
 
+    const btnPowerText = document.getElementById('btnCameraPowerText');
     const btnPower = document.getElementById('btnCameraPower');
 
     if (isCameraOn) {
+        if (btnPowerText) btnPowerText.textContent = 'Cam OFF';
         if (btnPower) {
-            btnPower.innerHTML = '⏹️ Cam OFF';
             btnPower.style.background = 'rgba(0, 0, 0, 0.7)';
         }
         switchCameraView(currentCameraMode);
     } else {
+        if (btnPowerText) btnPowerText.textContent = 'Cam ON';
         if (btnPower) {
-            btnPower.innerHTML = '▶️ Cam ON';
             btnPower.style.background = '#10B981';
         }
         showCameraPaused();
@@ -549,9 +553,13 @@ function toggleCameraPower(forceOn = null) {
 function showCameraPaused() {
     const streamImg = document.getElementById('fertilityCameraStream');
     const pausedScreen = document.getElementById('cameraPausedScreen');
+    const offlineScreen = document.getElementById('cameraOfflineScreen');
+    const centerIcon = document.getElementById('camOverlayIcon');
     const badge = document.getElementById('cameraStatusBadge');
     const returnLiveBtn = document.getElementById('btnReturnLive');
 
+    if (centerIcon) centerIcon.style.display = 'none';
+    if (offlineScreen) offlineScreen.style.display = 'none';
     if (streamImg) {
         streamImg.src = ''; // Halt MJPEG stream to stop bandwidth & CPU
         streamImg.style.display = 'none';
@@ -560,7 +568,7 @@ function showCameraPaused() {
     if (returnLiveBtn) returnLiveBtn.style.display = 'none';
     if (badge) {
         badge.className = 'camera-status-badge paused-mode';
-        badge.innerText = '⏸️ CAMERA OFF';
+        badge.innerHTML = '<span class="paused-dot"></span> CAMERA OFF';
     }
 }
 
@@ -574,22 +582,36 @@ function refreshLiveStream() {
 
 function onCameraStreamError() {
     if (!isCameraOn) return;
-    const overlay = document.getElementById('camOverlayIcon');
-    if (overlay && currentCameraMode === 'live') {
-        overlay.style.display = 'block';
+    const streamImg = document.getElementById('fertilityCameraStream');
+    const offlineScreen = document.getElementById('cameraOfflineScreen');
+    const pausedScreen = document.getElementById('cameraPausedScreen');
+    const centerIcon = document.getElementById('camOverlayIcon');
+    const badge = document.getElementById('cameraStatusBadge');
+
+    if (centerIcon) centerIcon.style.display = 'none';
+    if (pausedScreen) pausedScreen.style.display = 'none';
+
+    if (currentCameraMode === 'live') {
+        if (streamImg) streamImg.style.display = 'none';
+        if (offlineScreen) offlineScreen.style.display = 'flex';
+        if (badge) {
+            badge.className = 'camera-status-badge paused-mode';
+            badge.innerHTML = '<span class="paused-dot"></span> OFFLINE';
+        }
     }
 }
 
 async function toggleCandlingLight() {
     candlingLightState = !candlingLightState;
     const btnLight = document.getElementById('btnCamLight');
+    const btnLightText = document.getElementById('btnCamLightText');
     if (btnLight) {
         if (candlingLightState) {
             btnLight.classList.add('is-active-gold');
-            btnLight.innerText = '💡 Light: ON';
+            if (btnLightText) btnLightText.textContent = 'Light: ON';
         } else {
             btnLight.classList.remove('is-active-gold');
-            btnLight.innerText = '💡 Light';
+            if (btnLightText) btnLightText.textContent = 'Light';
         }
     }
 

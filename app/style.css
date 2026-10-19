@@ -94,6 +94,14 @@ body {
     filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.08));
 }
 
+.brand-chick-icon-img {
+    height: 44px;
+    width: auto;
+    max-width: 44px;
+    object-fit: contain;
+    display: block;
+}
+
 .brand-title {
     font-family: var(--font-heading);
     font-size: 1.85rem;
@@ -187,6 +195,13 @@ body {
     justify-content: center;
 }
 
+.icon-clock {
+    width: 34px;
+    height: 34px;
+    object-fit: contain;
+    display: block;
+}
+
 .countdown-text span {
     font-family: var(--font-heading);
     font-size: 1.45rem;
@@ -238,7 +253,20 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 40px;
+    height: 42px;
+}
+
+.metric-icon-img {
+    height: 38px;
+    max-width: 48px;
+    width: auto;
+    object-fit: contain;
+    display: block;
+    transition: transform 0.15s ease;
+}
+
+.metric-box:hover .metric-icon-img {
+    transform: scale(1.08);
 }
 
 .text-icon {
@@ -344,6 +372,19 @@ body {
     align-items: center;
     justify-content: center;
     color: #4B5563;
+    overflow: hidden;
+}
+
+.actuator-icon-img {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    display: block;
+    transition: transform 0.2s ease;
+}
+
+.actuator-card:hover .actuator-icon-img {
+    transform: scale(1.12);
 }
 
 .actuator-title {
@@ -668,6 +709,22 @@ body {
     animation: livePulse 1.8s infinite;
 }
 
+.paused-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #9CA3AF;
+    display: inline-block;
+}
+
+.audit-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #F59E0B;
+    display: inline-block;
+}
+
 @keyframes livePulse {
     0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
     70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
@@ -800,7 +857,7 @@ body {
 }
 
 .cam-btn-resume {
-    margin-top: 4px;
+    margin-top: 6px;
     background: #10B981;
     color: white;
     border: none;
@@ -809,6 +866,14 @@ body {
     font-size: 0.75rem;
     font-weight: 800;
     cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.15s ease;
+}
+
+.cam-btn-resume:hover {
+    background: #059669;
 }
 
 /* Fertility Scores Row */
@@ -1026,6 +1091,8 @@ body {
 .app-bottom-nav {
     position: fixed;
     bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
     width: 100%;
     max-width: 440px;
     height: 70px;

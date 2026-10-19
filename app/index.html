@@ -8,8 +8,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Poppins:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/dashboard/style.css?v=5">
-    <link rel="stylesheet" href="./style.css?v=5">
+    <link rel="icon" type="image/png" href="./icons/chick.png">
+    <link rel="stylesheet" href="/dashboard/style.css?v=6">
+    <link rel="stylesheet" href="./style.css?v=6">
     <style>
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 :root {
@@ -42,6 +43,7 @@ body { background-color: #E2CA85; font-family: var(--font-body); color: var(--te
 .app-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px 10px 20px; background: transparent; }
 .brand-group { display: flex; align-items: center; gap: 10px; cursor: pointer; }
 .brand-chick-icon { display: flex; align-items: center; justify-content: center; filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.08)); }
+.brand-chick-icon-img { height: 44px; width: auto; max-width: 44px; object-fit: contain; display: block; }
 .brand-title { font-family: var(--font-heading); font-size: 1.85rem; font-weight: 800; color: #1A1615; letter-spacing: -0.02em; font-style: italic; }
 .header-bell-btn { width: 44px; height: 44px; border-radius: 50%; background: #FBAE36; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1); transition: transform 0.15s ease; }
 .header-bell-btn:active { transform: scale(0.92); }
@@ -53,15 +55,17 @@ body { background-color: #E2CA85; font-family: var(--font-body); color: var(--te
 .card { background: var(--card-bg); border-radius: var(--radius-card); box-shadow: var(--shadow-card); padding: 16px; }
 .card-countdown { display: flex; align-items: center; gap: 16px; padding: 14px 20px; }
 .clock-icon-bubble { width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; }
+.icon-clock { width: 34px; height: 34px; object-fit: contain; display: block; }
 .countdown-text span { font-family: var(--font-heading); font-size: 1.45rem; font-weight: 800; color: #1A1615; }
 .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .metric-box { background: var(--card-bg); border-radius: var(--radius-card); box-shadow: var(--shadow-card); padding: 18px 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; min-height: 125px; gap: 10px; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease; }
 .metric-box:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); }
 .metric-box:active { transform: scale(0.96); }
 .metric-box.active-green { background: var(--color-green-active); }
-.metric-box.active-green .metric-icon-wrap svg { stroke: var(--brand-red); }
 .metric-box.active-green .metric-val, .metric-box.active-green .metric-lbl { color: #0E4210; }
-.metric-icon-wrap { display: flex; align-items: center; justify-content: center; height: 40px; }
+.metric-icon-wrap { display: flex; align-items: center; justify-content: center; height: 42px; }
+.metric-icon-img { height: 38px; max-width: 48px; width: auto; object-fit: contain; display: block; transition: transform 0.15s ease; }
+.metric-box:hover .metric-icon-img { transform: scale(1.08); }
 .text-icon { font-family: var(--font-heading); font-size: 2.2rem; font-weight: 800; color: var(--brand-red); line-height: 1; }
 .text-icon.italic { font-style: italic; font-size: 2.5rem; }
 .metric-content { display: flex; flex-direction: column; align-items: center; gap: 2px; }
@@ -74,7 +78,9 @@ body { background-color: #E2CA85; font-family: var(--font-body); color: var(--te
 .actuators-2x2-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .actuator-card { background: var(--card-bg); border-radius: 16px; padding: 14px 12px; display: flex; flex-direction: column; align-items: flex-start; gap: 7px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03); cursor: pointer; transition: transform 0.12s ease; }
 .actuator-card:active { transform: scale(0.96); }
-.actuator-icon-bubble { width: 38px; height: 38px; border-radius: 12px; background: #F8F9FA; display: flex; align-items: center; justify-content: center; color: #4B5563; }
+.actuator-icon-bubble { width: 38px; height: 38px; border-radius: 12px; background: #F8F9FA; display: flex; align-items: center; justify-content: center; color: #4B5563; overflow: hidden; }
+.actuator-icon-img { width: 24px; height: 24px; object-fit: contain; display: block; transition: transform 0.2s ease; }
+.actuator-card:hover .actuator-icon-img { transform: scale(1.12); }
 .actuator-title { font-family: var(--font-heading); font-size: 0.88rem; font-weight: 800; color: #1A1615; }
 .status-pill-toggle { display: inline-flex; align-items: center; gap: 6px; background: #E5E7EB; padding: 3px 12px; border-radius: var(--radius-pill); font-size: 0.72rem; font-weight: 800; color: #6B7280; font-family: var(--font-heading); transition: all 0.2s ease; }
 .status-dot { width: 7px; height: 7px; border-radius: 50%; background: #9CA3AF; transition: background-color 0.2s ease; }
@@ -113,6 +119,8 @@ body { background-color: #E2CA85; font-family: var(--font-body); color: var(--te
 .cam-tab-btn { flex: 1; border: none; background: transparent; border-radius: 9px; padding: 7px 10px; font-family: var(--font-heading); font-size: 0.8rem; font-weight: 800; color: #5D564C; cursor: pointer; transition: all 0.18s ease; display: flex; align-items: center; justify-content: center; gap: 6px; }
 .cam-tab-btn.active { background: #FFFFFF; color: #1A1615; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
 .live-dot { width: 8px; height: 8px; border-radius: 50%; background: #10B981; display: inline-block; box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3); animation: livePulse 1.8s infinite; }
+.paused-dot { width: 7px; height: 7px; border-radius: 50%; background: #9CA3AF; display: inline-block; }
+.audit-dot { width: 7px; height: 7px; border-radius: 50%; background: #F59E0B; display: inline-block; }
 @keyframes livePulse { 0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); } 100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
 .camera-stage { width: 100%; height: 260px; background: #000000; border-radius: 14px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; }
 .camera-stream-img { width: 100%; height: 100%; object-fit: contain; display: block; }
@@ -127,7 +135,7 @@ body { background-color: #E2CA85; font-family: var(--font-body); color: var(--te
 .btn-return-live { position: absolute; bottom: 12px; background: #10B981; color: #FFFFFF; border: none; border-radius: var(--radius-pill); padding: 7px 16px; font-family: var(--font-heading); font-size: 0.78rem; font-weight: 800; cursor: pointer; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.45); display: none; align-items: center; gap: 6px; transition: transform 0.12s ease; z-index: 5; }
 .btn-return-live:active { transform: scale(0.95); }
 .camera-paused-placeholder { display: none; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: #9CA3AF; font-size: 0.8rem; font-weight: 700; text-align: center; padding: 20px; }
-.cam-btn-resume { margin-top: 4px; background: #10B981; color: white; border: none; border-radius: 10px; padding: 6px 14px; font-size: 0.75rem; font-weight: 800; cursor: pointer; }
+.cam-btn-resume { margin-top: 6px; background: #10B981; color: white; border: none; border-radius: 10px; padding: 6px 14px; font-size: 0.75rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
 .fertility-scores-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .score-box { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 14px; gap: 4px; }
 .score-title { font-family: var(--font-heading); font-size: 0.82rem; font-weight: 800; }
@@ -156,7 +164,7 @@ body { background-color: #E2CA85; font-family: var(--font-body); color: var(--te
 .btn-primary-action { background: var(--brand-red); color: white; font-family: var(--font-heading); font-size: 0.88rem; font-weight: 800; padding: 12px; border-radius: var(--radius-pill); border: none; cursor: pointer; margin-top: 6px; }
 .btn-secondary-action { background: #F3F4F6; color: #1F2937; font-family: var(--font-heading); font-size: 0.85rem; font-weight: 700; padding: 10px; border-radius: var(--radius-pill); border: 1px solid #D1D5DB; cursor: pointer; }
 .divider { border: none; border-top: 1px solid #E5E7EB; margin: 4px 0; }
-.app-bottom-nav { position: fixed; bottom: 0; width: 100%; max-width: 440px; height: 70px; background-color: #FAD980; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid rgba(0, 0, 0, 0.06); box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05); z-index: 100; }
+.app-bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 440px; height: 70px; background-color: #FAD980; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid rgba(0, 0, 0, 0.06); box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05); z-index: 100; }
 .nav-tab { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; background: none; border: none; color: #7A4F08; cursor: pointer; padding: 6px 14px; transition: all 0.15s ease; }
 .nav-tab span { font-size: 0.72rem; font-weight: 800; font-family: var(--font-heading); }
 .nav-tab.active { color: #C2410C; transform: translateY(-2px); }
@@ -174,20 +182,8 @@ body { background-color: #E2CA85; font-family: var(--font-body); color: var(--te
         <!-- Top App Bar -->
         <header class="app-header">
             <div class="brand-group" onclick="switchNav('home')">
-                <!-- Cute Chick Logo SVG matching research mockup -->
                 <div class="brand-chick-icon">
-                    <svg viewBox="0 0 100 100" width="46" height="46">
-                        <!-- Cracked Egg Shell Bottom -->
-                        <path d="M 12,62 C 12,85 30,96 50,96 C 70,96 88,85 88,62 C 88,52 80,48 74,54 C 68,58 60,48 50,54 C 40,48 32,58 26,54 C 20,48 12,52 12,62 Z" fill="#FBAE36" stroke="#221B1A" stroke-width="3" stroke-linejoin="round"/>
-                        <!-- White Chick Body -->
-                        <path d="M 28,52 C 26,34 36,18 52,18 C 66,18 76,28 76,42 C 76,48 74,52 70,54 C 64,52 58,46 50,46 C 42,46 36,52 28,52 Z" fill="#FFFFFF" stroke="#221B1A" stroke-width="3" stroke-linejoin="round"/>
-                        <!-- Chick Beak -->
-                        <polygon points="74,36 84,40 74,44" fill="#F87A1E" stroke="#221B1A" stroke-width="2.5" stroke-linejoin="round"/>
-                        <!-- Chick Eye -->
-                        <circle cx="64" cy="32" r="3.5" fill="#221B1A"/>
-                        <!-- Embryo Swirl on Shell/Chest -->
-                        <path d="M 48,60 C 38,62 34,72 42,78 C 50,84 62,78 60,68 C 58,60 48,64 48,70 C 48,74 54,74 54,72" fill="none" stroke="#7A1D16" stroke-width="3" stroke-linecap="round"/>
-                    </svg>
+                    <img src="./icons/chick.png" alt="IncuVision" class="brand-chick-icon-img">
                 </div>
                 <h1 class="brand-title">IncuVision</h1>
             </div>
@@ -211,10 +207,7 @@ body { background-color: #E2CA85; font-family: var(--font-body); color: var(--te
                 <!-- 1. Countdown Days Left Card -->
                 <div class="card card-countdown">
                     <div class="clock-icon-bubble">
-                        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#A82820" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <polyline points="12 6 12 12 16 14"></polyline>
-                        </svg>
+                        <img src="./icons/clock.png" alt="Countdown Clock" class="icon-clock">
                     </div>
                     <div class="countdown-text">
                         <span id="homeDaysLeft">12 Days Left</span>
@@ -226,12 +219,7 @@ body { background-color: #E2CA85; font-family: var(--font-body); color: var(--te
                     <!-- Temperature Card (Green Highlight) -->
                     <div class="metric-box box-temp active-green" id="cardTemp" onclick="goToMetricGraph('temp')" title="View Temperature Curve">
                         <div class="metric-icon-wrap">
-                            <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="#A82820" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"></path>
-                                <line x1="17" y1="6" x2="20" y2="6"></line>
-                                <line x1="17" y1="9" x2="20" y2="9"></line>
-                                <line x1="17" y1="12" x2="20" y2="12"></line>
-                            </svg>
+                            <img src="./icons/temp.png" alt="Temperature" class="metric-icon-img">
                         </div>
                         <div class="metric-content">
                             <span class="metric-val" id="valTemp">37.5°C</span>
@@ -242,10 +230,7 @@ body { background-color: #E2CA85; font-family: var(--font-body); color: var(--te
                     <!-- Humidity Card -->
                     <div class="metric-box box-rh" id="cardRH" onclick="goToMetricGraph('rh')" title="View Humidity Curve">
                         <div class="metric-icon-wrap">
-                            <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="#A82820" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
-                                <text x="10" y="17" font-size="7" font-weight="bold" fill="#A82820" stroke="none">%</text>
-                            </svg>
+                            <img src="./icons/humidity.png" alt="Humidity" class="metric-icon-img">
                         </div>
                         <div class="metric-content">
                             <span class="metric-val" id="valRH">58.0%</span>
@@ -256,7 +241,7 @@ body { background-color: #E2CA85; font-family: var(--font-body); color: var(--te
                     <!-- Carbon Dioxide Card -->
                     <div class="metric-box box-co2" id="cardCO2" onclick="goToMetricGraph('co2')" title="View CO2 Trend">
                         <div class="metric-icon-wrap">
-                            <span class="text-icon">CO<sub>2</sub></span>
+                            <img src="./icons/co2.png" alt="CO2" class="metric-icon-img">
                         </div>
                         <div class="metric-content">
                             <span class="metric-val" id="valCO2">3,200</span>
@@ -267,7 +252,7 @@ body { background-color: #E2CA85; font-family: var(--font-body); color: var(--te
                     <!-- Oxygen Card -->
                     <div class="metric-box box-o2" id="cardO2" onclick="goToMetricGraph('o2')" title="View Oxygen Trend">
                         <div class="metric-icon-wrap">
-                            <span class="text-icon italic">O<sub>2</sub></span>
+                            <img src="./icons/o2.png" alt="O2" class="metric-icon-img">
                         </div>
                         <div class="metric-content">
                             <span class="metric-val" id="valO2">20.9%</span>
@@ -287,9 +272,7 @@ body { background-color: #E2CA85; font-family: var(--font-body); color: var(--te
                         <!-- 1. PTC Heater -->
                         <div class="actuator-card" id="actCardHeater" onclick="toggleRelayByName('heater')">
                             <div class="actuator-icon-bubble">
-                                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path>
-                                </svg>
+                                <img src="./icons/heater.png" alt="PTC Heater" class="actuator-icon-img">
                             </div>
                             <span class="actuator-title">PTC Heater</span>
                             <div class="status-pill-toggle" id="pillHeater">
@@ -302,9 +285,7 @@ body { background-color: #E2CA85; font-family: var(--font-body); color: var(--te
                         <!-- 2. Egg Turner -->
                         <div class="actuator-card" id="actCardTurner" onclick="toggleRelayByName('motor')">
                             <div class="actuator-icon-bubble">
-                                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
-                                </svg>
+                                <img src="./icons/turner.png" alt="Egg Turner" class="actuator-icon-img">
                             </div>
                             <span class="actuator-title">Egg Turner</span>
                             <div class="status-pill-toggle" id="pillTurner">
@@ -317,10 +298,7 @@ body { background-color: #E2CA85; font-family: var(--font-body); color: var(--te
                         <!-- 3. Exhaust Fan -->
                         <div class="actuator-card" id="actCardExhaust" onclick="toggleRelayByName('exhaust')">
                             <div class="actuator-icon-bubble">
-                                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M10.827 16.379a6.082 6.082 0 0 1-8.618-7.002l5.412 1.45a2.027 2.027 0 0 0 2.426-2.426L8.597 2.99a6.082 6.082 0 0 1 7.002 8.618l-1.45-5.412a2.027 2.027 0 0 0-2.426 2.426l1.45 5.412a6.082 6.082 0 0 1-7.002-8.618l5.412 1.45a2.027 2.027 0 0 0 2.426-2.426l-1.45-5.412z"/>
-                                    <circle cx="12" cy="12" r="2"/>
-                                </svg>
+                                <img src="./icons/exhaust.png" alt="Exhaust Fan" class="actuator-icon-img">
                             </div>
                             <span class="actuator-title">Exhaust Fan</span>
                             <div class="status-pill-toggle" id="pillExhaust">
@@ -333,9 +311,7 @@ body { background-color: #E2CA85; font-family: var(--font-body); color: var(--te
                         <!-- 4. LED Light -->
                         <div class="actuator-card" id="actCardLed" onclick="toggleRelayByName('candling')">
                             <div class="actuator-icon-bubble">
-                                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-7 7c0 2.6 1.4 4.8 3.5 6h7c2.1-1.2 3.5-3.4 3.5-6a7 7 0 0 0-7-7z"/>
-                                </svg>
+                                <img src="./icons/led.png" alt="LED Light" class="actuator-icon-img">
                             </div>
                             <span class="actuator-title">LED Light</span>
                             <div class="status-pill-toggle" id="pillLed">
@@ -367,10 +343,10 @@ body { background-color: #E2CA85; font-family: var(--font-body); color: var(--te
 
                     <!-- 4-Sensor Metric Switcher Tabs -->
                     <div class="graph-metric-tabs">
-                        <button class="g-tab-btn active" id="gTabTemp" onclick="setGraphMetric('temp')">🌡️ Temp</button>
-                        <button class="g-tab-btn" id="gTabRH" onclick="setGraphMetric('rh')">💧 Humidity</button>
-                        <button class="g-tab-btn" id="gTabCO2" onclick="setGraphMetric('co2')">☁️ CO₂</button>
-                        <button class="g-tab-btn" id="gTabO2" onclick="setGraphMetric('o2')">🫧 O₂</button>
+                        <button class="g-tab-btn active" id="gTabTemp" onclick="setGraphMetric('temp')">Temp</button>
+                        <button class="g-tab-btn" id="gTabRH" onclick="setGraphMetric('rh')">Humidity</button>
+                        <button class="g-tab-btn" id="gTabCO2" onclick="setGraphMetric('co2')">CO₂</button>
+                        <button class="g-tab-btn" id="gTabO2" onclick="setGraphMetric('o2')">O₂</button>
                     </div>
 
                     <!-- Temperature Curve Wave Chart -->
@@ -428,12 +404,24 @@ body { background-color: #E2CA85; font-family: var(--font-body); color: var(--te
                             <span class="time-header">10:00 AM</span>
                             
                             <div class="alert-box">
-                                <span class="alert-warn-badge">⚠️</span>
+                                <span class="alert-warn-badge">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#D97706" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                                        <line x1="12" y1="9" x2="12" y2="13"/>
+                                        <line x1="12" y1="17" x2="12.01" y2="17"/>
+                                    </svg>
+                                </span>
                                 <p class="alert-msg">OXYGEN LEVEL IS 22%, IT'S ABOVE NORMAL. EXHAUST FAN IS TURNED ON.</p>
                             </div>
 
                             <div class="alert-box">
-                                <span class="alert-warn-badge">⚠️</span>
+                                <span class="alert-warn-badge">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#D97706" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                                        <line x1="12" y1="9" x2="12" y2="13"/>
+                                        <line x1="12" y1="17" x2="12.01" y2="17"/>
+                                    </svg>
+                                </span>
                                 <p class="alert-msg">TEMPERATURE IS 35°, IT'S BELOW NORMAL. PTC HEATER IS TURNED ON.</p>
                             </div>
                         </div>
@@ -442,12 +430,24 @@ body { background-color: #E2CA85; font-family: var(--font-body); color: var(--te
                             <span class="time-header">10:15 AM</span>
                             
                             <div class="alert-box">
-                                <span class="alert-warn-badge">⚠️</span>
+                                <span class="alert-warn-badge">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#D97706" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                                        <line x1="12" y1="9" x2="12" y2="13"/>
+                                        <line x1="12" y1="17" x2="12.01" y2="17"/>
+                                    </svg>
+                                </span>
                                 <p class="alert-msg">OXYGEN LEVEL IS STILL 22%, IT'S ABOVE NORMAL. MANUAL INTERVENTION IS NEEDED!</p>
                             </div>
 
                             <div class="alert-box">
-                                <span class="alert-warn-badge">⚠️</span>
+                                <span class="alert-warn-badge">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#D97706" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                                        <line x1="12" y1="9" x2="12" y2="13"/>
+                                        <line x1="12" y1="17" x2="12.01" y2="17"/>
+                                    </svg>
+                                </span>
                                 <p class="alert-msg">TEMPERATURE IS NOW 37.5°, IT'S NORMAL. PTC HEATER IS TURNED OFF.</p>
                             </div>
                         </div>
@@ -468,23 +468,23 @@ body { background-color: #E2CA85; font-family: var(--font-body); color: var(--te
                 <!-- Camera View Mode Switcher -->
                 <div class="camera-mode-tabs">
                     <button class="cam-tab-btn active" id="tabLiveView" onclick="switchCameraView('live')">
-                        <span class="live-dot"></span> 📹 Live Inside
+                        <span class="live-dot"></span> Live Chamber
                     </button>
                     <button class="cam-tab-btn" id="tabAuditView" onclick="switchCameraView('audit')">
-                        🎯 AI Candling Scan
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="22" y1="12" x2="18" y2="12"></line>
+                            <line x1="6" y1="12" x2="2" y2="12"></line>
+                            <line x1="12" y1="6" x2="12" y2="2"></line>
+                            <line x1="12" y1="22" x2="12" y2="18"></line>
+                        </svg>
+                        Candling Audit
                     </button>
                 </div>
 
                 <!-- Central Camera Viewport -->
                 <div class="camera-stage" id="cameraStageContainer">
                     <img id="fertilityCameraStream" src="/api/camera/stream" alt="Live Incubator Camera Feed" class="camera-stream-img" onerror="onCameraStreamError()" />
-                    
-                    <div class="camera-overlay-center" id="camOverlayIcon" style="display: none;">
-                        <svg viewBox="0 0 24 24" width="48" height="48" fill="#B91C1C">
-                            <path d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4z"/>
-                            <path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/>
-                        </svg>
-                    </div>
 
                     <!-- Live / Audit Status Badge -->
                     <div class="camera-status-badge" id="cameraStatusBadge">
@@ -493,24 +493,57 @@ body { background-color: #E2CA85; font-family: var(--font-body); color: var(--te
 
                     <!-- Quick Toolbar on Camera -->
                     <div class="camera-quick-bar">
-                        <button class="cam-btn" id="btnCamLight" onclick="toggleCandlingLight()">💡 Light</button>
-                        <button class="cam-btn" id="btnCameraPower" onclick="toggleCameraPower()">⏹️ Cam OFF</button>
-                        <button class="cam-btn" onclick="refreshLiveStream()" title="Refresh Camera Feed">🔄</button>
+                        <button class="cam-btn" id="btnCamLight" onclick="toggleCandlingLight()">
+                            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M9 18h6m-4 4h2M12 2a6 6 0 0 0-4 10.45V14a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-1.55A6 6 0 0 0 12 2z"></path>
+                            </svg>
+                            <span id="btnCamLightText">Light</span>
+                        </button>
+                        <button class="cam-btn" id="btnCameraPower" onclick="toggleCameraPower()">
+                            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="2" y="6" width="14" height="12" rx="2"></rect>
+                                <path d="M22 8l-6 4 6 4V8z"></path>
+                            </svg>
+                            <span id="btnCameraPowerText">Cam OFF</span>
+                        </button>
+                        <button class="cam-btn" onclick="refreshLiveStream()" title="Refresh Camera Feed" aria-label="Refresh Camera Feed">
+                            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
+                            </svg>
+                        </button>
                     </div>
 
                     <!-- Return to Live View Floating Button (Visible in Audit Mode) -->
                     <button class="btn-return-live" id="btnReturnLive" onclick="switchCameraView('live')">
-                        📹 Return to Live Chamber
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="15 18 9 12 15 6"></polyline>
+                        </svg>
+                        Return to Live
                     </button>
 
                     <!-- Camera Paused Placeholder -->
                     <div class="camera-paused-placeholder" id="cameraPausedScreen">
-                        <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="#9CA3AF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="#9CA3AF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M1 1l22 22M21 21H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3m3-3h6l2 3h4a2 2 0 0 1 2 2v9.34m-7.72-2.06a4 4 0 1 1-5.56-5.56"></path>
                         </svg>
-                        <span style="font-size:0.85rem; color:#E5E7EB;">Camera Stream Paused</span>
+                        <span style="font-size:0.85rem; color:#E5E7EB; font-weight:700;">Camera Stream Paused</span>
                         <span style="font-size:0.7rem; color:#9CA3AF;">Interior feed is paused to save bandwidth</span>
-                        <button class="cam-btn-resume" onclick="toggleCameraPower(true)">▶️ Resume Live Feed</button>
+                        <button class="cam-btn-resume" onclick="toggleCameraPower(true)">
+                            <svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                            Resume Live Feed
+                        </button>
+                    </div>
+
+                    <!-- Camera Offline Placeholder -->
+                    <div class="camera-paused-placeholder" id="cameraOfflineScreen" style="display: none;">
+                        <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="#9CA3AF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 1l22 22M21 21H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3m3-3h6l2 3h4a2 2 0 0 1 2 2v9.34m-7.72-2.06a4 4 0 1 1-5.56-5.56"></path>
+                        </svg>
+                        <span style="font-size:0.85rem; color:#E5E7EB; font-weight:700;">Live Feed Disconnected</span>
+                        <span style="font-size:0.7rem; color:#9CA3AF;">Waiting for incubator video signal</span>
+                        <button class="cam-btn-resume" style="background:#4B5563;" onclick="refreshLiveStream()">
+                            Retry Connection
+                        </button>
                     </div>
                 </div>
 
@@ -623,16 +656,17 @@ body { background-color: #E2CA85; font-family: var(--font-body); color: var(--te
             <!-- Fertility Tab (AI Candling) -->
             <button class="nav-tab" id="navFertility" onclick="switchNav('fertility')">
                 <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 2a5 5 0 0 0-5 5c0 4 5 10 5 10s5-6 5-10a5 5 0 0 0-5-5z"></path>
-                    <circle cx="12" cy="7" r="1.5"></circle>
+                    <path d="M12 2C8 2 4 8.5 4 14.5a8 8 0 0 0 16 0C20 8.5 16 2 12 2z"/>
                 </svg>
                 <span>Fertility</span>
             </button>
 
-            <!-- Profile / Settings Tab -->
+            <!-- Analytics Tab -->
             <button class="nav-tab" id="navProfile" onclick="switchNav('analytics')">
-                <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor">
-                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="20" x2="18" y2="10"></line>
+                    <line x1="12" y1="20" x2="12" y2="4"></line>
+                    <line x1="6" y1="20" x2="6" y2="14"></line>
                 </svg>
                 <span>Analytics</span>
             </button>
