@@ -189,10 +189,10 @@ function handleIncomingTelemetry(data) {
         const cardTemp = document.getElementById('cardTemp');
         const pillTemp = document.getElementById('analyticsTempPill');
         
-        if (valTempEl) valTempEl.innerText = `${temp.toFixed(1)}Â°C`;
-        if (pillTemp) pillTemp.innerText = `${temp.toFixed(1)}Â°`;
+        if (valTempEl) valTempEl.innerText = `${temp.toFixed(1)}°C`;
+        if (pillTemp) pillTemp.innerText = `${temp.toFixed(1)}°`;
 
-        // Highlight Green if in safe range (36.8 - 38.0Â°C)
+        // Highlight Green if in safe range (36.8 - 38.0°C)
         if (cardTemp) {
             if (temp >= 36.8 && temp <= 38.0) {
                 cardTemp.classList.add('active-green');
@@ -343,13 +343,13 @@ const metricConfigs = {
     temp: {
         title: 'TEMPERATURE',
         tabId: 'gTabTemp',
-        pillText: () => `${parseFloat(currentTelemetry.temp || 37.5).toFixed(1)}Â°C`,
-        targetText: 'Target: 37.5Â°C (Setting)',
+        pillText: () => `${parseFloat(currentTelemetry.temp || 37.5).toFixed(1)}°C`,
+        targetText: 'Target: 37.5°C (Setting)',
         strokeColor: '#E09930',
         gradTop: 'rgba(250, 217, 128, 0.45)',
         minVal: 30.0,
         maxVal: 39.0,
-        yLabels: ['39Â°', '38Â°', '37Â°', '36Â°', '35Â°', '34Â°', '33Â°', '32Â°', '31Â°', '30Â°'],
+        yLabels: ['39°', '38°', '37°', '36°', '35°', '34°', '33°', '32°', '31°', '30°'],
         wavePoints: [
             { x: 0,   y: 80 }, { x: 25,  y: 105 }, { x: 45,  y: 92 }, { x: 68,  y: 120 },
             { x: 90,  y: 135 }, { x: 110, y: 100 }, { x: 135, y: 145 }, { x: 160, y: 108 },
