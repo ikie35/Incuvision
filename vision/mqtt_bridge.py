@@ -278,8 +278,10 @@ class MQTTBridge:
             self.latest_telemetry["actuators"]["candling"] = (m_candling.group(1).upper() == "ON")
             updated = True
 
-        # 3. Parse JSON lines
-        if line.startswith("{") and line.endswith("}"):
+        # 3. Parse JSON lines (supports raw JSON or [TELEMETRY] prefix)
+        json_str = line.split('[TELEMETRY]', 1)[1].strip() if '[TELEMETRY]' in line else line
+        if json_str.startswith("{") and json_str.endswith("}"):
+            line = json_str
             try:
                 data = json.loads(line)
                 self._update_telemetry_dict(data)

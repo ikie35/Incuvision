@@ -122,7 +122,7 @@ body { background-color: #E2CA85; font-family: var(--font-body); color: var(--te
 .paused-dot { width: 7px; height: 7px; border-radius: 50%; background: #9CA3AF; display: inline-block; }
 .audit-dot { width: 7px; height: 7px; border-radius: 50%; background: #F59E0B; display: inline-block; }
 @keyframes livePulse { 0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); } 100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
-.camera-stage { width: 100%; height: 260px; background: #000000; border-radius: 14px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+.camera-stage { width: 100%; min-height: 520px; max-height: 75vh; background: #000000; border-radius: 14px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255, 255, 255, 0.12); }
 .camera-stream-img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .camera-overlay-center { position: absolute; pointer-events: none; opacity: 0.85; }
 .camera-status-badge { position: absolute; top: 10px; left: 10px; background: rgba(0, 0, 0, 0.7); color: #10B981; font-family: var(--font-heading); font-size: 0.68rem; font-weight: 800; padding: 4px 8px; border-radius: 8px; backdrop-filter: blur(4px); border: 1px solid rgba(255, 255, 255, 0.15); display: flex; align-items: center; gap: 5px; letter-spacing: 0.04em; }
@@ -482,17 +482,12 @@ body { background-color: #E2CA85; font-family: var(--font-body); color: var(--te
                     </button>
                 </div>
 
-                <!-- Central Camera Viewport -->
-                <div class="camera-stage" id="cameraStageContainer">
-                    <img id="fertilityCameraStream" src="/api/camera/stream" alt="Live Incubator Camera Feed" class="camera-stream-img" onerror="onCameraStreamError()" />
-
-                    <!-- Live / Audit Status Badge -->
-                    <div class="camera-status-badge" id="cameraStatusBadge">
+                <!-- Dedicated Top Toolbar (Above Camera View) -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding: 0 4px;">
+                    <div class="camera-status-badge" id="cameraStatusBadge" style="position: static;">
                         <span class="live-dot"></span> LIVE FEED
                     </div>
-
-                    <!-- Quick Toolbar on Camera -->
-                    <div class="camera-quick-bar">
+                    <div class="camera-quick-bar" style="position: static; display: flex; gap: 8px;">
                         <button class="cam-btn" id="btnCamLight" onclick="toggleCandlingLight()">
                             <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M9 18h6m-4 4h2M12 2a6 6 0 0 0-4 10.45V14a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-1.55A6 6 0 0 0 12 2z"></path>
@@ -512,6 +507,11 @@ body { background-color: #E2CA85; font-family: var(--font-body); color: var(--te
                             </svg>
                         </button>
                     </div>
+                </div>
+
+                <!-- Central Camera Viewport -->
+                <div class="camera-stage" id="cameraStageContainer">
+                    <img id="fertilityCameraStream" src="/api/camera/stream" alt="Live Incubator Camera Feed" class="camera-stream-img" onerror="onCameraStreamError()" />
 
                     <!-- Return to Live View Floating Button (Visible in Audit Mode) -->
                     <button class="btn-return-live" id="btnReturnLive" onclick="switchCameraView('live')">

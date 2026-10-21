@@ -139,10 +139,8 @@ class CameraManager:
             co2 = overlay_telemetry.get("co2", 3200)
             info_text += f"  |  {t:.1f} C  |  {rh:.1f}% RH  |  {co2} ppm"
 
-        cv2.putText(frame, info_text, (20, 28), 
                     cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 240, 255), 2, cv2.LINE_AA)
 
-        cv2.putText(frame, "STATUS: OK (LIVE)", (w - 180, h - 20),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 120), 2, cv2.LINE_AA)
 
         _, jpeg_bytes = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 85])

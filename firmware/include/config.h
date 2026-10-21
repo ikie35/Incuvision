@@ -68,5 +68,12 @@
 #define TELEMETRY_PUB_INTERVAL_MS  5000   // Publish MQTT telemetry every 5 sec
 #define WATCHDOG_TIMEOUT_S         15     // Hardware watchdog timeout
 
+
+// Compatibility aliases for sensors.cpp
+#define PIN_SCD30_SDA       PIN_I2C_SDA
+#define PIN_SCD30_SCL       PIN_I2C_SCL
+#define PIN_DFROBOT_O2_ADC  34
+
 #endif // INCUVISION_CONFIG_H
+
 
