@@ -759,7 +759,6 @@ function renderAuditScores(audit, switchToAudit = true) {
             const slot = document.getElementById('eggSlot-' + egg.index);
             if (slot) slot.className = 'egg-slot-pill ' + egg.status;
         });
-    });
     }
 }
 
