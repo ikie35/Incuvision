@@ -1,4 +1,4 @@
-import os
+﻿import os
 import time
 import cv2
 import numpy as np
@@ -24,7 +24,7 @@ class CameraManager:
         try:
             from picamera2 import Picamera2
             self._picam2 = Picamera2()
-            config = self._picam2.create_video_configuration(main={"size": (1280, 720)})
+            config = self._picam2.create_video_configuration(main={"size": (1920, 1080)})
             self._picam2.configure(config)
             self._picam2.start()
             time.sleep(0.3)
@@ -67,6 +67,8 @@ class CameraManager:
             try:
                 cap = cv2.VideoCapture(self._opencv_device_index, cv2.CAP_V4L2)
                 if cap.isOpened():
+                    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+                    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
                     ret, frame = cap.read()
                     cap.release()
                     if ret and frame is not None:
@@ -156,3 +158,4 @@ class CameraManager:
             time.sleep(0.1)
 
 camera_mgr = CameraManager()
+

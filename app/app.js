@@ -1,4 +1,4 @@
-// IncuVision Mobile-First Dashboard Controller
+﻿// IncuVision Mobile-First Dashboard Controller
 // Connected to Raspberry Pi 5 Master Vision & Coordinator Engine
 
 let ws = null;
@@ -18,12 +18,14 @@ let currentTelemetry = {
 };
 
 let eggMatrixData = [];
+let telemetryHistory = []; // Rolling buffer (30-50 samples) for real-time wave graph
 let turningSecondsLeft = 30 * 60 + 9; // 30:09 countdown default
 let candlingLightState = false;
 
 document.addEventListener('DOMContentLoaded', () => {
     initWebSocket();
     fetchInitialData();
+    loadTelemetryHistory();
     init56EggGrid();
     startTurningCountdown();
     drawTempWaveChart();
@@ -102,6 +104,27 @@ function initWebSocket() {
     }
 }
 
+
+async function loadTelemetryHistory() {
+    try {
+        const res = await fetch('/api/history?limit=50');
+        if (res.ok) {
+            const rows = await res.json();
+            if (Array.isArray(rows) && rows.length > 0) {
+                telemetryHistory = rows.map(r => ({
+                    temp: parseFloat(r.temperature !== undefined ? r.temperature : (r.temp || 37.5)),
+                    rh: parseFloat(r.humidity !== undefined ? r.humidity : (r.rh || 58.0)),
+                    co2: parseFloat(r.co2 || 3200),
+                    o2: parseFloat(r.o2 || 20.9),
+                    time: r.timestamp || Date.now()
+                }));
+                drawWaveChart();
+            }
+        }
+    } catch (e) {
+        console.warn("[HISTORY] Preload error:", e);
+    }
+}
 async function fetchInitialData() {
     try {
         const res = await fetch('/api/telemetry');
@@ -132,16 +155,44 @@ function handleIncomingTelemetry(data) {
     if (telem) {
         currentTelemetry = telem;
 
+        // Push live sample to rolling buffer
+        const liveTemp = parseFloat(telem.temp || 37.5);
+        const liveRH = parseFloat(telem.rh || 58.0);
+        const liveCO2 = parseFloat(telem.co2 || 3200);
+        const liveO2 = parseFloat(telem.o2 || 20.9);
+        telemetryHistory.push({ temp: liveTemp, rh: liveRH, co2: liveCO2, o2: liveO2, time: Date.now() });
+        if (telemetryHistory.length > 50) {
+            telemetryHistory.shift();
+        }
+
+        // Hardware synchronized egg turning timer
+        if (telem.next_turn_seconds !== undefined) {
+            turningSecondsLeft = parseInt(telem.next_turn_seconds);
+            const turnEl = document.getElementById('turningCountdown');
+            if (turnEl) {
+                if (telem.actuators && telem.actuators.motor) {
+                    turnEl.innerText = "TURNING...";
+                } else {
+                    const m = Math.floor(turningSecondsLeft / 60).toString().padStart(2, '0');
+                    const s = (turningSecondsLeft % 60).toString().padStart(2, '0');
+                    turnEl.innerText = `${m}:${s}`;
+                }
+            }
+        }
+
+        // Refresh wave chart dynamically with live telemetry
+        drawWaveChart();
+
         // 1. Temperature
         const temp = parseFloat(telem.temp || 37.5);
         const valTempEl = document.getElementById('valTemp');
         const cardTemp = document.getElementById('cardTemp');
         const pillTemp = document.getElementById('analyticsTempPill');
         
-        if (valTempEl) valTempEl.innerText = `${temp.toFixed(1)}°C`;
-        if (pillTemp) pillTemp.innerText = `${temp.toFixed(1)}°`;
+        if (valTempEl) valTempEl.innerText = `${temp.toFixed(1)}Â°C`;
+        if (pillTemp) pillTemp.innerText = `${temp.toFixed(1)}Â°`;
 
-        // Highlight Green if in safe range (36.8 - 38.0°C)
+        // Highlight Green if in safe range (36.8 - 38.0Â°C)
         if (cardTemp) {
             if (temp >= 36.8 && temp <= 38.0) {
                 cardTemp.classList.add('active-green');
@@ -292,11 +343,13 @@ const metricConfigs = {
     temp: {
         title: 'TEMPERATURE',
         tabId: 'gTabTemp',
-        pillText: () => `${parseFloat(currentTelemetry.temp || 37.5).toFixed(1)}°C`,
-        targetText: 'Target: 37.5°C (Setting)',
+        pillText: () => `${parseFloat(currentTelemetry.temp || 37.5).toFixed(1)}Â°C`,
+        targetText: 'Target: 37.5Â°C (Setting)',
         strokeColor: '#E09930',
         gradTop: 'rgba(250, 217, 128, 0.45)',
-        yLabels: ['39°', '38°', '37°', '36°', '35°', '34°', '33°', '32°', '31°', '30°'],
+        minVal: 30.0,
+        maxVal: 39.0,
+        yLabels: ['39Â°', '38Â°', '37Â°', '36Â°', '35Â°', '34Â°', '33Â°', '32Â°', '31Â°', '30Â°'],
         wavePoints: [
             { x: 0,   y: 80 }, { x: 25,  y: 105 }, { x: 45,  y: 92 }, { x: 68,  y: 120 },
             { x: 90,  y: 135 }, { x: 110, y: 100 }, { x: 135, y: 145 }, { x: 160, y: 108 },
@@ -311,6 +364,8 @@ const metricConfigs = {
         targetText: 'Target: 58.0% (Setting)',
         strokeColor: '#0284C7',
         gradTop: 'rgba(186, 230, 253, 0.55)',
+        minVal: 40.0,
+        maxVal: 80.0,
         yLabels: ['80%', '75%', '70%', '65%', '60%', '55%', '50%', '45%', '40%'],
         wavePoints: [
             { x: 0,   y: 95 }, { x: 30,  y: 75 }, { x: 60,  y: 110 }, { x: 90,  y: 85 },
@@ -319,12 +374,14 @@ const metricConfigs = {
         ]
     },
     co2: {
-        title: 'CO₂ LEVEL',
+        title: 'COâ‚‚ LEVEL',
         tabId: 'gTabCO2',
         pillText: () => `${parseInt(currentTelemetry.co2 || 3200).toLocaleString()} ppm`,
         targetText: 'Safe Threshold: <5,000 ppm',
         strokeColor: '#059669',
         gradTop: 'rgba(167, 243, 208, 0.55)',
+        minVal: 0,
+        maxVal: 6000,
         yLabels: ['6k', '5k', '4k', '3k', '2k', '1k', '0'],
         wavePoints: [
             { x: 0,   y: 130 }, { x: 35,  y: 115 }, { x: 70,  y: 140 }, { x: 105, y: 95 },
@@ -339,6 +396,8 @@ const metricConfigs = {
         targetText: 'Min Threshold: >20.5%',
         strokeColor: '#7C3AED',
         gradTop: 'rgba(233, 213, 255, 0.55)',
+        minVal: 19.0,
+        maxVal: 23.0,
         yLabels: ['23%', '22%', '21.5%', '21%', '20.5%', '20%', '19%'],
         wavePoints: [
             { x: 0,   y: 100 }, { x: 40,  y: 120 }, { x: 80,  y: 90 }, { x: 120, y: 105 },
@@ -410,8 +469,29 @@ function drawWaveChart() {
     }
     ctx.setLineDash([]); // Reset line dash
 
-    // Generate smooth wave curve matching mockup
-    const wavePoints = cfg.wavePoints;
+    // Generate dynamic wave curve points from telemetry history
+    let wavePoints = [];
+    if (telemetryHistory.length >= 2) {
+        const count = telemetryHistory.length;
+        wavePoints = telemetryHistory.map((item, idx) => {
+            const rawVal = item[currentGraphMetric] !== undefined ? item[currentGraphMetric] : (cfg.minVal + cfg.maxVal) / 2;
+            const norm = Math.max(0, Math.min(1, (rawVal - cfg.minVal) / (cfg.maxVal - cfg.minVal)));
+            const x = (w / (count - 1)) * idx;
+            const y = h - (norm * (h - 24) + 12);
+            return { x, y };
+        });
+    } else {
+        const curVal = parseFloat(currentTelemetry[currentGraphMetric] || (cfg.minVal + cfg.maxVal) / 2);
+        const norm = Math.max(0, Math.min(1, (curVal - cfg.minVal) / (cfg.maxVal - cfg.minVal)));
+        const baseY = h - (norm * (h - 24) + 12);
+        wavePoints = [
+            { x: 0, y: baseY },
+            { x: w * 0.25, y: Math.max(10, baseY - 6) },
+            { x: w * 0.5, y: Math.min(h - 10, baseY + 6) },
+            { x: w * 0.75, y: Math.max(10, baseY - 4) },
+            { x: w, y: baseY }
+        ];
+    }
 
     // Smooth bezier curve
     ctx.beginPath();
@@ -666,18 +746,20 @@ function renderAuditScores(audit, switchToAudit = true) {
         }
     }
 
-    // Update 56-Egg Matrix
+    // Update 56-Egg Matrix from dynamic detections
     if (audit.matrix) {
         eggMatrixData = [];
-        audit.matrix.forEach(row => {
-            row.forEach(egg => {
-                eggMatrixData.push(egg);
-                const slot = document.getElementById(`eggSlot-${egg.index}`);
-                if (slot) {
-                    slot.className = `egg-slot-pill ${egg.status}`;
-                }
-            });
+        for (let i = 1; i <= 56; i++) {
+            const slot = document.getElementById('eggSlot-' + i);
+            if (slot) slot.className = 'egg-slot-pill';
+        }
+        const flatList = Array.isArray(audit.matrix[0]) ? audit.matrix.flat() : audit.matrix;
+        flatList.forEach(egg => {
+            eggMatrixData.push(egg);
+            const slot = document.getElementById('eggSlot-' + egg.index);
+            if (slot) slot.className = 'egg-slot-pill ' + egg.status;
         });
+    });
     }
 }
 
@@ -779,3 +861,5 @@ async function saveMenuSetpoints() {
         alert("Error updating setpoints: " + e);
     }
 }
+
+

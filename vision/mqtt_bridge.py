@@ -1,4 +1,4 @@
-import os
+﻿import os
 import re
 import glob
 import json
@@ -47,7 +47,8 @@ class MQTTBridge:
                 "alarm": False
             },
             "phase": "SETTING",
-            "uptime": 0
+            "uptime": 0,
+            "next_turn_seconds": 3600
         }
 
     def start(self):
@@ -112,6 +113,8 @@ class MQTTBridge:
             self.latest_telemetry["actuators"].update(data["actuators"])
         if "phase" in data:
             self.latest_telemetry["phase"] = data["phase"]
+        if "next_turn_seconds" in data:
+            self.latest_telemetry["next_turn_seconds"] = int(data["next_turn_seconds"])
         if "uptime" in data:
             self.latest_telemetry["uptime"] = data["uptime"]
 
@@ -342,3 +345,4 @@ class MQTTBridge:
 
     def set_custom_setpoints(self, temp: float, rh: float, co2: int):
         self.send_command({"cmd": "SET_SETPOINTS", "temp": temp, "rh": rh, "co2": co2})
+

@@ -1,4 +1,4 @@
-#include "actuators.h"
+﻿#include "actuators.h"
 #include "config.h"
 
 ActuatorManager actuators;
@@ -38,7 +38,7 @@ void ActuatorManager::begin() {
 
 void ActuatorManager::setRelay(uint8_t pin, bool active) {
     // Active LOW relay boards: LOW = Energized (ON), HIGH = De-energized (OFF)
-    digitalWrite(pin, active ? LOW : HIGH);
+    digitalWrite(pin, active ? RELAY_ACTIVE_LEVEL : RELAY_INACTIVE_LEVEL);
 }
 
 void ActuatorManager::processHeating(float currentTemp) {
@@ -61,7 +61,7 @@ void ActuatorManager::processHeating(float currentTemp) {
         state.alarmActive = false;
     }
 
-    // Precision Hysteresis Thermal Controller (0.15°C Deadband)
+    // Precision Hysteresis Thermal Controller (0.15Â°C Deadband)
     const float HYSTERESIS = 0.15f;
     if (currentTemp < (targetTemp - HYSTERESIS)) {
         setRelay(PIN_RELAY_HEATER, true);
@@ -83,7 +83,7 @@ void ActuatorManager::processVentilation(uint16_t currentCO2, float currentO2, f
     // Ventilation triggers:
     // 1. CO2 exceeds threshold (> 5000 ppm in Setting, > 7500 ppm in Hatching)
     // 2. O2 drops below 20.5%
-    // 3. Mild over-temperature (> targetTemp + 0.5°C)
+    // 3. Mild over-temperature (> targetTemp + 0.5Â°C)
     bool needVentilation = (currentCO2 > targetCO2) || 
                            (currentO2 > 0.0f && currentO2 < DEFAULT_O2_MIN_SETTING) ||
                            (currentTemp > (targetTemp + 0.5f));
@@ -122,7 +122,7 @@ void ActuatorManager::processEggTurning() {
         return;
     }
 
-    // Check if interval has elapsed (Hourly 45° tilt)
+    // Check if interval has elapsed (Hourly 45Â° tilt)
     if (now - lastTurnTimestamp >= (DEFAULT_TURNING_INTERVAL_S * 1000UL)) {
         Serial.println("[ACTUATORS] Triggering hourly egg turning cycle...");
         triggerEggTurnManual(DEFAULT_TURNING_DURATION_S);
@@ -201,7 +201,7 @@ void ActuatorManager::setPhase(IncubationPhase phase) {
         targetTemp = DEFAULT_TEMP_SETTING;
         targetRH = DEFAULT_RH_SETTING;
         targetCO2 = DEFAULT_CO2_MAX_SETTING;
-        Serial.println("[ACTUATORS] Phase set to: SETTING (Days 1–18)");
+        Serial.println("[ACTUATORS] Phase set to: SETTING (Days 1â€“18)");
     } else {
         targetTemp = DEFAULT_TEMP_HATCHING;
         targetRH = DEFAULT_RH_HATCHING;
@@ -210,7 +210,7 @@ void ActuatorManager::setPhase(IncubationPhase phase) {
         setRelay(PIN_RELAY_MOTOR, false);
         isTurningNow = false;
         state.eggMotor = false;
-        Serial.println("[ACTUATORS] Phase set to: HATCHING (Days 19–21)");
+        Serial.println("[ACTUATORS] Phase set to: HATCHING (Days 19â€“21)");
     }
 }
 
@@ -218,5 +218,13 @@ void ActuatorManager::setCustomSetpoints(float temp, float rh, uint16_t co2) {
     if (temp > 30.0f && temp < 40.0f) targetTemp = temp;
     if (rh > 30.0f && rh < 95.0f) targetRH = rh;
     if (co2 >= 1000 && co2 <= 10000) targetCO2 = co2;
-    Serial.printf("[ACTUATORS] Custom setpoints applied: Temp=%.1f°C, RH=%.1f%%, CO2=%u ppm\n", targetTemp, targetRH, targetCO2);
+    Serial.printf("[ACTUATORS] Custom setpoints applied: Temp=%.1fÂ°C, RH=%.1f%%, CO2=%u ppm\n", targetTemp, targetRH, targetCO2);
+}
+
+uint32_t ActuatorManager::getSecondsToNextTurn() const {
+    if (currentPhase == PHASE_HATCHING) return 0;
+    if (isTurningNow) return 0;
+    uint32_t elapsed = (millis() - lastTurnTimestamp) / 1000UL;
+    if (elapsed >= DEFAULT_TURNING_INTERVAL_S) return 0;
+    return DEFAULT_TURNING_INTERVAL_S - elapsed;
 }

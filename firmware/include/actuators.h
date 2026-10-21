@@ -1,12 +1,12 @@
-#ifndef INCUVISION_ACTUATORS_H
+﻿#ifndef INCUVISION_ACTUATORS_H
 #define INCUVISION_ACTUATORS_H
 
 #include <Arduino.h>
 #include "sensors.h"
 
 enum IncubationPhase {
-    PHASE_SETTING = 1,   // Days 1–18 (Egg turning active, 37.5°C)
-    PHASE_HATCHING = 2   // Days 19–21 (No egg turning, 36.9°C, higher RH)
+    PHASE_SETTING = 1,   // Days 1â€“18 (Egg turning active, 37.5Â°C)
+    PHASE_HATCHING = 2   // Days 19â€“21 (No egg turning, 36.9Â°C, higher RH)
 };
 
 struct ActuatorState {
@@ -44,6 +44,7 @@ public:
     float getTargetTemp() const { return targetTemp; }
     float getTargetRH() const { return targetRH; }
     uint16_t getTargetCO2() const { return targetCO2; }
+    uint32_t getSecondsToNextTurn() const;
 
 private:
     ActuatorState state;
@@ -69,3 +70,4 @@ private:
 extern ActuatorManager actuators;
 
 #endif // INCUVISION_ACTUATORS_H
+

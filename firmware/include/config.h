@@ -1,4 +1,4 @@
-#ifndef INCUVISION_CONFIG_H
+﻿#ifndef INCUVISION_CONFIG_H
 #define INCUVISION_CONFIG_H
 
 #include <Arduino.h>
@@ -18,6 +18,10 @@
 #define PIN_RELAY_CANDLING   26     // High-Intensity Candling LED Array
 #define PIN_RELAY_HEATER     14     // PTC Heating Element
 // Circulation fan is continuously powered (not relay controlled)
+
+// Relay logic polarity (Active LOW for standard ESP32 4-channel relay modules)
+#define RELAY_ACTIVE_LEVEL   LOW    // LOW = Energized (ON)
+#define RELAY_INACTIVE_LEVEL HIGH   // HIGH = De-energized (OFF)
 
 // Indicators & Alarms
 #define PIN_STATUS_LED        2     // On-board Status LED (GPIO 2)
@@ -40,16 +44,16 @@
 // ==========================================
 // 3. DEFAULT INCUBATION SETPOINTS
 // ==========================================
-// Setting Phase (Days 1–18)
-#define DEFAULT_TEMP_SETTING       37.5f  // °C
+// Setting Phase (Days 1â€“18)
+#define DEFAULT_TEMP_SETTING       37.5f  // Â°C
 #define DEFAULT_RH_SETTING         58.0f  // %
 #define DEFAULT_CO2_MAX_SETTING    5000   // ppm (0.5%)
 #define DEFAULT_O2_MIN_SETTING     20.5f  // %
 #define DEFAULT_TURNING_INTERVAL_S 3600   // 60 minutes
 #define DEFAULT_TURNING_DURATION_S 15     // 15 seconds motor run duration
 
-// Hatching Phase (Days 19–21)
-#define DEFAULT_TEMP_HATCHING      36.9f  // °C
+// Hatching Phase (Days 19â€“21)
+#define DEFAULT_TEMP_HATCHING      36.9f  // Â°C
 #define DEFAULT_RH_HATCHING        70.0f  // % (66-75%)
 #define DEFAULT_CO2_MAX_HATCHING   7500   // ppm (0.75%)
 
@@ -65,3 +69,4 @@
 #define WATCHDOG_TIMEOUT_S         15     // Hardware watchdog timeout
 
 #endif // INCUVISION_CONFIG_H
+

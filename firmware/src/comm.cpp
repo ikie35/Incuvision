@@ -1,4 +1,4 @@
-#include "comm.h"
+﻿#include "comm.h"
 #include "config.h"
 #include <WiFi.h>
 #include <PubSubClient.h>
@@ -91,7 +91,7 @@ void CommManager::publishTelemetry(const SensorData& sData, const ActuatorState&
     lastTelemetryPub = now;
 
     // Create JSON document
-    StaticJsonDocument<384> doc;
+    StaticJsonDocument<512> doc;
     doc["uptime"] = now / 1000;
     doc["temp"] = serialized(String(sData.temperature, 2));
     doc["rh"] = serialized(String(sData.humidity, 1));
@@ -110,8 +110,9 @@ void CommManager::publishTelemetry(const SensorData& sData, const ActuatorState&
     doc["phase"] = (actuators.getPhase() == PHASE_SETTING) ? "SETTING" : "HATCHING";
     doc["target_temp"] = serialized(String(actuators.getTargetTemp(), 2));
     doc["target_rh"] = serialized(String(actuators.getTargetRH(), 1));
+    doc["next_turn_seconds"] = actuators.getSecondsToNextTurn();
 
-    char buffer[384];
+    char buffer[512];
     serializeJson(doc, buffer);
 
     // Send via Serial (always active)
@@ -131,21 +132,18 @@ void CommManager::publishStatus(const char* message) {
 }
 
 void CommManager::parseCommand(const char* payload) {
+    // 1. Try parsing JSON format first
     StaticJsonDocument<256> doc;
     DeserializationError error = deserializeJson(doc, payload);
 
-    if (error) {
-        Serial.printf("[COMM] JSON parse error: %s\n", error.c_str());
-        return;
-    }
-
-    if (doc.containsKey("cmd")) {
+    if (!error && doc.containsKey("cmd")) {
         const char* cmd = doc["cmd"];
         Serial.printf("[COMM] Received command: %s\n", cmd);
 
         if (strcmp(cmd, "SET_RELAY") == 0) {
             const char* act = doc["actuator"] | "";
             bool st = doc["state"] | false;
+            actuators.setManualOverride(true);
             actuators.setRelayByName(act, st);
             publishStatus("RELAY_UPDATED");
         }
@@ -184,6 +182,61 @@ void CommManager::parseCommand(const char* payload) {
             actuators.setCustomSetpoints(t, rh, co2);
             publishStatus("SETPOINTS_UPDATED");
         }
+        return;
+    }
+
+    // 2. Plain-text command fallback (sent over USB Serial or raw MQTT)
+    String line = String(payload);
+    line.trim();
+    line.toUpperCase();
+    Serial.printf("[COMM] Plain-text command fallback: %s\n", line.c_str());
+
+    if (line == "HEATER ON") {
+        actuators.setManualOverride(true);
+        actuators.setHeater(true);
+        publishStatus("RELAY_UPDATED");
+    } else if (line == "HEATER OFF") {
+        actuators.setManualOverride(true);
+        actuators.setHeater(false);
+        publishStatus("RELAY_UPDATED");
+    } else if (line == "EXHAUST ON" || line == "FAN ON") {
+        actuators.setManualOverride(true);
+        actuators.setExhaustFan(true);
+        publishStatus("RELAY_UPDATED");
+    } else if (line == "EXHAUST OFF" || line == "FAN OFF") {
+        actuators.setManualOverride(true);
+        actuators.setExhaustFan(false);
+        publishStatus("RELAY_UPDATED");
+    } else if (line == "TURN ON") {
+        actuators.setManualOverride(true);
+        actuators.setEggMotor(true);
+        publishStatus("RELAY_UPDATED");
+    } else if (line == "TURN OFF") {
+        actuators.setManualOverride(true);
+        actuators.setEggMotor(false);
+        publishStatus("RELAY_UPDATED");
+    } else if (line == "LED ON") {
+        actuators.setCandlingLed(true);
+        publishStatus("CANDLING_LIGHT_READY");
+    } else if (line == "LED OFF") {
+        actuators.setCandlingLed(false);
+        publishStatus("CANDLING_LIGHT_OFF");
+    } else if (line == "MODE MANUAL" || line == "MANUAL") {
+        actuators.setManualOverride(true);
+        publishStatus("MODE_MANUAL");
+    } else if (line == "MODE AUTO" || line == "AUTO") {
+        actuators.setManualOverride(false);
+        publishStatus("MODE_AUTO");
+    } else if (line.startsWith("DAY ")) {
+        int d = line.substring(4).toInt();
+        if (d >= 19) {
+            actuators.setPhase(PHASE_HATCHING);
+        } else if (d >= 1) {
+            actuators.setPhase(PHASE_SETTING);
+        }
+        publishStatus("PHASE_UPDATED");
+    } else {
+        Serial.printf("[COMM] Unrecognized command: %s\n", line.c_str());
     }
 }
 
@@ -197,3 +250,4 @@ void CommManager::mqttCallback(char* topic, byte* payload, unsigned int length) 
 
     comm.parseCommand(message);
 }
+
