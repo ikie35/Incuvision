@@ -9,8 +9,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
     <link rel="icon" type="image/png" href="./icons/logo.png">
-    <link rel="stylesheet" href="/dashboard/style.css?v=8">
-    <link rel="stylesheet" href="./style.css?v=8">
+    <link rel="stylesheet" href="/dashboard/style.css?v=10">
+    <link rel="stylesheet" href="./style.css?v=10">
     <style>
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 :root {
@@ -62,8 +62,6 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
 .metric-box { background: var(--card-bg); border-radius: var(--radius-card); box-shadow: var(--shadow-card); padding: 18px 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; min-height: 125px; gap: 10px; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease; }
 .metric-box:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); }
 .metric-box:active { transform: scale(0.96); }
-.metric-box.active-green { background: var(--color-green-active); }
-.metric-box.active-green .metric-val, .metric-box.active-green .metric-lbl { color: #0E4210; }
 .metric-icon-wrap { display: flex; align-items: center; justify-content: center; height: 42px; }
 .metric-icon-img { height: 38px; max-width: 48px; width: auto; object-fit: contain; display: block; transition: transform 0.15s ease; }
 .metric-box:hover .metric-icon-img { transform: scale(1.08); }
@@ -217,8 +215,8 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
 
                 <!-- 2. The 4 Big Metric Square Cards (2x2 Grid) -->
                 <div class="metrics-grid">
-                    <!-- Temperature Card (Green Highlight) -->
-                    <div class="metric-box box-temp active-green" id="cardTemp" onclick="goToMetricGraph('temp')" title="View Temperature Curve">
+                    <!-- Temperature Card -->
+                    <div class="metric-box box-temp" id="cardTemp" onclick="goToMetricGraph('temp')" title="View Temperature Curve">
                         <div class="metric-icon-wrap">
                             <img src="./icons/temp.png" alt="Temperature" class="metric-icon-img">
                         </div>

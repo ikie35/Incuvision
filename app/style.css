@@ -242,21 +242,6 @@ body {
 .metric-box:active {
     transform: scale(0.97);
 }
-
-/* Green Highlight for Temperature Card (Matching design) */
-.metric-box.active-green {
-    background: var(--color-green-active);
-}
-
-.metric-box.active-green .metric-icon-wrap svg {
-    stroke: var(--brand-red);
-}
-
-.metric-box.active-green .metric-val,
-.metric-box.active-green .metric-lbl {
-    color: #0E4210;
-}
-
 .metric-icon-wrap {
     display: flex;
     align-items: center;

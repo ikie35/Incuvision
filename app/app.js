@@ -194,13 +194,8 @@ function handleIncomingTelemetry(data) {
         if (valTempEl) valTempEl.innerText = `${temp.toFixed(1)}°C`;
         if (pillTemp) pillTemp.innerText = `${temp.toFixed(1)}°`;
 
-        // Highlight Green if in safe range (36.8 - 38.0°C)
         if (cardTemp) {
-            if (temp >= 36.8 && temp <= 38.0) {
-                cardTemp.classList.add('active-green');
-            } else {
-                cardTemp.classList.remove('active-green');
-            }
+            cardTemp.classList.remove('active-green');
         }
 
         // 2. Humidity
