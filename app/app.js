@@ -3,6 +3,7 @@
 
 let ws = null;
 let currentDay = 1;
+let currentPhase = 'SETTING';
 let currentTelemetry = {
     temp: 37.5,
     rh: 58.0,
@@ -154,81 +155,94 @@ function handleIncomingTelemetry(data) {
         const menuDay = document.getElementById('menuDayInput');
         if (menuDay) menuDay.value = currentDay;
     }
+    if (data.phase) {
+        currentPhase = data.phase;
+    }
 
     const telem = data.telemetry;
     if (telem) {
         currentTelemetry = telem;
 
-        // Push live sample to rolling buffer
-        const liveTemp = parseFloat(telem.temp || 37.5);
-        const liveRH = parseFloat(telem.rh || 58.0);
-        const liveCO2 = parseFloat(telem.co2 || 3200);
-        const liveO2 = parseFloat(telem.o2 || 20.9);
-        telemetryHistory.push({ temp: liveTemp, rh: liveRH, co2: liveCO2, o2: liveO2, time: Date.now() });
-        if (telemetryHistory.length > 50) {
-            telemetryHistory.shift();
+        // 1. ALWAYS UPDATE PRIMARY METRIC CARDS FIRST
+        try {
+            const temp = parseFloat(telem.temp !== undefined ? telem.temp : 37.5);
+            const valTempEl = document.getElementById('valTemp');
+            const pillTemp = document.getElementById('analyticsTempPill');
+            if (valTempEl) valTempEl.innerText = `${temp.toFixed(1)}°C`;
+            if (pillTemp) pillTemp.innerText = `${temp.toFixed(1)}°`;
+
+            const rh = parseFloat(telem.rh !== undefined ? telem.rh : 58.0);
+            const valRHEl = document.getElementById('valRH');
+            if (valRHEl) valRHEl.innerText = `${rh.toFixed(1)}%`;
+
+            const co2 = parseInt(telem.co2 !== undefined ? telem.co2 : 3200);
+            const valCO2El = document.getElementById('valCO2');
+            if (valCO2El) valCO2El.innerText = co2.toLocaleString();
+
+            const o2 = parseFloat(telem.o2 !== undefined ? telem.o2 : 20.9);
+            const valO2El = document.getElementById('valO2');
+            if (valO2El) valO2El.innerText = `${o2.toFixed(1)}%`;
+        } catch (err) {
+            console.error("[TELEMETRY] Error updating cards:", err);
         }
 
-        // Hardware synchronized egg turning timer
-        const motorActive = Boolean(telem.actuators && telem.actuators.motor);
-        isHardwareTurning = motorActive;
-
-        if (telem.next_turn_seconds !== undefined) {
-            const serverSecs = parseInt(telem.next_turn_seconds);
-            if (!isTurningInitialized || Math.abs(turningSecondsLeft - serverSecs) > 3 || motorActive) {
-                turningSecondsLeft = serverSecs;
-                isTurningInitialized = true;
+        // 2. Push live sample to rolling buffer
+        try {
+            const liveTemp = parseFloat(telem.temp || 37.5);
+            const liveRH = parseFloat(telem.rh || 58.0);
+            const liveCO2 = parseFloat(telem.co2 || 3200);
+            const liveO2 = parseFloat(telem.o2 || 20.9);
+            telemetryHistory.push({ temp: liveTemp, rh: liveRH, co2: liveCO2, o2: liveO2, time: Date.now() });
+            if (telemetryHistory.length > 50) {
+                telemetryHistory.shift();
             }
+        } catch (e) {}
+
+        // 3. Hardware synchronized egg turning timer
+        try {
+            const motorActive = Boolean(telem.actuators && telem.actuators.motor);
+            isHardwareTurning = motorActive;
+
+            if (telem.next_turn_seconds !== undefined) {
+                const serverSecs = parseInt(telem.next_turn_seconds);
+                if (!isTurningInitialized || Math.abs(turningSecondsLeft - serverSecs) > 3 || motorActive) {
+                    turningSecondsLeft = serverSecs;
+                    isTurningInitialized = true;
+                }
+            }
+            updateTurningDisplay();
+        } catch (e) {
+            console.warn("[TURNING] update error:", e);
         }
-        updateTurningDisplay();
 
-        // Refresh wave chart dynamically with live telemetry
-        drawWaveChart();
-
-        // 1. Temperature
-        const temp = parseFloat(telem.temp || 37.5);
-        const valTempEl = document.getElementById('valTemp');
-        const cardTemp = document.getElementById('cardTemp');
-        const pillTemp = document.getElementById('analyticsTempPill');
-        
-        if (valTempEl) valTempEl.innerText = `${temp.toFixed(1)}°C`;
-        if (pillTemp) pillTemp.innerText = `${temp.toFixed(1)}°`;
-
-        if (cardTemp) {
-            cardTemp.classList.remove('active-green');
-        }
-
-        // 2. Humidity
-        const rh = parseFloat(telem.rh || 58.0);
-        const valRHEl = document.getElementById('valRH');
-        if (valRHEl) valRHEl.innerText = `${rh.toFixed(1)}%`;
-
-        // 3. CO2
-        const co2 = parseInt(telem.co2 || 3200);
-        const valCO2El = document.getElementById('valCO2');
-        if (valCO2El) valCO2El.innerText = co2.toLocaleString();
-
-        // 4. Oxygen
-        const o2 = parseFloat(telem.o2 || 20.9);
-        const valO2El = document.getElementById('valO2');
-        if (valO2El) valO2El.innerText = `${o2.toFixed(1)}%`;
-
-        // Update active Graph reading pill
-        const graphPill = document.getElementById('graphCurrentValPill');
-        if (graphPill && metricConfigs[currentGraphMetric]) {
-            graphPill.innerText = metricConfigs[currentGraphMetric].pillText();
+        // 4. Refresh wave chart dynamically with live telemetry
+        try {
+            drawWaveChart();
+            const graphPill = document.getElementById('graphCurrentValPill');
+            if (graphPill && metricConfigs[currentGraphMetric]) {
+                graphPill.innerText = metricConfigs[currentGraphMetric].pillText();
+            }
+        } catch (e) {
+            console.warn("[CHART] draw error:", e);
         }
 
         // 5. 2x2 Actuator Status Pills sync (Heater, Turner, Exhaust, LED Light)
-        if (telem.actuators) {
-            updatePillState('pillHeater', !!telem.actuators.heater);
-            updatePillState('pillTurner', !!telem.actuators.motor);
-            updatePillState('pillExhaust', !!telem.actuators.exhaust);
-            updatePillState('pillLed', !!telem.actuators.candling);
-        }
+        try {
+            if (telem.actuators) {
+                updatePillState('pillHeater', !!telem.actuators.heater);
+                updatePillState('pillTurner', !!telem.actuators.motor);
+                updatePillState('pillExhaust', !!telem.actuators.exhaust);
+                updatePillState('pillLed', !!telem.actuators.candling);
+            }
+        } catch (e) {}
 
-        // Generate dynamic smart alerts based on thresholds
-        evaluateSmartAlerts(temp, rh, o2, telem.actuators);
+        // 6. Generate dynamic smart alerts based on thresholds
+        try {
+            const tempVal = parseFloat(telem.temp || 37.5);
+            const rhVal = parseFloat(telem.rh || 58.0);
+            const o2Val = parseFloat(telem.o2 || 20.9);
+            evaluateSmartAlerts(tempVal, rhVal, o2Val, telem.actuators);
+        } catch (e) {}
     }
 
     // Latest Candling Audit Data
