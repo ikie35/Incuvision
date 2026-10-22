@@ -41,10 +41,9 @@
 body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--text-dark); display: flex; justify-content: center; min-height: 100vh; overflow-x: hidden; }
 .mobile-app-wrapper { width: 100%; max-width: 440px; min-height: 100vh; background-color: var(--app-bg); display: flex; flex-direction: column; position: relative; box-shadow: 0 0 35px rgba(0, 0, 0, 0.15); }
 .app-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px 14px 20px; background-color: #FBD487; border-bottom: 1px solid rgba(0, 0, 0, 0.05); }
-.brand-group { display: flex; align-items: center; gap: 10px; cursor: pointer; }
-.brand-chick-icon { display: flex; align-items: center; justify-content: center; filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.08)); }
-.brand-chick-icon-img { height: 44px; width: auto; max-width: 44px; object-fit: contain; display: block; }
-.brand-title { font-family: var(--font-heading); font-size: 1.85rem; font-weight: 800; color: #1A1615; letter-spacing: -0.02em; font-style: italic; }
+.brand-group { display: flex; align-items: center; cursor: pointer; }
+.brand-logo-img { height: 40px; width: auto; max-width: 175px; object-fit: contain; display: block; filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.06)); transition: transform 0.15s ease; }
+.brand-logo-img:hover { transform: scale(1.02); }
 .header-bell-btn { width: 44px; height: 44px; border-radius: 50%; background: #FBAE36; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1); transition: transform 0.15s ease; }
 .header-bell-btn:active { transform: scale(0.92); }
 .bell-alert-dot { position: absolute; top: 9px; right: 10px; width: 9px; height: 9px; background-color: #DC2626; border-radius: 50%; border: 2px solid #FBAE36; display: block; }
@@ -182,10 +181,7 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
         <!-- Top App Bar -->
         <header class="app-header">
             <div class="brand-group" onclick="switchNav('home')">
-                <div class="brand-chick-icon">
-                    <img src="./icons/logo.png" alt="IncuVision" class="brand-chick-icon-img">
-                </div>
-                <h1 class="brand-title">IncuVision</h1>
+                <img src="./icons/logo.png" alt="IncuVision" class="brand-logo-img">
             </div>
 
             <!-- Notification Bell Icon with Badge -->

@@ -84,32 +84,21 @@ body {
 .brand-group {
     display: flex;
     align-items: center;
-    gap: 10px;
     cursor: pointer;
 }
 
-.brand-chick-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.08));
-}
-
-.brand-chick-icon-img {
-    height: 44px;
+.brand-logo-img {
+    height: 40px;
     width: auto;
-    max-width: 44px;
+    max-width: 175px;
     object-fit: contain;
     display: block;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.06));
+    transition: transform 0.15s ease;
 }
 
-.brand-title {
-    font-family: var(--font-heading);
-    font-size: 1.85rem;
-    font-weight: 800;
-    color: #1A1615;
-    letter-spacing: -0.02em;
-    font-style: italic;
+.brand-logo-img:hover {
+    transform: scale(1.02);
 }
 
 .header-bell-btn {
