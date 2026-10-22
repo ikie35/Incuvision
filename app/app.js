@@ -27,6 +27,8 @@ let candlingLightState = false;
 document.addEventListener('DOMContentLoaded', () => {
     initWebSocket();
     fetchInitialData();
+    // Continuous 2-second polling fallback (guarantees live telemetry over Cloudflare/proxies)
+    setInterval(fetchInitialData, 2000);
     loadTelemetryHistory();
     init56EggGrid();
     startTurningCountdown();
