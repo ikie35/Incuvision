@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Caprasimo&family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap');
+
 /* ==========================================================================
    IncuVision Mobile-First Dashboard - Custom Warm Yolk Theme
    Faithfully crafted to match the IncuVision research design mockups
@@ -35,9 +37,9 @@
     --text-muted: #6B7280;
     --text-white: #FFFFFF;
     
-    /* Fonts */
-    --font-heading: 'Outfit', -apple-system, sans-serif;
-    --font-body: 'Poppins', -apple-system, sans-serif;
+    /* Fonts matching IncuVision Logo */
+    --font-heading: 'Caprasimo', 'Fraunces', 'Cooper Black', cursive, serif;
+    --font-body: 'Fredoka', 'Nunito', -apple-system, sans-serif;
     --font-mono: 'JetBrains Mono', monospace;
     
     /* Radii & Shadows */
