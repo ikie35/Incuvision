@@ -4,7 +4,7 @@ from pathlib import Path
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import StreamingResponse, Response, RedirectResponse, FileResponse
+from fastapi.responses import StreamingResponse, Response, RedirectResponse, FileResponse, JSONResponse
 from pydantic import BaseModel
 
 from config import PROJECT_ROOT, CAPTURES_DIR
@@ -71,13 +71,21 @@ def get_telemetry():
         raise HTTPException(status_code=503, detail="System initializing")
     
     telem = mqtt_bridge.get_telemetry()
-    return {
+    payload = {
         "day": coordinator.current_day,
         "phase": coordinator.phase,
         "is_auditing": coordinator.is_auditing_now,
         "telemetry": telem,
         "latest_audit": coordinator.latest_audit_result
     }
+    return JSONResponse(
+        content=payload,
+        headers={
+            "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
+            "Pragma": "no-cache",
+            "Expires": "0"
+        }
+    )
 
 @app.get("/api/history")
 def get_history(limit: int = 60):
