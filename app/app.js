@@ -732,32 +732,45 @@ async function toggleCandlingLight() {
 
 async function triggerCandlingAudit() {
     const btnLabel = document.getElementById('btnCandlingLabel');
+    const originalText = btnLabel ? btnLabel.innerText : "Run AI Candling Audit";
     if (btnLabel) btnLabel.innerText = "Running YOLOv8 Audit...";
 
     try {
         const res = await fetch('/api/candling/trigger', { method: 'POST' });
         const data = await res.json();
         if (data.status === 'success' && data.result) {
-            renderAuditScores(data.result);
+            if (data.result.error) {
+                alert("Candling audit note: " + data.result.error);
+            } else {
+                renderAuditScores(data.result);
+            }
+        } else {
+            alert("Candling audit error: " + (data.detail || "Server error"));
         }
     } catch (e) {
-        alert("Candling audit error: " + e);
+        alert("Candling audit connection error: " + e);
     } finally {
-        if (btnLabel) btnLabel.innerText = "Run AI Candling Audit";
+        if (btnLabel) btnLabel.innerText = originalText;
     }
 }
 
 function renderAuditScores(audit, switchToAudit = true) {
-    if (!audit) return;
+    if (!audit || audit.error) return;
 
     const fertileScore = document.getElementById('scoreFertile');
     const infertileScore = document.getElementById('scoreInfertile');
+    const fertileSub = document.getElementById('scoreFertileSub');
+    const infertileSub = document.getElementById('scoreInfertileSub');
 
-    if (fertileScore) fertileScore.innerText = `${audit.fertility_rate || 0}%`;
-    if (infertileScore) {
-        const infertileRate = (100 - (audit.fertility_rate || 0)).toFixed(1);
-        infertileScore.innerText = `${infertileRate}%`;
-    }
+    const rate = parseFloat(audit.fertility_rate !== undefined ? audit.fertility_rate : 0);
+    const total = parseInt(audit.total_eggs || 56);
+    const fertileCount = audit.fertile !== undefined ? audit.fertile : Math.round((rate / 100) * total);
+    const infertileCount = audit.infertile !== undefined ? audit.infertile : (total - fertileCount);
+
+    if (fertileScore) fertileScore.innerText = `${rate.toFixed(1)}%`;
+    if (infertileScore) infertileScore.innerText = `${(100 - rate).toFixed(1)}%`;
+    if (fertileSub) fertileSub.innerText = `${fertileCount} / ${total} Eggs`;
+    if (infertileSub) infertileSub.innerText = `${infertileCount} / ${total} Eggs`;
 
     // Save and optionally switch camera viewport to the annotated scan photo
     if (audit.annotated_image_url) {

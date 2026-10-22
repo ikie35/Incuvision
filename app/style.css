@@ -881,28 +881,87 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 14px;
-    gap: 4px;
+    padding: 16px 12px;
+    gap: 6px;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.score-box:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+}
+
+.score-box-fertile {
+    background: linear-gradient(180deg, #FFFFFF 0%, #F0FDF4 100%);
+    border-color: rgba(34, 197, 94, 0.25);
+}
+
+.score-box-infertile {
+    background: linear-gradient(180deg, #FFFFFF 0%, #FEF2F2 100%);
+    border-color: rgba(239, 68, 68, 0.25);
+}
+
+.score-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
+    border-radius: var(--radius-pill);
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+}
+
+.badge-fertile {
+    background: rgba(34, 197, 94, 0.14);
+    color: #15803D;
+}
+
+.badge-infertile {
+    background: rgba(239, 68, 68, 0.14);
+    color: #B91C1C;
+}
+
+.score-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+}
+
+.dot-fertile {
+    background: #16A34A;
+}
+
+.dot-infertile {
+    background: #DC2626;
 }
 
 .score-title {
     font-family: var(--font-heading);
-    font-size: 0.82rem;
+    font-size: 0.72rem;
     font-weight: 800;
 }
 
 .score-number {
     font-family: var(--font-heading);
-    font-size: 1.45rem;
-    font-weight: 900;
+    font-size: 1.8rem;
+    font-weight: 800;
+    line-height: 1.1;
+}
+
+.score-subtext {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-muted);
 }
 
 .fertile-text {
-    color: var(--color-fertile);
+    color: #15803D;
 }
 
 .infertile-text {
-    color: var(--color-infertile);
+    color: #B91C1C;
 }
 
 /* Calendar Button Card */
@@ -910,21 +969,55 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 12px;
-    padding: 14px 20px;
+    gap: 14px;
+    padding: 16px 20px;
     cursor: pointer;
-    transition: transform 0.15s ease;
+    background: #FFFFFF;
+    border: 1.5px solid rgba(168, 40, 32, 0.25);
+    box-shadow: 0 4px 14px rgba(168, 40, 32, 0.08);
+    transition: all 0.15s ease;
+}
+
+.card-action-calendar:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(168, 40, 32, 0.14);
+    border-color: rgba(168, 40, 32, 0.45);
 }
 
 .card-action-calendar:active {
     transform: scale(0.97);
 }
 
+.calendar-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: rgba(168, 40, 32, 0.08);
+    color: var(--brand-red);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.action-btn-text-group {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+}
+
 .calendar-btn-label {
     font-family: var(--font-heading);
-    font-size: 0.95rem;
+    font-size: 0.98rem;
     font-weight: 800;
     color: var(--brand-maroon);
+}
+
+.calendar-btn-sub {
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: var(--text-muted);
 }
 
 /* 56-Egg Matrix Collapsible */

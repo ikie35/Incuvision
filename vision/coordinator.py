@@ -21,7 +21,7 @@ class IncubationCoordinator:
         self.is_auditing_now = False
         
         self.completed_audits = set()  # Tracks which scheduled days have been completed (e.g. {7, 10, 18})
-        self.latest_audit_result = None
+        self.latest_audit_result = logger.get_latest_audit()
         self._lock = threading.Lock()
 
     def start(self):

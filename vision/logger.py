@@ -122,17 +122,29 @@ class DataLogger:
             print(f"[LOGGER] Query error: {e}")
             return []
 
-    def get_all_audits(self):
+    def get_latest_audit(self):
         try:
             conn = sqlite3.connect(DB_PATH)
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
-            cursor.execute("SELECT * FROM candling_audits ORDER BY day ASC")
-            rows = [dict(r) for r in cursor.fetchall()]
+            cursor.execute("SELECT * FROM candling_audits ORDER BY id DESC LIMIT 1")
+            row = cursor.fetchone()
             conn.close()
-            return rows
+            if row:
+                r = dict(row)
+                if r.get("matrix_json"):
+                    try:
+                        r["matrix"] = json.loads(r["matrix_json"])
+                    except Exception:
+                        pass
+                if r.get("annotated_image_path"):
+                    r["annotated_image_url"] = "/captures/" + os.path.basename(r["annotated_image_path"])
+                if r.get("image_path"):
+                    r["raw_image_url"] = "/captures/" + os.path.basename(r["image_path"])
+                return r
+            return None
         except Exception as e:
-            print(f"[LOGGER] Query error: {e}")
-            return []
+            print(f"[LOGGER] Query latest audit error: {e}")
+            return None
 
 logger = DataLogger()
