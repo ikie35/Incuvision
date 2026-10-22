@@ -138,17 +138,18 @@ STEP 8: PERSISTENT BACKGROUND SERVICE (OPTIONAL AUTO-START ON BOOT)
 --------------------------------------------------------------------------------
 To keep IncuVision running even when you close your browser or terminal:
 
-1. Create a systemd service:
+1. Create a systemd service (adjust User and paths if your username is 'incuvision' instead of 'pi'):
     sudo tee /etc/systemd/system/incuvision.service << 'EOF'
 [Unit]
-Description=IncuVision Master Engine
+Description=IncuVision Master Vision & Dashboard Engine
 After=network.target mosquitto.service
+Wants=mosquitto.service
 
 [Service]
 Type=simple
-User=pi
-WorkingDirectory=/home/pi/IncuVision/vision
-ExecStart=/home/pi/IncuVision/vision/venv/bin/python main.py
+User=incuvision
+WorkingDirectory=/home/incuvision/IncuVision/vision
+ExecStart=/home/incuvision/venv/bin/python main.py
 Restart=always
 RestartSec=5
 Environment=PYTHONUNBUFFERED=1

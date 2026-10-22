@@ -1,4 +1,4 @@
-﻿#include "actuators.h"
+#include "actuators.h"
 #include "config.h"
 
 ActuatorManager actuators;
@@ -11,6 +11,10 @@ ActuatorManager::ActuatorManager() {
     targetRH = DEFAULT_RH_SETTING;
     targetCO2 = DEFAULT_CO2_MAX_SETTING;
     
+    heaterStartTimestamp = 0;
+    heaterBurstActive = false;
+    heaterRestTimestamp = 0;
+
     lastTurnTimestamp = 0;
     isTurningNow = false;
     turnStartTimestamp = 0;
@@ -42,10 +46,11 @@ void ActuatorManager::setRelay(uint8_t pin, bool active) {
 }
 
 void ActuatorManager::processHeating(float currentTemp) {
-    // Critical Overheat Hard Failsafe
+    // 1. Critical Overheat Hard Failsafe
     if (currentTemp >= CRITICAL_TEMP_MAX) {
         setRelay(PIN_RELAY_HEATER, false);
         state.heater = false;
+        heaterBurstActive = false;
         
         // Turn ON Exhaust Fan immediately to vent excess heat
         setRelay(PIN_RELAY_EXHAUST, true);
@@ -61,18 +66,50 @@ void ActuatorManager::processHeating(float currentTemp) {
         state.alarmActive = false;
     }
 
-    // Precision Hysteresis Thermal Controller (0.15Â°C Deadband)
-    const float HYSTERESIS = 0.15f;
-    if (currentTemp < (targetTemp - HYSTERESIS)) {
-        setRelay(PIN_RELAY_HEATER, true);
-        state.heater = true;
-    } else if (currentTemp >= targetTemp) {
-        setRelay(PIN_RELAY_HEATER, false);
-        state.heater = false;
+    // Use operator-optimized temperature control bands based on phase
+    float lowThreshold  = (currentPhase == PHASE_SETTING) ? SET_TEMP_CONTROL_LOW : HATCH_TEMP_CONTROL_LOW;
+    float highThreshold = (currentPhase == PHASE_SETTING) ? SET_TEMP_CONTROL_HIGH : HATCH_TEMP_CONTROL_HIGH;
+
+    uint32_t now = millis();
+
+    // 2. High threshold cutoff: shut OFF immediately once temperature hits high band
+    if (currentTemp >= highThreshold) {
+        if (state.heater) {
+            setRelay(PIN_RELAY_HEATER, false);
+            state.heater = false;
+            heaterBurstActive = false;
+            heaterRestTimestamp = now;
+        }
+        return;
+    }
+
+    // 3. 10-second persist heating burst (prevents thermal runaway / overshoot)
+    if (heaterBurstActive) {
+        if (now - heaterStartTimestamp >= PERSIST_TIME_MS) {
+            // Cut off heater after 10 seconds to allow the fan to circulate the heat
+            setRelay(PIN_RELAY_HEATER, false);
+            state.heater = false;
+            heaterBurstActive = false;
+            heaterRestTimestamp = now;
+            Serial.println("[ACTUATORS] 10s Heat burst elapsed. Pausing for circulation dissipation.");
+        }
+        return;
+    }
+
+    // 4. Low threshold trigger: activate heater if temperature is below low limit and rested
+    if (currentTemp < lowThreshold) {
+        const uint32_t MIN_REST_TIME_MS = 5000UL; // 5s rest between bursts for sensor stabilization
+        if (now - heaterRestTimestamp >= MIN_REST_TIME_MS) {
+            setRelay(PIN_RELAY_HEATER, true);
+            state.heater = true;
+            heaterBurstActive = true;
+            heaterStartTimestamp = now;
+            Serial.printf("[ACTUATORS] Temp (%.2f C) < Low (%.2f C). Heating for up to 10s...\n", currentTemp, lowThreshold);
+        }
     }
 }
 
-void ActuatorManager::processVentilation(uint16_t currentCO2, float currentO2, float currentTemp) {
+void ActuatorManager::processVentilation(uint16_t currentCO2, float currentO2, float currentTemp, float currentRH) {
     // If exhaust fan is already forced ON due to overheat, do not turn off
     if (currentTemp >= CRITICAL_TEMP_MAX) {
         setRelay(PIN_RELAY_EXHAUST, true);
@@ -80,13 +117,17 @@ void ActuatorManager::processVentilation(uint16_t currentCO2, float currentO2, f
         return;
     }
 
+    float maxRH = (currentPhase == PHASE_SETTING) ? SET_HUMIDITY_HIGH : HATCH_HUMIDITY_HIGH;
+
     // Ventilation triggers:
     // 1. CO2 exceeds threshold (> 5000 ppm in Setting, > 7500 ppm in Hatching)
-    // 2. O2 drops below 20.5%
-    // 3. Mild over-temperature (> targetTemp + 0.5Â°C)
+    // 2. O2 drops below 21.0%
+    // 3. Mild over-temperature (> targetTemp + 0.5°C)
+    // 4. Relative humidity exceeds high target (> 60% in Setting, > 75% in Hatching)
     bool needVentilation = (currentCO2 > targetCO2) || 
                            (currentO2 > 0.0f && currentO2 < DEFAULT_O2_MIN_SETTING) ||
-                           (currentTemp > (targetTemp + 0.5f));
+                           (currentTemp > (targetTemp + 0.5f)) ||
+                           (currentRH > maxRH);
 
     if (needVentilation) {
         setRelay(PIN_RELAY_EXHAUST, true);
@@ -110,7 +151,7 @@ void ActuatorManager::processEggTurning() {
 
     uint32_t now = millis();
 
-    // Check if active turning duration has elapsed
+    // Check if active turning duration has elapsed (always runs to prevent motor burn)
     if (isTurningNow) {
         if (now - turnStartTimestamp >= turnDurationMs) {
             setRelay(PIN_RELAY_MOTOR, false);
@@ -122,7 +163,12 @@ void ActuatorManager::processEggTurning() {
         return;
     }
 
-    // Check if interval has elapsed (Hourly 45Â° tilt)
+    // In manual override mode, do not automatically trigger hourly cycle
+    if (manualOverride) {
+        return;
+    }
+
+    // Check if interval has elapsed (Hourly 45° tilt)
     if (now - lastTurnTimestamp >= (DEFAULT_TURNING_INTERVAL_S * 1000UL)) {
         Serial.println("[ACTUATORS] Triggering hourly egg turning cycle...");
         triggerEggTurnManual(DEFAULT_TURNING_DURATION_S);
@@ -133,7 +179,10 @@ void ActuatorManager::updateControl(const SensorData& data) {
     // Circulation fan is continuously powered on 12V/AC rail
     state.circulationFan = true;
 
-    // In manual override mode, do not let automatic loops overwrite relay states
+    // Process egg turning duration monitoring regardless of manual override
+    processEggTurning();
+
+    // In manual override mode, do not let automatic loops overwrite heater/exhaust states
     if (manualOverride) {
         return;
     }
@@ -142,8 +191,7 @@ void ActuatorManager::updateControl(const SensorData& data) {
         processHeating(data.temperature);
     }
     
-    processVentilation(data.co2, data.o2, data.temperature);
-    processEggTurning();
+    processVentilation(data.co2, data.o2, data.temperature, data.humidity);
 }
 
 void ActuatorManager::setHeater(bool active) {
@@ -187,6 +235,10 @@ void ActuatorManager::setRelayByName(const char* name, bool active) {
 }
 
 void ActuatorManager::triggerEggTurnManual(uint32_t durationSec) {
+    if (currentPhase == PHASE_HATCHING) {
+        Serial.println("[ACTUATORS] Egg turning blocked: In HATCHING phase.");
+        return;
+    }
     turnDurationMs = durationSec * 1000;
     turnStartTimestamp = millis();
     isTurningNow = true;

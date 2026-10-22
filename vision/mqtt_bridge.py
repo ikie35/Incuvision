@@ -1,4 +1,4 @@
-﻿import os
+import os
 import re
 import glob
 import json
@@ -50,6 +50,24 @@ class MQTTBridge:
             "uptime": 0,
             "next_turn_seconds": 3600
         }
+        self._turn_sync_timestamp = time.time()
+        self._turn_interval_remaining = 3600
+
+    def get_telemetry(self) -> dict:
+        """Returns the latest telemetry dictionary with dynamically updated next_turn_seconds."""
+        if self.latest_telemetry.get("phase") == "HATCHING":
+            self.latest_telemetry["next_turn_seconds"] = 0
+        elif self.latest_telemetry.get("actuators", {}).get("motor", False):
+            self.latest_telemetry["next_turn_seconds"] = 0
+        else:
+            elapsed = int(time.time() - self._turn_sync_timestamp)
+            rem = max(0, self._turn_interval_remaining - elapsed)
+            if rem == 0 and self._turn_interval_remaining > 0:
+                self._turn_sync_timestamp = time.time()
+                self._turn_interval_remaining = 3600
+                rem = 3600
+            self.latest_telemetry["next_turn_seconds"] = rem
+        return self.latest_telemetry
 
     def start(self):
         # 1. Start MQTT Client
@@ -114,7 +132,10 @@ class MQTTBridge:
         if "phase" in data:
             self.latest_telemetry["phase"] = data["phase"]
         if "next_turn_seconds" in data:
-            self.latest_telemetry["next_turn_seconds"] = int(data["next_turn_seconds"])
+            val = int(data["next_turn_seconds"])
+            self.latest_telemetry["next_turn_seconds"] = val
+            self._turn_interval_remaining = val
+            self._turn_sync_timestamp = time.time()
         if "uptime" in data:
             self.latest_telemetry["uptime"] = data["uptime"]
 
@@ -330,6 +351,9 @@ class MQTTBridge:
                 elif cmd in ("SET_DAY", "DAY"):
                     d = cmd_dict.get("day", 1)
                     self.serial_conn.write(f"DAY {d}\n".encode("utf-8"))
+                elif cmd == "TURN_EGGS":
+                    dur = cmd_dict.get("duration", 15)
+                    self.serial_conn.write(f"TURN {dur}\n".encode("utf-8"))
 
                 print(f"[SERIAL] Command sent to ESP32: {payload}")
             except Exception as e:
@@ -340,6 +364,10 @@ class MQTTBridge:
         self.send_command({"cmd": cmd})
 
     def trigger_egg_turning(self, duration_sec: int = 15):
+        self.latest_telemetry["actuators"]["motor"] = True
+        self.latest_telemetry["next_turn_seconds"] = 0
+        self._turn_sync_timestamp = time.time() + duration_sec
+        self._turn_interval_remaining = 3600
         self.send_command({"cmd": "TURN_EGGS", "duration": duration_sec})
 
     def set_phase(self, phase_str: str):

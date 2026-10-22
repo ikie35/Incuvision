@@ -1,4 +1,4 @@
-﻿// IncuVision Mobile-First Dashboard Controller
+// IncuVision Mobile-First Dashboard Controller
 // Connected to Raspberry Pi 5 Master Vision & Coordinator Engine
 
 let ws = null;
@@ -19,7 +19,9 @@ let currentTelemetry = {
 
 let eggMatrixData = [];
 let telemetryHistory = []; // Rolling buffer (30-50 samples) for real-time wave graph
-let turningSecondsLeft = 30 * 60 + 9; // 30:09 countdown default
+let turningSecondsLeft = 3600;
+let isHardwareTurning = false;
+let isTurningInitialized = false;
 let candlingLightState = false;
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -166,19 +168,17 @@ function handleIncomingTelemetry(data) {
         }
 
         // Hardware synchronized egg turning timer
+        const motorActive = Boolean(telem.actuators && telem.actuators.motor);
+        isHardwareTurning = motorActive;
+
         if (telem.next_turn_seconds !== undefined) {
-            turningSecondsLeft = parseInt(telem.next_turn_seconds);
-            const turnEl = document.getElementById('turningCountdown');
-            if (turnEl) {
-                if (telem.actuators && telem.actuators.motor) {
-                    turnEl.innerText = "TURNING...";
-                } else {
-                    const m = Math.floor(turningSecondsLeft / 60).toString().padStart(2, '0');
-                    const s = (turningSecondsLeft % 60).toString().padStart(2, '0');
-                    turnEl.innerText = `${m}:${s}`;
-                }
+            const serverSecs = parseInt(telem.next_turn_seconds);
+            if (!isTurningInitialized || Math.abs(turningSecondsLeft - serverSecs) > 3 || motorActive) {
+                turningSecondsLeft = serverSecs;
+                isTurningInitialized = true;
             }
         }
+        updateTurningDisplay();
 
         // Refresh wave chart dynamically with live telemetry
         drawWaveChart();
@@ -306,10 +306,29 @@ async function toggleActuatorMode() {
     }
 }
 
+function updateTurningDisplay() {
+    const turnEl = document.getElementById('turningCountdown');
+    if (!turnEl) return;
+
+    if (currentPhase === 'HATCHING' || currentDay >= 19) {
+        turnEl.innerText = "OFF (HATCH)";
+        return;
+    }
+
+    if (isHardwareTurning) {
+        turnEl.innerText = "TURNING...";
+        return;
+    }
+
+    const m = Math.floor(turningSecondsLeft / 60).toString().padStart(2, '0');
+    const s = (turningSecondsLeft % 60).toString().padStart(2, '0');
+    turnEl.innerText = `${m}:${s}`;
+}
+
 async function manualEggTurn() {
-    const turningEl = document.getElementById('turningCountdown');
-    if (turningEl) turningEl.innerText = "TURNING...";
-    turningSecondsLeft = 3600; // Reset to 60 mins
+    isHardwareTurning = true;
+    turningSecondsLeft = 3600;
+    updateTurningDisplay();
 
     try {
         await fetch('/api/control/egg_turning', { method: 'POST' });
@@ -320,17 +339,22 @@ async function manualEggTurn() {
 
 function startTurningCountdown() {
     setInterval(() => {
+        if (currentPhase === 'HATCHING' || currentDay >= 19) {
+            updateTurningDisplay();
+            return;
+        }
+
+        if (isHardwareTurning) {
+            updateTurningDisplay();
+            return;
+        }
+
         if (turningSecondsLeft > 0) {
             turningSecondsLeft--;
-            const mins = Math.floor(turningSecondsLeft / 60).toString().padStart(2, '0');
-            const secs = (turningSecondsLeft % 60).toString().padStart(2, '0');
-            const el = document.getElementById('turningCountdown');
-            if (el && el.innerText !== "TURNING...") {
-                el.innerText = `${mins}:${secs}`;
-            }
         } else {
             turningSecondsLeft = 3600;
         }
+        updateTurningDisplay();
     }, 1000);
 }
 

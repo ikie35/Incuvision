@@ -81,9 +81,9 @@ void loop() {
             lcd.print(b);
 
             lcd.setCursor(0, 3);
-            const ActuatorState& st = actuators.getState();
+            const char* turnStr = (actuators.getPhase() == PHASE_HATCHING) ? "OFF " : (st.eggMotor ? "RUN " : "WAIT");
             snprintf(b, sizeof(b), "Turn:%-4s Light:%-3s", 
-                st.eggMotor ? "RUN " : "WAIT", 
+                turnStr, 
                 st.candlingLed ? "ON " : "OFF");
             lcd.print(b);
         }

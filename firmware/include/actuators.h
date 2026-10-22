@@ -1,4 +1,4 @@
-﻿#ifndef INCUVISION_ACTUATORS_H
+#ifndef INCUVISION_ACTUATORS_H
 #define INCUVISION_ACTUATORS_H
 
 #include <Arduino.h>
@@ -55,6 +55,11 @@ private:
     float targetRH;
     uint16_t targetCO2;
     
+    // Heating anti-overshoot 10s burst timing
+    uint32_t heaterStartTimestamp;
+    bool heaterBurstActive;
+    uint32_t heaterRestTimestamp;
+
     // Turning timing
     uint32_t lastTurnTimestamp;
     bool isTurningNow;
@@ -63,7 +68,7 @@ private:
 
     void setRelay(uint8_t pin, bool active);
     void processHeating(float currentTemp);
-    void processVentilation(uint16_t currentCO2, float currentO2, float currentTemp);
+    void processVentilation(uint16_t currentCO2, float currentO2, float currentTemp, float currentRH);
     void processEggTurning();
 };
 

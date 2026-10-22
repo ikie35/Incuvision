@@ -70,7 +70,7 @@ def get_telemetry():
     if not coordinator or not mqtt_bridge:
         raise HTTPException(status_code=503, detail="System initializing")
     
-    telem = mqtt_bridge.latest_telemetry
+    telem = mqtt_bridge.get_telemetry()
     return {
         "day": coordinator.current_day,
         "phase": coordinator.phase,
@@ -89,14 +89,14 @@ def get_audits():
 
 @app.get("/api/camera/snapshot")
 def get_camera_snapshot():
-    telem = mqtt_bridge.latest_telemetry if mqtt_bridge else None
+    telem = mqtt_bridge.get_telemetry() if mqtt_bridge else None
     jpeg_bytes = camera_mgr.get_snapshot_jpeg(overlay_telemetry=telem)
     return Response(content=jpeg_bytes, media_type="image/jpeg")
 
 @app.get("/api/camera/stream")
 def get_camera_stream():
     def get_telem():
-        return mqtt_bridge.latest_telemetry if mqtt_bridge else None
+        return mqtt_bridge.get_telemetry() if mqtt_bridge else None
     return StreamingResponse(
         camera_mgr.generate_mjpeg_stream(get_telemetry_fn=get_telem),
         media_type="multipart/x-mixed-replace; boundary=frame"
@@ -179,7 +179,7 @@ async def websocket_endpoint(websocket: WebSocket):
     try:
         while True:
             if coordinator and mqtt_bridge:
-                telem = mqtt_bridge.latest_telemetry
+                telem = mqtt_bridge.get_telemetry()
                 payload = {
                     "day": coordinator.current_day,
                     "phase": coordinator.phase,

@@ -1,4 +1,4 @@
-﻿#ifndef INCUVISION_CONFIG_H
+#ifndef INCUVISION_CONFIG_H
 #define INCUVISION_CONFIG_H
 
 #include <Arduino.h>
@@ -42,37 +42,69 @@
 #define TOPIC_SETPOINTS      "incuvision/setpoints"
 
 // ==========================================
-// 3. DEFAULT INCUBATION SETPOINTS
+// 3. INCUBATION SETTINGS (OPERATOR OPTIMIZED)
 // ==========================================
-// Setting Phase (Days 1â€“18)
-#define DEFAULT_TEMP_SETTING       37.5f  // Â°C
-#define DEFAULT_RH_SETTING         58.0f  // %
-#define DEFAULT_CO2_MAX_SETTING    5000   // ppm (0.5%)
-#define DEFAULT_O2_MIN_SETTING     20.5f  // %
-#define DEFAULT_TURNING_INTERVAL_S 3600   // 60 minutes
-#define DEFAULT_TURNING_DURATION_S 15     // 15 seconds motor run duration
+#define SETTING_START_DAY          1
+#define SETTING_END_DAY            18
 
-// Hatching Phase (Days 19â€“21)
-#define DEFAULT_TEMP_HATCHING      36.9f  // Â°C
-#define DEFAULT_RH_HATCHING        70.0f  // % (66-75%)
-#define DEFAULT_CO2_MAX_HATCHING   7500   // ppm (0.75%)
+#define DEFAULT_TEMP_SETTING       37.5f  // °C Target center
+#define DEFAULT_RH_SETTING         58.0f  // % Target center
+#define DEFAULT_CO2_MAX_SETTING    5000   // ppm
+#define DEFAULT_O2_MIN_SETTING     21.0f  // %
 
-// Safety Limits
-#define CRITICAL_TEMP_MAX          39.5f  // Hard cutoff & alarm
+#define HATCHING_START_DAY         19
+#define HATCHING_END_DAY           21
+
+#define DEFAULT_TEMP_HATCHING      36.9f  // °C Target center
+#define DEFAULT_RH_HATCHING        70.0f  // % Target center
+#define DEFAULT_CO2_MAX_HATCHING   7500   // ppm
+#define DEFAULT_O2_MIN_HATCHING    21.0f  // %
+
+// Precision Hysteresis Temperature Bands
+#define SET_TEMP_CONTROL_LOW       37.3f  // °C (Heater turns ON below this)
+#define SET_TEMP_CONTROL_HIGH      37.7f  // °C (Heater turns OFF above this)
+
+#define HATCH_TEMP_CONTROL_LOW     36.7f  // °C (Heater turns ON below this)
+#define HATCH_TEMP_CONTROL_HIGH    37.1f  // °C (Heater turns OFF above this)
+
+// Humidity Control Bands
+#define SET_HUMIDITY_LOW           56.0f  // %
+#define SET_HUMIDITY_HIGH          60.0f  // % (Exhaust vents if above this)
+
+#define HATCH_HUMIDITY_LOW         66.0f  // %
+#define HATCH_HUMIDITY_HIGH        75.0f  // % (Exhaust vents if above this)
+
+// Safety Cutoff Limits
+#define CRITICAL_TEMP_MAX          39.5f  // Hard cutoff & exhaust alarm
 #define CRITICAL_TEMP_MIN          35.0f  // Alarm
 
 // ==========================================
-// 4. TIMING & INTERVALS (ms)
+// 4. TIMING SETTINGS
 // ==========================================
-#define SENSOR_READ_INTERVAL_MS    2000   // Read sensors every 2 sec
-#define TELEMETRY_PUB_INTERVAL_MS  5000   // Publish MQTT telemetry every 5 sec
+#define SENSOR_READ_INTERVAL_MS    2000UL // Read sensors every 2 sec
+#define TELEMETRY_PUB_INTERVAL_MS  5000UL // Publish telemetry every 5 sec
 #define WATCHDOG_TIMEOUT_S         15     // Hardware watchdog timeout
+#define STARTUP_WARMUP_TIME_MS     (10UL * 60UL * 1000UL) // 10 minutes warmup
 
+// Anti-Overshoot Heating Limit (Burst window)
+#define PERSIST_TIME_MS            10000UL // 10 seconds max continuous heating to prevent thermal runaway
+
+// Egg Turning Timing
+#define DEFAULT_TURNING_INTERVAL_S 3600UL // 1 hour between turns
+#define DEFAULT_TURNING_DURATION_S 15UL   // 15 seconds motor run duration
+#define DEFAULT_TURNING_DURATION_MS (DEFAULT_TURNING_DURATION_S * 1000UL)
+#define DEFAULT_TURNING_INTERVAL_MS (DEFAULT_TURNING_INTERVAL_S * 1000UL)
 
 // Compatibility aliases for sensors.cpp
 #define PIN_SCD30_SDA       PIN_I2C_SDA
 #define PIN_SCD30_SCL       PIN_I2C_SCL
 #define PIN_DFROBOT_O2_ADC  34
+
+// ==========================================
+// 5. SENSOR CALIBRATION OFFSETS
+// ==========================================
+#define DHT_TEMP_OFFSET_C   (+0.3f)   // +0.3°C operator calibration offset for DHT22
+#define DHT_RH_OFFSET_PCT   (-5.5f)   // -5.5% RH operator calibration offset for DHT22
 
 #endif // INCUVISION_CONFIG_H
 

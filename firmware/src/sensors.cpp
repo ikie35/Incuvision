@@ -56,8 +56,11 @@ void SensorManager::readDHT22() {
         currentData.dht_valid = false;
     } else {
         currentData.dht_valid = true;
-        currentData.temperature = t;
-        currentData.humidity = h;
+        currentData.temperature = t + DHT_TEMP_OFFSET_C;
+        float adjustedRH = h + DHT_RH_OFFSET_PCT;
+        if (adjustedRH < 0.0f) adjustedRH = 0.0f;
+        if (adjustedRH > 100.0f) adjustedRH = 100.0f;
+        currentData.humidity = adjustedRH;
     }
 }
 
