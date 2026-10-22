@@ -108,6 +108,7 @@ class MQTTBridge:
             if msg.topic == TOPIC_TELEMETRY:
                 data = json.loads(payload_str)
                 self._update_telemetry_dict(data)
+                print(f"[MQTT] Telemetry updated: {self.latest_telemetry['temp']}°C, {self.latest_telemetry['rh']}%, CO2={self.latest_telemetry['co2']}")
                 if self.on_telemetry_cb:
                     self.on_telemetry_cb(self.latest_telemetry)
 
@@ -311,9 +312,14 @@ class MQTTBridge:
                 pass
 
         if updated:
+            print(f"[SERIAL] Telemetry parsed: {self.latest_telemetry['temp']}°C, {self.latest_telemetry['rh']}%, CO2={self.latest_telemetry['co2']}")
             # Trigger listener callbacks (dashboard broadcast, SQLite logger, 20x4 LCD)
             if self.on_telemetry_cb:
                 self.on_telemetry_cb(self.latest_telemetry)
+        elif line:
+            # Print any diagnostic lines emitted by ESP32 firmware
+            if any(k in line for k in ["DATA", "TELEMETRY", "SENSORS", "COMM", "ERROR", "{", "T:"]):
+                print(f"[ESP32 SERIAL RAW] {line}")
 
     # =========================================================================
     # COMMAND DISPATCH (MQTT + USB SERIAL)

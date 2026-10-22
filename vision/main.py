@@ -22,9 +22,9 @@ def main():
     api.coordinator = coordinator
     api.mqtt_bridge = mqtt_bridge
 
-    # 4. Start Uvicorn HTTP / WebSocket Server
+    # 4. Start Uvicorn HTTP / WebSocket Server (Fast 2s shutdown so systemctl restart never hangs)
     print("\n[SERVER] Launching Web Dashboard & API at http://0.0.0.0:8000 ...\n")
-    uvicorn.run(api.app, host="0.0.0.0", port=8000, log_level="info")
+    uvicorn.run(api.app, host="0.0.0.0", port=8000, log_level="info", timeout_graceful_shutdown=2)
 
 if __name__ == "__main__":
     main()
