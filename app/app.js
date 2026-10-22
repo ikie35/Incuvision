@@ -817,13 +817,16 @@ function openEggDetail(index) {
 
     title.innerText = `Egg Slot #${index.toString().padStart(2, '0')}`;
     
+    const row = (egg && egg.row) ? egg.row : Math.floor((index - 1) / 8) + 1;
+    const col = (egg && egg.col) ? egg.col : ((index - 1) % 8) + 1;
+
     if (egg) {
         const statusColor = egg.status === 'fertile' ? '#15803D' : '#B91C1C';
         body.innerHTML = `
             <div style="display:flex; flex-direction:column; gap:10px; font-size:0.85rem;">
                 <div style="display:flex; justify-content:space-between; border-bottom:1px solid #E5E7EB; padding-bottom:8px;">
                     <span style="color:#6B7280;">Tray Coordinate</span>
-                    <span style="font-weight:700;">Row ${egg.row}, Col ${egg.col}</span>
+                    <span style="font-weight:700;">Row ${row} of 7, Col ${col} of 8</span>
                 </div>
                 <div style="display:flex; justify-content:space-between; border-bottom:1px solid #E5E7EB; padding-bottom:8px;">
                     <span style="color:#6B7280;">Fertility Classification</span>
@@ -836,7 +839,15 @@ function openEggDetail(index) {
             </div>
         `;
     } else {
-        body.innerHTML = `<p style="color:#6B7280; font-size:0.85rem;">No AI candling scan recorded for this slot yet. Run Candling Audit to scan.</p>`;
+        body.innerHTML = `
+            <div style="display:flex; flex-direction:column; gap:10px; font-size:0.85rem;">
+                <div style="display:flex; justify-content:space-between; border-bottom:1px solid #E5E7EB; padding-bottom:8px;">
+                    <span style="color:#6B7280;">Tray Coordinate</span>
+                    <span style="font-weight:700;">Row ${row} of 7, Col ${col} of 8</span>
+                </div>
+                <p style="color:#6B7280; font-size:0.85rem; padding-top:6px;">No AI candling scan recorded for this slot yet. Run Candling Audit to scan.</p>
+            </div>
+        `;
     }
 
     modal.classList.add('open');
