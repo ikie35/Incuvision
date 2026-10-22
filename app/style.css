@@ -12,10 +12,10 @@
 
 :root {
     /* Brand Theme Colors */
-    --app-bg: #FFE499;                /* Warm golden-yellow egg yolk background */
+    --app-bg: #FBE6B9;                /* Warm soft egg yolk background */
     --card-bg: #FFFFFF;               /* Crisp pure white rounded cards */
     --card-subtle: #FFF8E7;
-    --card-accent-gold: #FAD980;      /* Warm golden yellow container */
+    --card-accent-gold: #FBD487;      /* Warm golden yellow container */
     --btn-gold: #F8CF66;              /* Golden yellow button pill */
     --btn-gold-hover: #F2C247;
     
@@ -48,7 +48,7 @@
 }
 
 body {
-    background-color: #E2CA85;
+    background-color: #FBE6B9;
     font-family: var(--font-body);
     color: var(--text-dark);
     display: flex;
@@ -76,8 +76,9 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 16px 20px 10px 20px;
-    background: transparent;
+    padding: 16px 20px 14px 20px;
+    background-color: #FBD487;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .brand-group {
@@ -1096,7 +1097,7 @@ body {
     width: 100%;
     max-width: 440px;
     height: 70px;
-    background-color: #FAD980;
+    background-color: #FBD487;
     display: flex;
     justify-content: space-around;
     align-items: center;

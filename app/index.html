@@ -8,16 +8,16 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Poppins:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-    <link rel="icon" type="image/png" href="./icons/chick.png">
-    <link rel="stylesheet" href="/dashboard/style.css?v=6">
-    <link rel="stylesheet" href="./style.css?v=6">
+    <link rel="icon" type="image/png" href="./icons/logo.png">
+    <link rel="stylesheet" href="/dashboard/style.css?v=7">
+    <link rel="stylesheet" href="./style.css?v=7">
     <style>
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 :root {
-    --app-bg: #FFE499;
+    --app-bg: #FBE6B9;
     --card-bg: #FFFFFF;
     --card-subtle: #FFF8E7;
-    --card-accent-gold: #FAD980;
+    --card-accent-gold: #FBD487;
     --btn-gold: #F8CF66;
     --btn-gold-hover: #F2C247;
     --brand-maroon: #7A1D16;
@@ -38,9 +38,9 @@
     --shadow-card: 0 4px 12px rgba(120, 60, 0, 0.07);
     --shadow-soft: 0 2px 6px rgba(0, 0, 0, 0.05);
 }
-body { background-color: #E2CA85; font-family: var(--font-body); color: var(--text-dark); display: flex; justify-content: center; min-height: 100vh; overflow-x: hidden; }
+body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--text-dark); display: flex; justify-content: center; min-height: 100vh; overflow-x: hidden; }
 .mobile-app-wrapper { width: 100%; max-width: 440px; min-height: 100vh; background-color: var(--app-bg); display: flex; flex-direction: column; position: relative; box-shadow: 0 0 35px rgba(0, 0, 0, 0.15); }
-.app-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px 10px 20px; background: transparent; }
+.app-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px 14px 20px; background-color: #FBD487; border-bottom: 1px solid rgba(0, 0, 0, 0.05); }
 .brand-group { display: flex; align-items: center; gap: 10px; cursor: pointer; }
 .brand-chick-icon { display: flex; align-items: center; justify-content: center; filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.08)); }
 .brand-chick-icon-img { height: 44px; width: auto; max-width: 44px; object-fit: contain; display: block; }
@@ -164,7 +164,7 @@ body { background-color: #E2CA85; font-family: var(--font-body); color: var(--te
 .btn-primary-action { background: var(--brand-red); color: white; font-family: var(--font-heading); font-size: 0.88rem; font-weight: 800; padding: 12px; border-radius: var(--radius-pill); border: none; cursor: pointer; margin-top: 6px; }
 .btn-secondary-action { background: #F3F4F6; color: #1F2937; font-family: var(--font-heading); font-size: 0.85rem; font-weight: 700; padding: 10px; border-radius: var(--radius-pill); border: 1px solid #D1D5DB; cursor: pointer; }
 .divider { border: none; border-top: 1px solid #E5E7EB; margin: 4px 0; }
-.app-bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 440px; height: 70px; background-color: #FAD980; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid rgba(0, 0, 0, 0.06); box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05); z-index: 100; }
+.app-bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 440px; height: 70px; background-color: #FBD487; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid rgba(0, 0, 0, 0.06); box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05); z-index: 100; }
 .nav-tab { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; background: none; border: none; color: #7A4F08; cursor: pointer; padding: 6px 14px; transition: all 0.15s ease; }
 .nav-tab span { font-size: 0.72rem; font-weight: 800; font-family: var(--font-heading); }
 .nav-tab.active { color: #C2410C; transform: translateY(-2px); }
@@ -183,7 +183,7 @@ body { background-color: #E2CA85; font-family: var(--font-body); color: var(--te
         <header class="app-header">
             <div class="brand-group" onclick="switchNav('home')">
                 <div class="brand-chick-icon">
-                    <img src="./icons/chick.png" alt="IncuVision" class="brand-chick-icon-img">
+                    <img src="./icons/logo.png" alt="IncuVision" class="brand-chick-icon-img">
                 </div>
                 <h1 class="brand-title">IncuVision</h1>
             </div>
