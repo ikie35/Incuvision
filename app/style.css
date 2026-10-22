@@ -84,21 +84,37 @@ body {
 .brand-group {
     display: flex;
     align-items: center;
+    gap: 8px;
     cursor: pointer;
-}
-
-.brand-logo-img {
-    height: 40px;
-    width: auto;
-    max-width: 175px;
-    object-fit: contain;
-    display: block;
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.06));
     transition: transform 0.15s ease;
 }
 
-.brand-logo-img:hover {
+.brand-group:hover {
     transform: scale(1.02);
+}
+
+.brand-chick-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.08));
+}
+
+.brand-chick-icon-img {
+    height: 38px;
+    width: auto;
+    max-width: 38px;
+    object-fit: contain;
+    display: block;
+}
+
+.brand-wordmark-img {
+    height: 26px;
+    width: auto;
+    max-width: 170px;
+    object-fit: contain;
+    display: block;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.06));
 }
 
 .header-bell-btn {
