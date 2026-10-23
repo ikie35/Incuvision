@@ -203,7 +203,16 @@ class IncubationCoordinator:
                     phase=self.phase
                 )
 
-            # 3. Check for Automated Scheduled Candling Audits (Day 7, 10, 18)
+            # 3. Emergency Overheat Watchdog: if manual mode is active and temp >= 38.0°C, force revert to AUTO
+            if temp >= 38.0 and act.get("manual", False):
+                print(f"[COORDINATOR SAFETY] Critical temp {temp}°C in MANUAL mode! Force-reverting to AUTOMATIC.")
+                if self.mqtt:
+                    self.mqtt.latest_telemetry["actuators"]["manual"] = False
+                    self.mqtt.send_command({"cmd": "SET_MODE", "mode": "AUTO"})
+                    self.mqtt.send_command({"cmd": "SET_RELAY", "actuator": "heater", "state": False})
+                    self.mqtt.send_command({"cmd": "SET_RELAY", "actuator": "exhaust", "state": True})
+
+            # 4. Check for Automated Scheduled Candling Audits (Day 7, 10, 18)
             if self.current_day in CANDLING_SCHEDULE_DAYS and self.current_day not in self.completed_audits:
                 print(f"[COORDINATOR] Scheduled Day {self.current_day} Candling Audit triggered!")
                 self.trigger_candling_audit_now(self.current_day)

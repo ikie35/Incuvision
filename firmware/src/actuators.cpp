@@ -182,9 +182,17 @@ void ActuatorManager::updateControl(const SensorData& data) {
     // Process egg turning duration monitoring regardless of manual override
     processEggTurning();
 
-    // In manual override mode, do not let automatic loops overwrite heater/exhaust states
+    // Critical Overheat Safety Watchdog for Manual Override:
+    // If the system is in manual mode but temperature reaches critical level (>= CRITICAL_TEMP_MAX or >= 38.0°C),
+    // immediately force-revert to AUTOMATIC mode, kill heater, and engage exhaust ventilation!
     if (manualOverride) {
-        return;
+        if (data.temperature >= CRITICAL_TEMP_MAX || (data.temperature >= 38.0f && data.temperature < 60.0f)) {
+            Serial.printf("[SAFETY] Critical temperature reached (%.2f C) during manual override! Force-reverting to AUTOMATIC mode.\n", data.temperature);
+            manualOverride = false;
+            state.manualOverride = false;
+        } else {
+            return;
+        }
     }
 
     if (data.temperature > 5.0f && data.temperature < 60.0f) {

@@ -41,6 +41,9 @@ HATCHING_DAYS_START = 19    # Day 19 to 21
 # Automated Candling Audit Schedule (Days)
 CANDLING_SCHEDULE_DAYS = [7, 10, 18]
 
+# Critical Safety Cutoff Limit (°C)
+CRITICAL_TEMP_MAX = 38.0
+
 # 56-Egg Matrix Grid Layout (8 Rows x 7 Columns)
 GRID_ROWS = 8
 GRID_COLS = 7

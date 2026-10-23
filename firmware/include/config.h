@@ -75,7 +75,7 @@
 #define HATCH_HUMIDITY_HIGH        75.0f  // % (Exhaust vents if above this)
 
 // Safety Cutoff Limits
-#define CRITICAL_TEMP_MAX          39.5f  // Hard cutoff & exhaust alarm
+#define CRITICAL_TEMP_MAX          38.0f  // Hard cutoff & exhaust alarm (forces revert from MANUAL to AUTO)
 #define CRITICAL_TEMP_MIN          35.0f  // Alarm
 
 // ==========================================

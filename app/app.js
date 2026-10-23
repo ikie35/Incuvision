@@ -275,6 +275,14 @@ function handleIncomingTelemetry(data) {
                     }
                 }
             }
+
+            // Emergency Overheat Safety Auto-Revert check
+            const currentTemp = parseFloat(telem.temp || 0);
+            if (currentTemp >= 38.0 && isManualMode) {
+                isManualMode = false;
+                setManualModeUI(false);
+                showToast("CRITICAL TEMPERATURE (38.0°C) REACHED! Safety system reverted to AUTOMATIC mode.", true);
+            }
         } catch (e) {}
 
         // 6. Generate dynamic smart alerts based on thresholds
