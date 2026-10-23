@@ -62,7 +62,8 @@ void loop() {
 
         SensorData s = sensors.readAll();
         actuators.updateControl(s);
-        comm.publishTelemetry(s, actuators.getState());
+        ActuatorState st = actuators.getState();
+        comm.publishTelemetry(s, st);
 
         if (lcdOk) {
             char b[21];

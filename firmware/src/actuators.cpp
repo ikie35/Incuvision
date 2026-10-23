@@ -244,7 +244,7 @@ void ActuatorManager::triggerEggTurnManual(uint32_t durationSec) {
     isTurningNow = true;
     setRelay(PIN_RELAY_MOTOR, true);
     state.eggMotor = true;
-    Serial.printf("[ACTUATORS] Egg turning motor activated for %u seconds.\n", durationSec);
+    Serial.printf("[ACTUATORS] Egg turning motor activated for %lu seconds.\n", (unsigned long)durationSec);
 }
 
 void ActuatorManager::setPhase(IncubationPhase phase) {
