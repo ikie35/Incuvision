@@ -1,5 +1,6 @@
 import sqlite3
 import csv
+import io
 import os
 import json
 from datetime import datetime
@@ -146,5 +147,29 @@ class DataLogger:
         except Exception as e:
             print(f"[LOGGER] Query latest audit error: {e}")
             return None
+
+    def export_telemetry_csv_string(self, order: str = "desc") -> str:
+        """Exports all telemetry records to a CSV string. Defaults to DESC (latest reading at the top)."""
+        order_clause = "DESC" if order.lower() == "desc" else "ASC"
+        try:
+            conn = sqlite3.connect(DB_PATH)
+            cursor = conn.cursor()
+            cursor.execute(f"""
+                SELECT timestamp, day, temperature, humidity, co2, o2, 
+                       heater_state, exhaust_state, motor_state, phase 
+                FROM telemetry 
+                ORDER BY id {order_clause}
+            """)
+            rows = cursor.fetchall()
+            conn.close()
+
+            output = io.StringIO()
+            writer = csv.writer(output)
+            writer.writerow(["timestamp", "day", "temperature", "humidity", "co2", "o2", "heater", "exhaust", "motor", "phase"])
+            writer.writerows(rows)
+            return output.getvalue()
+        except Exception as e:
+            print(f"[LOGGER] Export CSV Error: {e}")
+            return "timestamp,day,temperature,humidity,co2,o2,heater,exhaust,motor,phase\n"
 
 logger = DataLogger()

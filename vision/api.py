@@ -103,13 +103,14 @@ def get_history(limit: int = 60):
     return logger.get_recent_telemetry(limit)
 
 @app.get("/api/export/csv")
-def export_csv():
-    if not CSV_LOG_PATH.exists():
-        raise HTTPException(status_code=404, detail="Telemetry CSV log not found.")
-    return FileResponse(
-        path=CSV_LOG_PATH,
-        filename="incuvision_telemetry_log.csv",
-        media_type="text/csv"
+def export_csv(order: str = "desc"):
+    csv_content = logger.export_telemetry_csv_string(order=order)
+    return Response(
+        content=csv_content,
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": "attachment; filename=incuvision_telemetry_log.csv"
+        }
     )
 
 @app.get("/api/audits")
