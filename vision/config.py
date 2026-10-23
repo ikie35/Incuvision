@@ -9,6 +9,7 @@ MODELS_DIR = BASE_DIR / "models"
 CAPTURES_DIR = BASE_DIR / "captures"
 DB_PATH = BASE_DIR / "incuvision_data.db"
 CSV_LOG_PATH = BASE_DIR / "telemetry_log.csv"
+TELEMETRY_LOG_INTERVAL_S = 60.0  # Log to DB and CSV once every 60 seconds (1 minute)
 
 # Ensure runtime directories exist
 CAPTURES_DIR.mkdir(parents=True, exist_ok=True)

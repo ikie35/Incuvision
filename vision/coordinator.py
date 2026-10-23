@@ -3,7 +3,7 @@ import threading
 from datetime import datetime, timedelta
 from config import (
     TOTAL_INCUBATION_DAYS, SETTING_DAYS_END, HATCHING_DAYS_START,
-    CANDLING_SCHEDULE_DAYS
+    CANDLING_SCHEDULE_DAYS, TELEMETRY_LOG_INTERVAL_S
 )
 from logger import logger
 from lcd_manager import lcd_display
@@ -188,8 +188,8 @@ class IncubationCoordinator:
                     phase=self.phase
                 )
 
-            # 2. Log Telemetry to DB & CSV every 10 seconds
-            if now - last_log_time >= 10.0:
+            # 2. Log Telemetry to DB & CSV every 60 seconds (1 minute interval)
+            if now - last_log_time >= TELEMETRY_LOG_INTERVAL_S:
                 last_log_time = now
                 logger.log_telemetry(
                     day=self.current_day,
