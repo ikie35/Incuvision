@@ -7,7 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import StreamingResponse, Response, RedirectResponse, FileResponse, JSONResponse
 from pydantic import BaseModel
 
-from config import PROJECT_ROOT, CAPTURES_DIR
+from config import PROJECT_ROOT, CAPTURES_DIR, CSV_LOG_PATH
 from logger import logger
 from camera_manager import camera_mgr
 
@@ -101,6 +101,16 @@ def get_telemetry():
 @app.get("/api/history")
 def get_history(limit: int = 60):
     return logger.get_recent_telemetry(limit)
+
+@app.get("/api/export/csv")
+def export_csv():
+    if not CSV_LOG_PATH.exists():
+        raise HTTPException(status_code=404, detail="Telemetry CSV log not found.")
+    return FileResponse(
+        path=CSV_LOG_PATH,
+        filename="incuvision_telemetry_log.csv",
+        media_type="text/csv"
+    )
 
 @app.get("/api/audits")
 def get_audits():
