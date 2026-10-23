@@ -66,45 +66,30 @@ void ActuatorManager::processHeating(float currentTemp) {
         state.alarmActive = false;
     }
 
-    // Dynamic precision hysteresis: heat when temperature drops below (targetTemp - 0.25°C), cutoff immediately at targetTemp to avoid overshoot
+    // Dynamic precision hysteresis:
+    // lowThreshold  = targetTemp - 0.25°C (Heater turns ON below this)
+    // highThreshold = targetTemp         (Heater turns OFF once target is reached)
     float lowThreshold  = targetTemp - 0.25f;
     float highThreshold = targetTemp;
 
-    uint32_t now = millis();
-
-    // 2. High threshold cutoff: shut OFF immediately once temperature hits target band
+    // 2. High threshold cutoff: shut OFF immediately once target temperature is reached
     if (currentTemp >= highThreshold) {
         if (state.heater) {
             setRelay(PIN_RELAY_HEATER, false);
             state.heater = false;
             heaterBurstActive = false;
-            heaterRestTimestamp = now;
+            Serial.printf("[ACTUATORS] Target reached (%.2f C >= %.2f C). Heater OFF.\n", currentTemp, highThreshold);
         }
         return;
     }
 
-    // 3. Persist heating burst (prevents thermal runaway / overshoot)
-    if (heaterBurstActive) {
-        if (now - heaterStartTimestamp >= PERSIST_TIME_MS) {
-            // Cut off heater after burst to allow the fan to circulate the heat
-            setRelay(PIN_RELAY_HEATER, false);
-            state.heater = false;
-            heaterBurstActive = false;
-            heaterRestTimestamp = now;
-            Serial.println("[ACTUATORS] Heat burst elapsed. Pausing for circulation dissipation.");
-        }
-        return;
-    }
-
-    // 4. Low threshold trigger: activate heater if temperature is below low limit and rested
+    // 3. Low threshold trigger: activate heater when below low limit and keep ON until target is reached
     if (currentTemp < lowThreshold) {
-        const uint32_t MIN_REST_TIME_MS = 15000UL; // 15s anti-chatter rest between bursts for sensor stabilization
-        if (now - heaterRestTimestamp >= MIN_REST_TIME_MS) {
+        if (!state.heater) {
             setRelay(PIN_RELAY_HEATER, true);
             state.heater = true;
             heaterBurstActive = true;
-            heaterStartTimestamp = now;
-            Serial.printf("[ACTUATORS] Temp (%.2f C) < Low (%.2f C). Heating for up to 10s...\n", currentTemp, lowThreshold);
+            Serial.printf("[ACTUATORS] Temp (%.2f C) < Low (%.2f C). Heater ON until %.2f C.\n", currentTemp, lowThreshold, highThreshold);
         }
     }
 }
