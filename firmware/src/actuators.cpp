@@ -66,9 +66,9 @@ void ActuatorManager::processHeating(float currentTemp) {
         state.alarmActive = false;
     }
 
-    // Use operator-optimized temperature control bands based on phase
-    float lowThreshold  = (currentPhase == PHASE_SETTING) ? SET_TEMP_CONTROL_LOW : HATCH_TEMP_CONTROL_LOW;
-    float highThreshold = (currentPhase == PHASE_SETTING) ? SET_TEMP_CONTROL_HIGH : HATCH_TEMP_CONTROL_HIGH;
+    // Dynamic precision hysteresis temperature bands around targetTemp (±0.2°C)
+    float lowThreshold  = targetTemp - 0.2f;
+    float highThreshold = targetTemp + 0.2f;
 
     uint32_t now = millis();
 
@@ -117,7 +117,7 @@ void ActuatorManager::processVentilation(uint16_t currentCO2, float currentO2, f
         return;
     }
 
-    float maxRH = (currentPhase == PHASE_SETTING) ? SET_HUMIDITY_HIGH : HATCH_HUMIDITY_HIGH;
+    float maxRH = (currentPhase == PHASE_SETTING) ? (targetRH + 2.0f) : (targetRH + 5.0f);
 
     // Ventilation triggers:
     // 1. CO2 exceeds threshold (> 5000 ppm in Setting, > 7500 ppm in Hatching)

@@ -47,13 +47,19 @@ class IncubationCoordinator:
     def _update_day_and_phase(self):
         elapsed = datetime.now() - self.start_time
         calc_day = int(elapsed.total_seconds() // 86400) + 1
-        self.current_day = max(1, min(TOTAL_INCUBATION_DAYS, calc_day))
+        calc_day = max(1, min(TOTAL_INCUBATION_DAYS, calc_day))
+
+        day_changed = (calc_day != self.current_day)
+        self.current_day = calc_day
 
         new_phase = "HATCHING" if self.current_day >= HATCHING_DAYS_START else "SETTING"
         if new_phase != self.phase:
             self.phase = new_phase
-            print(f"[COORDINATOR] Phase transitioned to: {self.phase}")
+            print(f"[COORDINATOR] Automatic Phase Transition -> {self.phase} (Day {self.current_day})")
             self.mqtt.set_phase(self.phase)
+            self.mqtt.send_command({"cmd": "SET_DAY", "day": self.current_day})
+        elif day_changed:
+            self.mqtt.send_command({"cmd": "SET_DAY", "day": self.current_day})
 
     def trigger_candling_audit_now(self, day: int = None) -> dict:
         """Executes a full candling audit routine synchronously or via trigger."""

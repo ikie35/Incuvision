@@ -1,4 +1,4 @@
-﻿#include "comm.h"
+#include "comm.h"
 #include "config.h"
 #include <WiFi.h>
 #include <PubSubClient.h>
@@ -110,6 +110,7 @@ void CommManager::publishTelemetry(const SensorData& sData, const ActuatorState&
     doc["phase"] = (actuators.getPhase() == PHASE_SETTING) ? "SETTING" : "HATCHING";
     doc["target_temp"] = serialized(String(actuators.getTargetTemp(), 2));
     doc["target_rh"] = serialized(String(actuators.getTargetRH(), 1));
+    doc["target_co2"] = actuators.getTargetCO2();
     doc["next_turn_seconds"] = actuators.getSecondsToNextTurn();
 
     char buffer[512];
@@ -174,6 +175,15 @@ void CommManager::parseCommand(const char* payload) {
                 actuators.setPhase(PHASE_SETTING);
             }
             publishStatus("PHASE_UPDATED");
+        }
+        else if (strcmp(cmd, "SET_DAY") == 0) {
+            int d = doc["day"] | 1;
+            if (d >= 19) {
+                actuators.setPhase(PHASE_HATCHING);
+            } else {
+                actuators.setPhase(PHASE_SETTING);
+            }
+            publishStatus("DAY_UPDATED");
         }
         else if (strcmp(cmd, "SET_SETPOINTS") == 0) {
             float t = doc["temp"] | actuators.getTargetTemp();

@@ -585,17 +585,97 @@ function evaluateSmartAlerts(temp, rh, o2, actuators) {
     const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const bellDot = document.getElementById('bellDot');
 
-    // Check conditions
+    const isHatching = (currentPhase === 'HATCHING' || currentDay >= 19);
+
     let hasAlert = false;
-    if (o2 > 21.8) {
-        hasAlert = true;
+    let alerts = [];
+
+    // Phase-specific target evaluations
+    if (isHatching) {
+        // Hatching Phase Targets: Temp ~36.9°C, RH ~70%, CO2 <= 7500ppm
+        if (temp < 36.2) {
+            hasAlert = true;
+            alerts.push({ msg: `TEMPERATURE IS ${temp.toFixed(1)}°C, BELOW HATCHING TARGET (36.9°C). HEATER ENGAGED.` });
+        } else if (temp > 37.6) {
+            hasAlert = true;
+            alerts.push({ msg: `TEMPERATURE IS ${temp.toFixed(1)}°C, ABOVE HATCHING TARGET (36.9°C). COOLING.` });
+        }
+
+        if (rh < 62.0) {
+            hasAlert = true;
+            alerts.push({ msg: `HUMIDITY IS ${rh.toFixed(1)}%, BELOW HATCHING TARGET (70%). HUMIDIFIER ENGAGED.` });
+        } else if (rh > 80.0) {
+            hasAlert = true;
+            alerts.push({ msg: `HUMIDITY IS ${rh.toFixed(1)}%, ABOVE HATCHING TARGET (70%). EXHAUST VENTING.` });
+        }
+
+        if (currentTelemetry.co2 && currentTelemetry.co2 > 7500) {
+            hasAlert = true;
+            alerts.push({ msg: `CO₂ LEVEL IS ${currentTelemetry.co2} PPM, EXCEEDS HATCHING LIMIT (7,500 PPM). EXHAUST ON.` });
+        }
+    } else {
+        // Setting Phase Targets: Temp ~37.5°C, RH ~58%, CO2 <= 5000ppm
+        if (temp < 36.8) {
+            hasAlert = true;
+            alerts.push({ msg: `TEMPERATURE IS ${temp.toFixed(1)}°C, BELOW SETTING TARGET (37.5°C). HEATER ENGAGED.` });
+        } else if (temp > 38.2) {
+            hasAlert = true;
+            alerts.push({ msg: `TEMPERATURE IS ${temp.toFixed(1)}°C, ABOVE SETTING TARGET (37.5°C). VENTING.` });
+        }
+
+        if (rh < 50.0) {
+            hasAlert = true;
+            alerts.push({ msg: `HUMIDITY IS ${rh.toFixed(1)}%, BELOW SETTING TARGET (58%). HUMIDIFIER ENGAGED.` });
+        } else if (rh > 65.0) {
+            hasAlert = true;
+            alerts.push({ msg: `HUMIDITY IS ${rh.toFixed(1)}%, ABOVE SETTING TARGET (58%). EXHAUST VENTING.` });
+        }
+
+        if (currentTelemetry.co2 && currentTelemetry.co2 > 5000) {
+            hasAlert = true;
+            alerts.push({ msg: `CO₂ LEVEL IS ${currentTelemetry.co2} PPM, EXCEEDS SETTING LIMIT (5,000 PPM). EXHAUST ON.` });
+        }
     }
-    if (temp < 36.5 || temp > 38.5) {
+
+    if (o2 > 0 && o2 < 20.0) {
         hasAlert = true;
+        alerts.push({ msg: `OXYGEN LEVEL IS ${o2.toFixed(1)}%, BELOW 20.0%. EXHAUST FAN ENGAGED.` });
     }
 
     if (bellDot) {
         bellDot.style.display = hasAlert ? 'block' : 'none';
+    }
+
+    const alertsListEl = document.getElementById('alertsList');
+    if (alertsListEl && alerts.length > 0) {
+        alertsListEl.innerHTML = `
+            <div class="alert-time-group">
+                <span class="time-header">${timeStr} · ${isHatching ? 'HATCHING PHASE (LOCKDOWN)' : 'SETTING PHASE'}</span>
+                ${alerts.map(a => `
+                    <div class="alert-box">
+                        <span class="alert-warn-badge">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#D97706" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                                <line x1="12" y1="9" x2="12" y2="13"/>
+                                <line x1="12" y1="17" x2="12.01" y2="17"/>
+                            </svg>
+                        </span>
+                        <p class="alert-msg">${a.msg}</p>
+                    </div>
+                `).join('')}
+            </div>
+            <div class="alert-time-group" style="opacity:0.6;">
+                <span class="time-header">OPERATING STATUS</span>
+                <div class="alert-box">
+                    <span class="alert-warn-badge">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#059669" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 6L9 17l-5-5"/>
+                        </svg>
+                    </span>
+                    <p class="alert-msg">${isHatching ? 'SYSTEM OPERATING UNDER HATCHING LOCKDOWN SETPOINTS (36.9°C / 70% RH / NO TURN).' : 'SYSTEM OPERATING UNDER SETTING PHASE SETPOINTS (37.5°C / 58% RH / 1-HR ROTATE).'}</p>
+                </div>
+            </div>
+        `;
     }
 }
 
@@ -1071,6 +1151,13 @@ async function saveProtocolSettings() {
                 rh: protocolState.rh,
                 co2: protocolState.co2
             })
+        });
+
+        // 3. Send Phase update
+        await fetch('/api/control/phase', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phase: protocolState.phase })
         });
 
         showToast(`Protocol Saved! Day ${currentDay} (${isHatching ? 'Hatching, 36.9°C, 70% RH' : 'Setting, 37.5°C, 58% RH'})`);

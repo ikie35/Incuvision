@@ -380,6 +380,9 @@ class MQTTBridge:
         self.send_command({"cmd": cmd})
 
     def trigger_egg_turning(self, duration_sec: int = 15):
+        if self.latest_telemetry.get("phase") == "HATCHING":
+            print("[TURNING] Blocked: Egg turning is prohibited during Hatching Phase (Lockdown).")
+            return
         self.latest_telemetry["actuators"]["motor"] = True
         self.latest_telemetry["next_turn_seconds"] = 0
         self._turn_sync_timestamp = time.time() + duration_sec
@@ -395,11 +398,14 @@ class MQTTBridge:
             self.latest_telemetry["next_turn_seconds"] = 0
             if "actuators" in self.latest_telemetry and isinstance(self.latest_telemetry["actuators"], dict):
                 self.latest_telemetry["actuators"]["motor"] = False
+            self.send_command({"cmd": "SET_PHASE", "phase": "HATCHING"})
+            self.send_command({"cmd": "SET_SETPOINTS", "temp": 36.9, "rh": 70.0, "co2": 7500})
         else:
             self.latest_telemetry["target_temp"] = 37.5
             self.latest_telemetry["target_rh"] = 58.0
             self.latest_telemetry["target_co2"] = 5000
-        self.send_command({"cmd": "SET_PHASE", "phase": phase_str})
+            self.send_command({"cmd": "SET_PHASE", "phase": "SETTING"})
+            self.send_command({"cmd": "SET_SETPOINTS", "temp": 37.5, "rh": 58.0, "co2": 5000})
 
     def set_custom_setpoints(self, temp: float, rh: float, co2: int):
         self.latest_telemetry["target_temp"] = float(temp)

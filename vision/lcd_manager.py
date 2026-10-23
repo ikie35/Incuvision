@@ -43,7 +43,8 @@ class LCDDisplayManager:
         line1 = f"INCUVISION: D{day:02d}/21".ljust(20)
         line2 = f"T:{temp:4.1f}C  RH:{rh:4.1f}%".ljust(20)
         line3 = f"CO2:{co2:4d}p O2:{o2:4.1f}%".ljust(20)
-        line4 = f"Mode: {phase[:7]} (OK)".ljust(20)
+        p_str = "HATCH" if phase == "HATCHING" else "SETTING"
+        line4 = f"Phase:{p_str} (OK)".ljust(20)
 
         self._render_4lines(line1, line2, line3, line4)
 

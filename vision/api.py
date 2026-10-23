@@ -43,6 +43,9 @@ class RelayCommandPayload(BaseModel):
 class DayPayload(BaseModel):
     day: int
 
+class PhasePayload(BaseModel):
+    phase: str  # "SETTING" or "HATCHING"
+
 class CandlingLightPayload(BaseModel):
     state: bool
 
@@ -143,6 +146,22 @@ def set_incubation_day(payload: DayPayload):
         raise HTTPException(status_code=503, detail="Coordinator not ready")
     coordinator.set_manual_day(payload.day)
     return {"status": "success", "day": coordinator.current_day, "phase": coordinator.phase}
+
+@app.post("/api/control/phase")
+def set_incubation_phase(payload: PhasePayload):
+    if not coordinator or not mqtt_bridge:
+        raise HTTPException(status_code=503, detail="Coordinator not ready")
+    p = payload.phase.upper()
+    if p not in ("SETTING", "HATCHING"):
+        raise HTTPException(status_code=400, detail="Invalid phase. Must be SETTING or HATCHING")
+    if p == "HATCHING" and coordinator.current_day < 19:
+        coordinator.set_manual_day(19)
+    elif p == "SETTING" and coordinator.current_day >= 19:
+        coordinator.set_manual_day(1)
+    else:
+        coordinator.phase = p
+        mqtt_bridge.set_phase(p)
+    return {"status": "success", "phase": coordinator.phase, "day": coordinator.current_day}
 
 @app.post("/api/control/egg_turning")
 def trigger_egg_turning(duration: int = 15):
