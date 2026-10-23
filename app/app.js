@@ -271,12 +271,7 @@ function handleIncomingTelemetry(data) {
                     // Do not let stale background telemetry revert user toggle within 4 seconds
                     if (Date.now() - lastUserModeSwitchTime > 4000) {
                         isManualMode = Boolean(telem.actuators.manual);
-                        const badge = document.getElementById('badgeActuatorMode');
-                        if (badge) {
-                            badge.innerText = isManualMode ? 'MANUAL' : 'AUTOMATIC';
-                            badge.style.background = isManualMode ? '#FEE2E2' : '#FDE68A';
-                            badge.style.color = isManualMode ? '#DC2626' : '#78350F';
-                        }
+                        setManualModeUI(isManualMode);
                     }
                 }
             }
@@ -314,6 +309,10 @@ function updatePillState(elementId, isOn) {
 }
 
 async function toggleRelayByName(actuatorName) {
+    if (!isManualMode) {
+        showToast("System is in AUTOMATIC mode. Click the 'AUTOMATIC' badge above to switch to MANUAL mode first.", true);
+        return;
+    }
     if (!currentTelemetry.actuators) {
         currentTelemetry.actuators = {};
     }
@@ -344,16 +343,29 @@ async function toggleRelayByName(actuatorName) {
 
 let isManualMode = false;
 let lastUserModeSwitchTime = 0;
+
+function setManualModeUI(manual) {
+    const badge = document.getElementById('badgeActuatorMode');
+    const grid = document.getElementById('actuatorsGrid');
+    if (badge) {
+        badge.innerText = manual ? 'MANUAL' : 'AUTOMATIC';
+        badge.style.background = manual ? '#FEE2E2' : '#FDE68A';
+        badge.style.color = manual ? '#DC2626' : '#78350F';
+    }
+    if (grid) {
+        if (manual) {
+            grid.classList.add('manual-mode-active');
+        } else {
+            grid.classList.remove('manual-mode-active');
+        }
+    }
+}
+
 async function toggleActuatorMode() {
     lastUserModeSwitchTime = Date.now();
     isManualMode = !isManualMode;
-    const modeStr = isManualMode ? 'MANUAL' : 'AUTOMATIC';
-    const badge = document.getElementById('badgeActuatorMode');
-    if (badge) {
-        badge.innerText = modeStr;
-        badge.style.background = isManualMode ? '#FEE2E2' : '#FDE68A';
-        badge.style.color = isManualMode ? '#DC2626' : '#78350F';
-    }
+    setManualModeUI(isManualMode);
+    showToast(isManualMode ? "Manual Override Enabled: You can now toggle actuators directly." : "Automatic Control Restored: Sensors and setpoints in charge.");
     try {
         await fetch('/api/control/mode', {
             method: 'POST',

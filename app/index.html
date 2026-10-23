@@ -9,8 +9,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Poppins:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
     <link rel="icon" type="image/png" href="./icons/logo.png">
-    <link rel="stylesheet" href="/dashboard/style.css?v=31">
-    <link rel="stylesheet" href="./style.css?v=31">
+    <link rel="stylesheet" href="/dashboard/style.css?v=32">
+    <link rel="stylesheet" href="./style.css?v=32">
     <style>
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 :root {
@@ -75,11 +75,12 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
 .actuator-panel-title { font-family: var(--font-heading); font-size: 0.92rem; font-weight: 800; color: #1E1B18; letter-spacing: 0.04em; }
 .badge-mode-pill { background: #FFFFFF; font-family: var(--font-heading); font-size: 0.68rem; font-weight: 800; color: #8A4E08; padding: 3px 12px; border-radius: var(--radius-pill); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06); }
 .actuators-2x2-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.actuator-card { background: var(--card-bg); border-radius: 16px; padding: 14px 12px; display: flex; flex-direction: column; align-items: flex-start; gap: 7px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03); cursor: pointer; transition: transform 0.12s ease; }
-.actuator-card:active { transform: scale(0.96); }
+.actuator-card { background: var(--card-bg); border-radius: 16px; padding: 14px 12px; display: flex; flex-direction: column; align-items: flex-start; gap: 7px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03); cursor: default; transition: transform 0.12s ease, border-color 0.2s ease; border: 1.5px solid transparent; }
+.actuators-2x2-grid.manual-mode-active .actuator-card { cursor: pointer; border-color: rgba(220, 38, 38, 0.35); }
+.actuators-2x2-grid.manual-mode-active .actuator-card:active { transform: scale(0.96); }
+.actuators-2x2-grid.manual-mode-active .actuator-card:hover .actuator-icon-img { transform: scale(1.12); }
 .actuator-icon-bubble { width: 38px; height: 38px; border-radius: 12px; background: #F8F9FA; display: flex; align-items: center; justify-content: center; color: #4B5563; overflow: hidden; }
 .actuator-icon-img { width: 24px; height: 24px; object-fit: contain; display: block; transition: transform 0.2s ease; }
-.actuator-card:hover .actuator-icon-img { transform: scale(1.12); }
 .actuator-title { font-family: var(--font-heading); font-size: 0.88rem; font-weight: 800; color: #1A1615; }
 .status-pill-toggle { display: inline-flex; align-items: center; gap: 6px; background: #E5E7EB; padding: 3px 12px; border-radius: var(--radius-pill); font-size: 0.72rem; font-weight: 800; color: #6B7280; font-family: var(--font-heading); transition: all 0.2s ease; }
 .status-dot { width: 7px; height: 7px; border-radius: 50%; background: #9CA3AF; transition: background-color 0.2s ease; }
@@ -268,7 +269,7 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
                         <span class="badge-mode-pill" id="badgeActuatorMode" onclick="toggleActuatorMode()" style="cursor: pointer;" title="Toggle Automatic / Manual Control">AUTOMATIC</span>
                     </div>
 
-                    <div class="actuators-2x2-grid">
+                    <div class="actuators-2x2-grid" id="actuatorsGrid">
                         <!-- 1. PTC Heater -->
                         <div class="actuator-card" id="actCardHeater" onclick="toggleRelayByName('heater')">
                             <div class="actuator-icon-bubble">
@@ -756,10 +757,10 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
     <!-- Toast Notification Container -->
     <div id="appToast" class="app-toast"></div>
 
-    <script src="/dashboard/app.js?v=31"></script>
+    <script src="/dashboard/app.js?v=32"></script>
     <script>
         if (typeof switchNav === 'undefined') {
-            document.write('<script src="./app.js?v=31"><\/script>');
+            document.write('<script src="./app.js?v=32"><\/script>');
         }
     </script>
 </body>
