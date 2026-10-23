@@ -163,11 +163,16 @@ class IncubationCoordinator:
 
     def _run_loop(self):
         last_lcd_update = 0
-        last_log_time = 0
+        last_log_time = time.time()
 
         while self.is_running:
             now = time.time()
             self._update_day_and_phase()
+
+            # Wait until ESP32 delivers real live telemetry before logging dummy defaults
+            if self.mqtt and not getattr(self.mqtt, "has_received_live_telemetry", False):
+                time.sleep(0.5)
+                continue
 
             telem = self.mqtt.latest_telemetry
             temp = telem.get("temp", 37.5)

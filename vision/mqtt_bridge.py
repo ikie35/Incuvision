@@ -53,6 +53,7 @@ class MQTTBridge:
         }
         self._turn_sync_timestamp = time.time()
         self._turn_interval_remaining = 3600
+        self.has_received_live_telemetry = False
 
     def get_telemetry(self) -> dict:
         """Returns the latest telemetry dictionary with dynamically updated next_turn_seconds."""
@@ -146,6 +147,7 @@ class MQTTBridge:
             self.latest_telemetry["target_rh"] = float(data["target_rh"])
         if "target_co2" in data:
             self.latest_telemetry["target_co2"] = int(data["target_co2"])
+        self.has_received_live_telemetry = True
 
     # =========================================================================
     # USB SERIAL BRIDGE & TELEMETRY PARSER
@@ -255,6 +257,7 @@ class MQTTBridge:
                         self.latest_telemetry["actuators"]["exhaust"] = (parts[12] == "1")
 
                     updated = True
+                    self.has_received_live_telemetry = True
                 except Exception:
                     pass
 

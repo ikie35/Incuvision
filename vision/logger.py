@@ -154,6 +154,10 @@ class DataLogger:
         try:
             conn = sqlite3.connect(DB_PATH)
             cursor = conn.cursor()
+            # Clean up any initial dummy boot placeholder records (37.5C, 58%RH, 3200ppm CO2)
+            cursor.execute("DELETE FROM telemetry WHERE co2 = 3200 AND temperature = 37.5 AND humidity = 58.0")
+            conn.commit()
+
             cursor.execute(f"""
                 SELECT timestamp, day, temperature, humidity, co2, o2, 
                        heater_state, exhaust_state, motor_state, phase 
