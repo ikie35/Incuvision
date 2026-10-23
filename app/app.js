@@ -142,7 +142,7 @@ function initWebSocket() {
 
 async function loadTelemetryHistory() {
     try {
-        const res = await fetch('/api/history?limit=50');
+        const res = await fetch('/api/history?limit=120');
         if (res.ok) {
             const rows = await res.json();
             if (Array.isArray(rows) && rows.length > 0) {
@@ -254,7 +254,7 @@ function handleIncomingTelemetry(data) {
             const liveCO2 = parseFloat(telem.co2 || 3200);
             const liveO2 = parseFloat(telem.o2 || 20.9);
             telemetryHistory.push({ temp: liveTemp, rh: liveRH, co2: liveCO2, o2: liveO2, time: Date.now() });
-            if (telemetryHistory.length > 50) {
+            if (telemetryHistory.length > 120) {
                 telemetryHistory.shift();
             }
         } catch (e) {}
@@ -586,14 +586,14 @@ function drawWaveChart() {
 
     const cfg = metricConfigs[currentGraphMetric] || metricConfigs.temp;
 
-    // Draw vertical dashed day separator lines
-    const dayCols = 5;
+    // Draw vertical dashed time division lines (-20m, -15m, -10m, -5m, Now)
+    const timeCols = 4;
     ctx.setLineDash([4, 4]);
     ctx.strokeStyle = '#F5C754';
     ctx.lineWidth = 1.5;
 
-    for (let i = 1; i < dayCols; i++) {
-        const x = (w / dayCols) * i;
+    for (let i = 1; i < timeCols; i++) {
+        const x = (w / timeCols) * i;
         ctx.beginPath();
         ctx.moveTo(x, 0);
         ctx.lineTo(x, h);

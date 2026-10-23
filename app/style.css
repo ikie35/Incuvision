@@ -559,8 +559,8 @@ body {
 
 .chart-x-axis {
     display: flex;
-    justify-content: space-around;
-    padding-top: 6px;
+    justify-content: space-between;
+    padding: 6px 4px 0 4px;
     font-size: 0.72rem;
     font-weight: 800;
     color: #D97706;
