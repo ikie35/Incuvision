@@ -169,6 +169,7 @@ void CommManager::parseCommand(const char* payload) {
         }
         else if (strcmp(cmd, "SET_PHASE") == 0) {
             const char* phaseStr = doc["phase"] | "SETTING";
+            actuators.setManualOverride(false);
             if (strcmp(phaseStr, "HATCHING") == 0) {
                 actuators.setPhase(PHASE_HATCHING);
             } else {
@@ -178,6 +179,7 @@ void CommManager::parseCommand(const char* payload) {
         }
         else if (strcmp(cmd, "SET_DAY") == 0) {
             int d = doc["day"] | 1;
+            actuators.setManualOverride(false);
             if (d >= 19) {
                 actuators.setPhase(PHASE_HATCHING);
             } else {
@@ -186,6 +188,7 @@ void CommManager::parseCommand(const char* payload) {
             publishStatus("DAY_UPDATED");
         }
         else if (strcmp(cmd, "SET_SETPOINTS") == 0) {
+            actuators.setManualOverride(false);
             float t = doc["temp"] | actuators.getTargetTemp();
             float rh = doc["rh"] | actuators.getTargetRH();
             uint16_t co2 = doc["co2"] | actuators.getTargetCO2();

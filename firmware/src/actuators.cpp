@@ -66,8 +66,8 @@ void ActuatorManager::processHeating(float currentTemp) {
         state.alarmActive = false;
     }
 
-    // Dynamic precision hysteresis temperature bands around targetTemp (±0.2°C)
-    float lowThreshold  = targetTemp - 0.2f;
+    // Dynamic precision hysteresis: heat when below targetTemp (with tiny 0.05°C buffer), cutoff at targetTemp + 0.2°C
+    float lowThreshold  = targetTemp - 0.05f;
     float highThreshold = targetTemp + 0.2f;
 
     uint32_t now = millis();

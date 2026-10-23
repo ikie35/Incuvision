@@ -266,6 +266,16 @@ function handleIncomingTelemetry(data) {
                 updatePillState('pillTurner', !!telem.actuators.motor);
                 updatePillState('pillExhaust', !!telem.actuators.exhaust);
                 updatePillState('pillLed', !!telem.actuators.candling);
+
+                if (telem.actuators.manual !== undefined) {
+                    isManualMode = Boolean(telem.actuators.manual);
+                    const badge = document.getElementById('badgeActuatorMode');
+                    if (badge) {
+                        badge.innerText = isManualMode ? 'MANUAL' : 'AUTOMATIC';
+                        badge.style.background = isManualMode ? '#FEE2E2' : '#FDE68A';
+                        badge.style.color = isManualMode ? '#DC2626' : '#78350F';
+                    }
+                }
             }
         } catch (e) {}
 
@@ -1386,6 +1396,13 @@ async function saveProtocolSettings() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ phase: protocolState.phase })
+        });
+
+        // 4. Ensure Mode is set to AUTOMATIC so heating loop runs
+        await fetch('/api/control/mode', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mode: 'AUTO' })
         });
 
         showToast(`Protocol Saved! Day ${currentDay} (${isHatching ? 'Hatching, 36.9°C, 70% RH' : 'Setting, 37.5°C, 58% RH'})`);
