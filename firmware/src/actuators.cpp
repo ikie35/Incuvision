@@ -66,13 +66,13 @@ void ActuatorManager::processHeating(float currentTemp) {
         state.alarmActive = false;
     }
 
-    // Dynamic precision hysteresis: heat when below targetTemp (with tiny 0.05°C buffer), cutoff immediately at targetTemp to avoid thermal overshoot
-    float lowThreshold  = targetTemp - 0.05f;
+    // Dynamic precision hysteresis: heat when temperature drops below (targetTemp - 0.25°C), cutoff immediately at targetTemp to avoid overshoot
+    float lowThreshold  = targetTemp - 0.25f;
     float highThreshold = targetTemp;
 
     uint32_t now = millis();
 
-    // 2. High threshold cutoff: shut OFF immediately once temperature hits high band
+    // 2. High threshold cutoff: shut OFF immediately once temperature hits target band
     if (currentTemp >= highThreshold) {
         if (state.heater) {
             setRelay(PIN_RELAY_HEATER, false);
@@ -83,22 +83,22 @@ void ActuatorManager::processHeating(float currentTemp) {
         return;
     }
 
-    // 3. 10-second persist heating burst (prevents thermal runaway / overshoot)
+    // 3. Persist heating burst (prevents thermal runaway / overshoot)
     if (heaterBurstActive) {
         if (now - heaterStartTimestamp >= PERSIST_TIME_MS) {
-            // Cut off heater after 10 seconds to allow the fan to circulate the heat
+            // Cut off heater after burst to allow the fan to circulate the heat
             setRelay(PIN_RELAY_HEATER, false);
             state.heater = false;
             heaterBurstActive = false;
             heaterRestTimestamp = now;
-            Serial.println("[ACTUATORS] 10s Heat burst elapsed. Pausing for circulation dissipation.");
+            Serial.println("[ACTUATORS] Heat burst elapsed. Pausing for circulation dissipation.");
         }
         return;
     }
 
     // 4. Low threshold trigger: activate heater if temperature is below low limit and rested
     if (currentTemp < lowThreshold) {
-        const uint32_t MIN_REST_TIME_MS = 5000UL; // 5s rest between bursts for sensor stabilization
+        const uint32_t MIN_REST_TIME_MS = 15000UL; // 15s anti-chatter rest between bursts for sensor stabilization
         if (now - heaterRestTimestamp >= MIN_REST_TIME_MS) {
             setRelay(PIN_RELAY_HEATER, true);
             state.heater = true;
