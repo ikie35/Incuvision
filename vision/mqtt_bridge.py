@@ -44,7 +44,8 @@ class MQTTBridge:
                 "circulate": True,
                 "motor": False,
                 "candling": False,
-                "alarm": False
+                "alarm": False,
+                "manual": False
             },
             "phase": "SETTING",
             "uptime": 0,
@@ -306,6 +307,13 @@ class MQTTBridge:
             self.latest_telemetry["actuators"]["candling"] = (m_candling.group(1).upper() == "ON")
             updated = True
 
+        if "MODE_MANUAL" in line or "MODE MANUAL" in line:
+            self.latest_telemetry["actuators"]["manual"] = True
+            updated = True
+        elif "MODE_AUTO" in line or "MODE AUTO" in line:
+            self.latest_telemetry["actuators"]["manual"] = False
+            updated = True
+
         # 3. Parse JSON lines (supports raw JSON or [TELEMETRY] prefix)
         json_str = line.split('[TELEMETRY]', 1)[1].strip() if '[TELEMETRY]' in line else line
         if json_str.startswith("{") and json_str.endswith("}"):
@@ -352,6 +360,8 @@ class MQTTBridge:
                 elif cmd == "SET_RELAY":
                     act = cmd_dict.get("actuator", "")
                     st = cmd_dict.get("state", False)
+                    self.latest_telemetry["actuators"][act] = st
+                    self.latest_telemetry["actuators"]["manual"] = True
                     if act in ("candling", "led"):
                         self.serial_conn.write(b"LED ON\n" if st else b"LED OFF\n")
                     elif act == "heater":
@@ -362,6 +372,7 @@ class MQTTBridge:
                         self.serial_conn.write(b"TURN ON\n" if st else b"TURN OFF\n")
                 elif cmd == "SET_MODE":
                     m = cmd_dict.get("mode", "AUTO").upper()
+                    self.latest_telemetry["actuators"]["manual"] = (m == "MANUAL")
                     self.serial_conn.write(f"MODE {m}\n".encode("utf-8"))
                 elif cmd in ("SET_DAY", "DAY"):
                     d = cmd_dict.get("day", 1)

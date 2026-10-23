@@ -189,8 +189,9 @@ def toggle_candling_light(payload: CandlingLightPayload):
 def control_relay(payload: RelayCommandPayload):
     if not mqtt_bridge:
         raise HTTPException(status_code=503, detail="MQTT not ready")
-    if payload.actuator in mqtt_bridge.latest_telemetry["actuators"]:
+    if "actuators" in mqtt_bridge.latest_telemetry:
         mqtt_bridge.latest_telemetry["actuators"][payload.actuator] = payload.state
+        mqtt_bridge.latest_telemetry["actuators"]["manual"] = True
     mqtt_bridge.send_command({
         "cmd": "SET_RELAY",
         "actuator": payload.actuator,
@@ -202,11 +203,14 @@ def control_relay(payload: RelayCommandPayload):
 def set_control_mode(payload: ModePayload):
     if not mqtt_bridge:
         raise HTTPException(status_code=503, detail="MQTT not ready")
+    is_manual = (payload.mode.upper() == "MANUAL")
+    if "actuators" in mqtt_bridge.latest_telemetry:
+        mqtt_bridge.latest_telemetry["actuators"]["manual"] = is_manual
     mqtt_bridge.send_command({
         "cmd": "SET_MODE",
         "mode": payload.mode
     })
-    return {"status": "success", "mode": payload.mode}
+    return {"status": "success", "mode": payload.mode, "manual": is_manual}
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):

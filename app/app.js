@@ -268,12 +268,15 @@ function handleIncomingTelemetry(data) {
                 updatePillState('pillLed', !!telem.actuators.candling);
 
                 if (telem.actuators.manual !== undefined) {
-                    isManualMode = Boolean(telem.actuators.manual);
-                    const badge = document.getElementById('badgeActuatorMode');
-                    if (badge) {
-                        badge.innerText = isManualMode ? 'MANUAL' : 'AUTOMATIC';
-                        badge.style.background = isManualMode ? '#FEE2E2' : '#FDE68A';
-                        badge.style.color = isManualMode ? '#DC2626' : '#78350F';
+                    // Do not let stale background telemetry revert user toggle within 4 seconds
+                    if (Date.now() - lastUserModeSwitchTime > 4000) {
+                        isManualMode = Boolean(telem.actuators.manual);
+                        const badge = document.getElementById('badgeActuatorMode');
+                        if (badge) {
+                            badge.innerText = isManualMode ? 'MANUAL' : 'AUTOMATIC';
+                            badge.style.background = isManualMode ? '#FEE2E2' : '#FDE68A';
+                            badge.style.color = isManualMode ? '#DC2626' : '#78350F';
+                        }
                     }
                 }
             }
@@ -340,7 +343,9 @@ async function toggleRelayByName(actuatorName) {
 }
 
 let isManualMode = false;
+let lastUserModeSwitchTime = 0;
 async function toggleActuatorMode() {
+    lastUserModeSwitchTime = Date.now();
     isManualMode = !isManualMode;
     const modeStr = isManualMode ? 'MANUAL' : 'AUTOMATIC';
     const badge = document.getElementById('badgeActuatorMode');
