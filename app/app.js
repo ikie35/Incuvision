@@ -403,7 +403,6 @@ const metricConfigs = {
         title: 'TEMPERATURE',
         tabId: 'gTabTemp',
         pillText: () => `${parseFloat(currentTelemetry.temp || 37.5).toFixed(1)}°C`,
-        targetText: () => (currentPhase === 'HATCHING' || currentDay >= 19) ? 'Target: 36.9°C (Hatching)' : 'Target: 37.5°C (Setting)',
         strokeColor: '#E09930',
         gradTop: 'rgba(250, 217, 128, 0.45)',
         minVal: 30.0,
@@ -420,7 +419,6 @@ const metricConfigs = {
         title: 'HUMIDITY',
         tabId: 'gTabRH',
         pillText: () => `${parseFloat(currentTelemetry.rh || 58.0).toFixed(1)}%`,
-        targetText: () => (currentPhase === 'HATCHING' || currentDay >= 19) ? 'Target: 70.0% (Hatching)' : 'Target: 58.0% (Setting)',
         strokeColor: '#0284C7',
         gradTop: 'rgba(186, 230, 253, 0.55)',
         minVal: 40.0,
@@ -436,7 +434,6 @@ const metricConfigs = {
         title: 'CO₂ LEVEL',
         tabId: 'gTabCO2',
         pillText: () => `${parseInt(currentTelemetry.co2 || 3200).toLocaleString()} ppm`,
-        targetText: () => (currentPhase === 'HATCHING' || currentDay >= 19) ? 'Max Threshold: <7,500 ppm' : 'Safe Threshold: <5,000 ppm',
         strokeColor: '#059669',
         gradTop: 'rgba(167, 243, 208, 0.55)',
         minVal: 0,
@@ -452,7 +449,6 @@ const metricConfigs = {
         title: 'OXYGEN',
         tabId: 'gTabO2',
         pillText: () => `${parseFloat(currentTelemetry.o2 || 20.9).toFixed(1)}%`,
-        targetText: 'Min Threshold: >20.5%',
         strokeColor: '#7C3AED',
         gradTop: 'rgba(233, 213, 255, 0.55)',
         minVal: 19.0,
@@ -483,17 +479,12 @@ function setGraphMetric(metricType) {
     const activeBtn = document.getElementById(metricConfigs[metricType].tabId);
     if (activeBtn) activeBtn.classList.add('active');
 
-    // 2. Update Header Title & Target Label
+    // 2. Update Header Title & Current Reading
     const titleEl = document.getElementById('graphMetricTitle');
     const pillEl = document.getElementById('graphCurrentValPill');
-    const targetEl = document.getElementById('graphTargetLabel');
 
     if (titleEl) titleEl.innerText = metricConfigs[metricType].title;
     if (pillEl) pillEl.innerText = metricConfigs[metricType].pillText();
-    if (targetEl) {
-        const tVal = metricConfigs[metricType].targetText;
-        targetEl.innerText = typeof tVal === 'function' ? tVal() : tVal;
-    }
 
     // 3. Update Y-Axis labels
     const yAxisEl = document.getElementById('chartYAxis');
