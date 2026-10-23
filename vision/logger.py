@@ -62,7 +62,7 @@ class DataLogger:
 
     def log_telemetry(self, day: int, temp: float, rh: float, co2: int, o2: float, 
                       heater: bool, exhaust: bool, motor: bool, phase: str):
-        now_str = datetime.now().isoformat()
+        now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         # Write to SQLite
         try:
@@ -89,7 +89,7 @@ class DataLogger:
     def log_candling_audit(self, day: int, total_eggs: int, fertile: int, infertile: int, 
                             early_dead: int, fertility_rate: float, img_path: str, 
                             annotated_path: str, matrix_data: list):
-        now_str = datetime.now().isoformat()
+        now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         try:
             conn = sqlite3.connect(DB_PATH)
             cursor = conn.cursor()
