@@ -131,7 +131,16 @@ body {
     cursor: pointer;
     position: relative;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-    transition: transform 0.15s ease;
+    transition: all 0.18s ease;
+}
+
+.header-bell-btn.active {
+    background: #A82820;
+    box-shadow: 0 0 0 3px rgba(168, 40, 32, 0.25);
+}
+
+.header-bell-btn.active svg {
+    fill: #FFFFFF;
 }
 
 .header-bell-btn:active {

@@ -9,8 +9,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Poppins:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
     <link rel="icon" type="image/png" href="./icons/logo.png">
-    <link rel="stylesheet" href="/dashboard/style.css?v=33">
-    <link rel="stylesheet" href="./style.css?v=33">
+    <link rel="stylesheet" href="/dashboard/style.css?v=34">
+    <link rel="stylesheet" href="./style.css?v=34">
     <style>
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 :root {
@@ -46,7 +46,9 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
 .brand-chick-icon { display: flex; align-items: center; justify-content: center; filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.08)); }
 .brand-chick-icon-img { height: 38px; width: auto; max-width: 38px; object-fit: contain; display: block; }
 .brand-wordmark-img { height: 26px; width: auto; max-width: 170px; object-fit: contain; display: block; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.06)); }
-.header-bell-btn { width: 44px; height: 44px; border-radius: 50%; background: #FBAE36; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1); transition: transform 0.15s ease; }
+.header-bell-btn { width: 44px; height: 44px; border-radius: 50%; background: #FBAE36; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1); transition: all 0.18s ease; }
+.header-bell-btn.active { background: #A82820; box-shadow: 0 0 0 3px rgba(168, 40, 32, 0.25); }
+.header-bell-btn.active svg { fill: #FFFFFF; }
 .header-bell-btn:active { transform: scale(0.92); }
 .bell-alert-dot { position: absolute; top: 9px; right: 10px; width: 9px; height: 9px; background-color: #DC2626; border-radius: 50%; border: 2px solid #FBAE36; display: block; }
 .app-body { flex: 1; padding: 10px 20px 85px 20px; overflow-y: auto; }
@@ -189,7 +191,7 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
             </div>
 
             <!-- Notification Bell Icon with Badge -->
-            <button class="header-bell-btn" id="btnHeaderBell" onclick="switchNav('alerts')" aria-label="Notifications">
+            <button class="header-bell-btn" id="btnHeaderBell" onclick="toggleNotifications()" aria-label="Notifications" title="Toggle Notifications">
                 <svg viewBox="0 0 24 24" width="22" height="22" fill="#7A1D16">
                     <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
                 </svg>
@@ -398,6 +400,12 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
                  ========================================================== -->
             <section id="screenAlerts" class="app-screen">
                 <div class="card card-alerts-container">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #F3F4F6;">
+                        <span style="font-family: var(--font-heading); font-size: 0.95rem; font-weight: 800; color: #1E1B18;">Notifications & Smart Alerts</span>
+                        <button type="button" onclick="toggleNotifications()" title="Minimize Notifications" style="background: #F3F4F6; border: none; border-radius: 8px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #4B5563;">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        </button>
+                    </div>
                     <!-- Push Notification Quick Bar -->
                     <div class="notif-bar-card" id="notifStatusCard">
                         <div class="notif-bar-left">
@@ -757,10 +765,10 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
     <!-- Toast Notification Container -->
     <div id="appToast" class="app-toast"></div>
 
-    <script src="/dashboard/app.js?v=33"></script>
+    <script src="/dashboard/app.js?v=34"></script>
     <script>
         if (typeof switchNav === 'undefined') {
-            document.write('<script src="./app.js?v=33"><\/script>');
+            document.write('<script src="./app.js?v=34"><\/script>');
         }
     </script>
 </body>

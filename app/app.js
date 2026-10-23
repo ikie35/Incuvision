@@ -41,7 +41,15 @@ document.addEventListener('DOMContentLoaded', () => {
 // =============================================================================
 // NAVIGATION & SCREEN SWITCHING
 // =============================================================================
+let currentActiveScreen = 'home';
+let previousActiveScreen = 'home';
+
 function switchNav(screenId) {
+    if (currentActiveScreen !== screenId && currentActiveScreen !== 'alerts') {
+        previousActiveScreen = currentActiveScreen;
+    }
+    currentActiveScreen = screenId;
+
     const screens = {
         'home': document.getElementById('screenHome'),
         'analytics': document.getElementById('screenAnalytics'),
@@ -71,11 +79,31 @@ function switchNav(screenId) {
         tabs[screenId].classList.add('active');
     }
 
+    // Toggle active highlight on header notification bell button
+    const bellBtn = document.getElementById('btnHeaderBell');
+    if (bellBtn) {
+        if (screenId === 'alerts') {
+            bellBtn.classList.add('active');
+        } else {
+            bellBtn.classList.remove('active');
+        }
+    }
+
     // Screen specific triggers
     if (screenId === 'analytics') {
         setTimeout(drawTempWaveChart, 50);
     } else if (screenId === 'fertility') {
         refreshLiveStream();
+    }
+}
+
+function toggleNotifications() {
+    if (currentActiveScreen === 'alerts') {
+        // Minimize notifications and return to previous screen
+        switchNav(previousActiveScreen || 'home');
+    } else {
+        // Open notifications
+        switchNav('alerts');
     }
 }
 
