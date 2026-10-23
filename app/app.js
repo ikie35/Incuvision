@@ -986,8 +986,8 @@ function openEggDetail(index) {
 
     title.innerText = `Egg Slot #${index.toString().padStart(2, '0')}`;
     
-    const row = (egg && egg.row) ? egg.row : Math.floor((index - 1) / 8) + 1;
-    const col = (egg && egg.col) ? egg.col : ((index - 1) % 8) + 1;
+    const row = (egg && egg.row) ? egg.row : Math.floor((index - 1) / 7) + 1;
+    const col = (egg && egg.col) ? egg.col : ((index - 1) % 7) + 1;
 
     if (egg) {
         const statusColor = egg.status === 'fertile' ? '#15803D' : '#B91C1C';
@@ -995,7 +995,7 @@ function openEggDetail(index) {
             <div style="display:flex; flex-direction:column; gap:10px; font-size:0.85rem;">
                 <div style="display:flex; justify-content:space-between; border-bottom:1px solid #E5E7EB; padding-bottom:8px;">
                     <span style="color:#6B7280;">Tray Coordinate</span>
-                    <span style="font-weight:700;">Row ${row} of 7, Col ${col} of 8</span>
+                    <span style="font-weight:700;">Row ${row} of 8, Col ${col} of 7</span>
                 </div>
                 <div style="display:flex; justify-content:space-between; border-bottom:1px solid #E5E7EB; padding-bottom:8px;">
                     <span style="color:#6B7280;">Fertility Classification</span>

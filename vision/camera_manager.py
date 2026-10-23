@@ -92,20 +92,20 @@ class CameraManager:
             r = int(35 + 40 * ratio)
             frame[y, :] = (b, g, r)
 
-        # Incubator tray mesh & turning rails
+        # Incubator tray mesh & turning rails (8 rows x 7 cols)
         cv2.rectangle(frame, (180, 120), (1100, 620), (45, 55, 65), 3)
-        for i in range(1, 8):
-            y_line = 120 + int(i * (500 / 7))
+        for i in range(1, 9):
+            y_line = 120 + int(i * (500 / 8))
             cv2.line(frame, (180, y_line), (1100, y_line), (35, 45, 55), 2)
-        for j in range(1, 9):
-            x_line = 180 + int(j * (920 / 8))
+        for j in range(1, 8):
+            x_line = 180 + int(j * (920 / 7))
             cv2.line(frame, (x_line, 120), (x_line, 620), (35, 45, 55), 2)
 
-        # Draw 56 eggs resting in tray
-        for r in range(7):
-            for c in range(8):
-                cx = 180 + int((c + 0.5) * (920 / 8))
-                cy = 120 + int((r + 0.5) * (500 / 7))
+        # Draw 56 eggs resting in tray (8 rows x 7 cols)
+        for r in range(8):
+            for c in range(7):
+                cx = 180 + int((c + 0.5) * (920 / 7))
+                cy = 120 + int((r + 0.5) * (500 / 8))
                 # Seeded egg viability appearance
                 seed = (r * 13 + c * 19) % 100
                 is_infertile = (seed >= 86)

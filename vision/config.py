@@ -41,9 +41,9 @@ HATCHING_DAYS_START = 19    # Day 19 to 21
 # Automated Candling Audit Schedule (Days)
 CANDLING_SCHEDULE_DAYS = [7, 10, 18]
 
-# 56-Egg Matrix Grid Layout (7 Rows x 8 Columns)
-GRID_ROWS = 7
-GRID_COLS = 8
+# 56-Egg Matrix Grid Layout (8 Rows x 7 Columns)
+GRID_ROWS = 8
+GRID_COLS = 7
 TOTAL_EGG_CAPACITY = GRID_ROWS * GRID_COLS  # 56 Eggs
 
 # Model Configuration (Defaults to ONNX for fast Raspberry Pi inference)

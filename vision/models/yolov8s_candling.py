@@ -152,8 +152,8 @@ class YOLOv8CandlingModel:
             detected.sort(key=lambda e: (round(e["center_y"] / 60.0) * 60.0, e["center_x"]))
             for i, egg in enumerate(detected):
                 egg["index"] = i + 1
-                egg["row"] = (i // 8) + 1
-                egg["col"] = (i % 8) + 1
+                egg["row"] = (i // 7) + 1
+                egg["col"] = (i % 7) + 1
 
         return detected
 
