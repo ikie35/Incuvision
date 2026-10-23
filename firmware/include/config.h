@@ -60,12 +60,12 @@
 #define DEFAULT_CO2_MAX_HATCHING   7500   // ppm
 #define DEFAULT_O2_MIN_HATCHING    21.0f  // %
 
-// Precision Hysteresis Temperature Bands
+// Precision Hysteresis Temperature Bands (Cutoff at target to prevent residual overshoot)
 #define SET_TEMP_CONTROL_LOW       37.3f  // °C (Heater turns ON below this)
-#define SET_TEMP_CONTROL_HIGH      37.7f  // °C (Heater turns OFF above this)
+#define SET_TEMP_CONTROL_HIGH      37.5f  // °C (Heater turns OFF at target)
 
 #define HATCH_TEMP_CONTROL_LOW     36.7f  // °C (Heater turns ON below this)
-#define HATCH_TEMP_CONTROL_HIGH    37.1f  // °C (Heater turns OFF above this)
+#define HATCH_TEMP_CONTROL_HIGH    36.9f  // °C (Heater turns OFF at target)
 
 // Humidity Control Bands
 #define SET_HUMIDITY_LOW           56.0f  // %

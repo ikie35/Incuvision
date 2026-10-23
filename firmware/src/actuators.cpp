@@ -66,9 +66,9 @@ void ActuatorManager::processHeating(float currentTemp) {
         state.alarmActive = false;
     }
 
-    // Dynamic precision hysteresis: heat when below targetTemp (with tiny 0.05°C buffer), cutoff at targetTemp + 0.2°C
+    // Dynamic precision hysteresis: heat when below targetTemp (with tiny 0.05°C buffer), cutoff immediately at targetTemp to avoid thermal overshoot
     float lowThreshold  = targetTemp - 0.05f;
-    float highThreshold = targetTemp + 0.2f;
+    float highThreshold = targetTemp;
 
     uint32_t now = millis();
 
@@ -122,11 +122,11 @@ void ActuatorManager::processVentilation(uint16_t currentCO2, float currentO2, f
     // Ventilation triggers:
     // 1. CO2 exceeds threshold (> 5000 ppm in Setting, > 7500 ppm in Hatching)
     // 2. O2 drops below 21.0%
-    // 3. Mild over-temperature (> targetTemp + 0.5°C)
+    // 3. Proactive over-temperature venting (>= targetTemp + 0.3°C, e.g. 37.8°C in Setting) to prevent reaching 38.0°C
     // 4. Relative humidity exceeds high target (> 60% in Setting, > 75% in Hatching)
     bool needVentilation = (currentCO2 > targetCO2) || 
                            (currentO2 > 0.0f && currentO2 < DEFAULT_O2_MIN_SETTING) ||
-                           (currentTemp > (targetTemp + 0.5f)) ||
+                           (currentTemp >= (targetTemp + 0.3f)) ||
                            (currentRH > maxRH);
 
     if (needVentilation) {
