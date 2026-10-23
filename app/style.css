@@ -1094,258 +1094,169 @@ body {
 /* ==========================================================================
    SCREEN 5: MENU / SETTINGS
    ========================================================================== */
-.card-protocol-clean {
+/* ==========================================================================
+   SCREEN 5: PROTOCOL SETTINGS (Visual Card Grid Matching Home Screen)
+   ========================================================================== */
+.card-protocol-top {
     display: flex;
     flex-direction: column;
-    gap: 16px;
-    padding: 22px 18px;
+    gap: 14px;
+    padding: 16px 18px;
     background: #FFFFFF;
     border-radius: var(--radius-card);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    box-shadow: var(--shadow-card);
 }
 
-.protocol-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.protocol-title {
-    font-family: var(--font-heading);
-    font-size: 1.25rem;
-    font-weight: 800;
-    color: #1A1615;
-    letter-spacing: -0.01em;
-}
-
-.protocol-badge {
-    font-family: var(--font-heading);
-    font-size: 0.72rem;
-    font-weight: 800;
-    letter-spacing: 0.03em;
-    padding: 4px 10px;
-    border-radius: 9999px;
-    background: #ECFDF5;
-    color: #065F46;
-    border: 1px solid #A7F3D0;
-    transition: all 0.2s ease;
-}
-
-.protocol-badge.badge-hatching {
-    background: #FFF7ED;
-    color: #9A3412;
-    border-color: #FED7AA;
-}
-
-/* Segmented 2-way switch */
-.phase-segmented-control {
+.phase-tabs-row {
     display: flex;
     background: #F3F4F6;
-    border-radius: 12px;
+    border-radius: var(--radius-pill);
     padding: 4px;
     gap: 4px;
 }
 
-.phase-segment-btn {
+.phase-tab-pill {
     flex: 1;
     border: none;
     background: transparent;
-    border-radius: 9px;
-    padding: 10px 12px;
+    border-radius: var(--radius-pill);
+    padding: 9px 12px;
     font-family: var(--font-heading);
-    font-size: 0.82rem;
+    font-size: 0.8rem;
     font-weight: 700;
     color: #6B7280;
     cursor: pointer;
     transition: all 0.18s ease;
+    text-align: center;
 }
 
-.phase-segment-btn.active {
+.phase-tab-pill.active {
     background: #FFFFFF;
     color: #111827;
     font-weight: 800;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
 }
 
-/* Clean Parameter Rows */
-.clean-param-row {
+.protocol-day-stepper {
     display: flex;
+    align-items: center;
     justify-content: space-between;
+    padding-top: 4px;
+}
+
+.stepper-bubble-clock {
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.stepper-clock-img {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+}
+
+.stepper-controls {
+    display: flex;
     align-items: center;
     gap: 12px;
-    padding: 4px 0;
 }
 
-.param-meta {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    flex: 1;
-}
-
-.param-name {
-    font-family: var(--font-heading);
-    font-size: 0.92rem;
-    font-weight: 700;
-    color: #1E1B18;
-}
-
-.param-sub {
-    font-size: 0.72rem;
-    font-weight: 500;
-    color: #6B7280;
-}
-
-/* Day Stepper Control */
-.day-stepper-control {
-    display: flex;
-    align-items: center;
-    background: #F9FAFB;
+.btn-step-circle {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
     border: 1px solid #E5E7EB;
-    border-radius: 10px;
-    overflow: hidden;
-}
-
-.btn-stepper {
-    background: transparent;
-    border: none;
-    width: 36px;
-    height: 38px;
+    background: #F9FAFB;
+    color: #1F2937;
     font-size: 1.15rem;
-    font-weight: 700;
-    color: #374151;
+    font-weight: 800;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background 0.1s ease;
+    transition: all 0.1s ease;
 }
 
-.btn-stepper:active {
+.btn-step-circle:active {
     background: #E5E7EB;
+    transform: scale(0.92);
 }
 
-.day-stepper-control input {
-    border: none;
-    background: transparent;
-    width: 44px;
-    height: 38px;
-    text-align: center;
+.stepper-day-text {
     font-family: var(--font-heading);
-    font-size: 1.05rem;
+    font-size: 1.25rem;
     font-weight: 800;
-    color: #111827;
-    outline: none;
-    -moz-appearance: textfield;
+    color: #1A1615;
+    min-width: 65px;
+    text-align: center;
 }
 
-.day-stepper-control input::-webkit-outer-spin-button,
-.day-stepper-control input::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-}
-
-/* Setpoint Input Box with Unit Suffix */
-.param-input-wrap {
+/* Metric Stepper Row inside .metric-box */
+.metric-stepper-row {
     display: flex;
     align-items: center;
-    background: #F9FAFB;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+}
+
+.btn-mini-step {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
     border: 1px solid #E5E7EB;
-    border-radius: 10px;
-    padding: 6px 12px;
-    gap: 6px;
-    width: 108px;
-    justify-content: flex-end;
-    transition: border-color 0.15s ease, background 0.15s ease;
-}
-
-.param-input-wrap:focus-within {
-    border-color: #D97706;
-    background: #FFFFFF;
-    box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.1);
-}
-
-.param-input-wrap input {
-    border: none;
-    background: transparent;
-    font-family: var(--font-heading);
-    font-size: 1rem;
-    font-weight: 800;
-    color: #111827;
-    text-align: right;
-    width: 62px;
-    outline: none;
-    -moz-appearance: textfield;
-}
-
-.param-input-wrap input::-webkit-outer-spin-button,
-.param-input-wrap input::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-}
-
-.param-unit {
-    font-family: var(--font-heading);
-    font-size: 0.76rem;
-    font-weight: 700;
-    color: #6B7280;
-}
-
-.protocol-section-divider {
-    border-top: 1px solid #F3F4F6;
-    margin: 2px 0;
-}
-
-.setpoints-group {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-/* Tray Turn Button */
-.btn-tray-turn {
-    background: #F3F4F6;
-    color: #1F2937;
-    border: 1px solid #D1D5DB;
-    border-radius: 10px;
-    padding: 8px 14px;
-    font-family: var(--font-heading);
-    font-size: 0.8rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    white-space: nowrap;
-}
-
-.btn-tray-turn:active {
-    background: #E5E7EB;
-}
-
-.btn-tray-turn.disabled-lockdown {
     background: #F9FAFB;
-    color: #9CA3AF;
-    border-color: #E5E7EB;
-    cursor: not-allowed;
-    opacity: 0.75;
+    color: #374151;
+    font-size: 0.95rem;
+    font-weight: 800;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.1s ease;
+    flex-shrink: 0;
 }
 
-/* Single Primary Save Button */
-.btn-save-protocol {
+.btn-mini-step:active {
+    background: #E5E7EB;
+    transform: scale(0.9);
+}
+
+.box-turner {
+    cursor: pointer;
+}
+
+.text-turn-val {
+    font-size: 1.15rem !important;
+    letter-spacing: 0.04em;
+    color: #7A1D16 !important;
+}
+
+.text-turn-val.locked {
+    color: #9CA3AF !important;
+}
+
+/* Full Width Apply Button */
+.btn-protocol-apply {
+    width: 100%;
     background: var(--brand-red);
     color: #FFFFFF;
     font-family: var(--font-heading);
-    font-size: 0.92rem;
+    font-size: 0.95rem;
     font-weight: 800;
-    padding: 13px;
+    letter-spacing: 0.03em;
+    padding: 14px 20px;
     border-radius: var(--radius-pill);
     border: none;
     cursor: pointer;
-    margin-top: 6px;
-    box-shadow: 0 4px 14px rgba(168, 40, 32, 0.22);
+    box-shadow: 0 4px 14px rgba(168, 40, 32, 0.28);
     transition: transform 0.12s ease, opacity 0.15s ease;
 }
 
-.btn-save-protocol:active {
+.btn-protocol-apply:active {
     transform: scale(0.98);
     opacity: 0.9;
 }

@@ -34,6 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
     init56EggGrid();
     startTurningCountdown();
     drawTempWaveChart();
+    renderProtocolCards();
 });
 
 // =============================================================================
@@ -151,17 +152,12 @@ function handleIncomingTelemetry(data) {
         const daysLeft = Math.max(0, 21 - currentDay);
         const dayEl = document.getElementById('homeDaysLeft');
         if (dayEl) dayEl.innerText = `${daysLeft} Days Left`;
-        
-        const menuDay = document.getElementById('menuDayInput');
-        if (menuDay && document.activeElement !== menuDay) {
-            menuDay.value = currentDay;
-        }
     }
     if (data.phase) {
         currentPhase = data.phase;
     }
 
-    // Update Home & Menu Protocol Phase Indicators
+    // Update Home & Protocol Phase Indicators
     const homePhaseSub = document.getElementById('homePhaseSub');
     if (homePhaseSub) {
         const isHatching = (currentPhase === 'HATCHING' || currentDay >= 19);
@@ -170,9 +166,14 @@ function handleIncomingTelemetry(data) {
         else homePhaseSub.classList.remove('hatching');
     }
 
-    const menuDayEl = document.getElementById('menuDayInput');
-    if (menuDayEl && document.activeElement !== menuDayEl) {
-        updateMenuProtocolDisplay(currentDay, currentPhase, false);
+    if (!protocolStateInitialized) {
+        protocolState.day = currentDay;
+        protocolState.phase = currentPhase;
+        protocolState.temp = (currentPhase === 'HATCHING' || currentDay >= 19) ? 36.9 : 37.5;
+        protocolState.rh = (currentPhase === 'HATCHING' || currentDay >= 19) ? 70.0 : 58.0;
+        protocolState.co2 = (currentPhase === 'HATCHING' || currentDay >= 19) ? 7500 : 5000;
+        protocolStateInitialized = true;
+        renderProtocolCards();
     }
 
     const telem = data.telemetry;
@@ -929,50 +930,77 @@ function showToast(message, isError = false) {
 }
 
 // =============================================================================
-// STREAMLINED PROTOCOL CONTROLLER (CLEAN INDUSTRIAL DESIGN)
+// VISUAL PROTOCOL CONTROLLER (MATCHES HOME SCREEN METRIC CARDS)
 // =============================================================================
-function selectIncubationPhase(phase) {
+let protocolStateInitialized = false;
+let protocolState = {
+    day: 1,
+    phase: 'SETTING',
+    temp: 37.5,
+    rh: 58.0,
+    co2: 5000
+};
+
+function setProtocolPhase(phase) {
     const isHatching = (phase === 'HATCHING');
-    const dayInput = document.getElementById('menuDayInput');
-    let day = parseInt(dayInput ? dayInput.value : 1) || 1;
+    protocolState.phase = phase;
 
-    if (isHatching && day < 19) {
-        day = 19;
-    } else if (!isHatching && day >= 19) {
-        day = 1;
-    }
-    if (dayInput) dayInput.value = day;
-
-    updateCleanProtocolUI(day, phase, true);
-    showToast(`Loaded ${isHatching ? 'Hatching (36.9°C, 70% RH)' : 'Setting (37.5°C, 58% RH)'} targets. Tap "Save & Apply Settings" to apply.`);
-}
-
-function adjustMenuDay(delta) {
-    const dayInput = document.getElementById('menuDayInput');
-    if (!dayInput) return;
-    let day = (parseInt(dayInput.value) || 1) + delta;
-    day = Math.max(1, Math.min(21, day));
-    dayInput.value = day;
-    onDayInputDirect(day);
-}
-
-function onDayInputDirect(val) {
-    const day = Math.max(1, Math.min(21, parseInt(val) || 1));
-    const isHatching = (day >= 19);
-    updateCleanProtocolUI(day, isHatching ? 'HATCHING' : 'SETTING', true);
-}
-
-function updateCleanProtocolUI(day, phase, syncInputs = false) {
-    const isHatching = (phase === 'HATCHING' || day >= 19);
-
-    // 1. Status Pill in Header
-    const statusPill = document.getElementById('protocolStatusPill');
-    if (statusPill) {
-        statusPill.innerText = isHatching ? 'Hatching Phase' : 'Setting Phase';
-        statusPill.className = 'protocol-badge ' + (isHatching ? 'badge-hatching' : '');
+    if (isHatching && protocolState.day < 19) {
+        protocolState.day = 19;
+    } else if (!isHatching && protocolState.day >= 19) {
+        protocolState.day = 1;
     }
 
-    // 2. Segmented switch active state
+    protocolState.temp = isHatching ? 36.9 : 37.5;
+    protocolState.rh = isHatching ? 70.0 : 58.0;
+    protocolState.co2 = isHatching ? 7500 : 5000;
+
+    renderProtocolCards();
+    showToast(`Loaded ${isHatching ? 'Hatching (36.9°C, 70% RH)' : 'Setting (37.5°C, 58% RH)'} targets.`);
+}
+
+function stepDay(delta) {
+    protocolState.day = Math.max(1, Math.min(21, protocolState.day + delta));
+    const isHatching = (protocolState.day >= 19);
+    protocolState.phase = isHatching ? 'HATCHING' : 'SETTING';
+    
+    // Automatically switch default targets when crossing Day 18
+    if (isHatching) {
+        protocolState.temp = 36.9;
+        protocolState.rh = 70.0;
+        protocolState.co2 = 7500;
+    } else {
+        protocolState.temp = 37.5;
+        protocolState.rh = 58.0;
+        protocolState.co2 = 5000;
+    }
+
+    renderProtocolCards();
+}
+
+function stepTemp(delta) {
+    protocolState.temp = Math.round((protocolState.temp + delta) * 10) / 10;
+    protocolState.temp = Math.max(35.0, Math.min(40.0, protocolState.temp));
+    renderProtocolCards();
+}
+
+function stepRH(delta) {
+    protocolState.rh = Math.max(40, Math.min(95, Math.round(protocolState.rh + delta)));
+    renderProtocolCards();
+}
+
+function stepCO2(delta) {
+    protocolState.co2 = Math.max(1000, Math.min(10000, Math.round(protocolState.co2 + delta)));
+    renderProtocolCards();
+}
+
+function renderProtocolCards() {
+    const isHatching = (protocolState.phase === 'HATCHING' || protocolState.day >= 19);
+
+    // 1. Day & Phase Tabs
+    const dispDay = document.getElementById('dispProtocolDay');
+    if (dispDay) dispDay.innerText = `Day ${protocolState.day}`;
+
     const btnSetting = document.getElementById('btnPhaseSetting');
     const btnHatching = document.getElementById('btnPhaseHatching');
     if (btnSetting) {
@@ -984,106 +1012,87 @@ function updateCleanProtocolUI(day, phase, syncInputs = false) {
         else btnHatching.classList.remove('active');
     }
 
-    // 3. Current Day label & Setpoint helper labels
-    const daySub = document.getElementById('paramDaySub');
-    if (daySub) {
-        daySub.innerText = `Incubation Day ${day} of 21 (${isHatching ? 'Hatching Phase' : 'Setting Phase'})`;
-    }
+    // 2. Target Metric Card Values
+    const dispTemp = document.getElementById('dispTargetTemp');
+    const dispRH = document.getElementById('dispTargetRH');
+    const dispCO2 = document.getElementById('dispTargetCO2');
 
-    const tempSub = document.getElementById('targetTempSub');
-    const rhSub = document.getElementById('targetRHSub');
-    const co2Sub = document.getElementById('targetCO2Sub');
-    if (tempSub) tempSub.innerText = isHatching ? '36.9°C recommended (Lockdown)' : '37.5°C recommended (Setting)';
-    if (rhSub) rhSub.innerText = isHatching ? '70% RH recommended (Lockdown)' : '58% RH recommended (Setting)';
-    if (co2Sub) co2Sub.innerText = isHatching ? 'Exhaust purges above 7500 ppm' : 'Exhaust purges above 5000 ppm';
+    if (dispTemp) dispTemp.innerText = `${protocolState.temp.toFixed(1)}°C`;
+    if (dispRH) dispRH.innerText = `${protocolState.rh.toFixed(1)}%`;
+    if (dispCO2) dispCO2.innerText = protocolState.co2.toLocaleString();
 
-    // 4. Update input values if requested
-    if (syncInputs) {
-        const tempIn = document.getElementById('menuTempInput');
-        const rhIn = document.getElementById('menuRHInput');
-        const co2In = document.getElementById('menuCO2Input');
-        if (tempIn) tempIn.value = isHatching ? '36.9' : '37.5';
-        if (rhIn) rhIn.value = isHatching ? '70' : '58';
-        if (co2In) co2In.value = isHatching ? '7500' : '5000';
-    }
+    // 3. Turner Control Card
+    const turnVal = document.getElementById('dispTurnerStatus');
+    const turnSub = document.getElementById('dispTurnerSub');
+    const turnCard = document.getElementById('cardTurnerTrigger');
 
-    // 5. Egg Turner Button state
-    const rotateBtn = document.getElementById('menuRotateBtn');
-    const turnerNote = document.getElementById('eggTurnerStatusNote');
-    if (rotateBtn) {
+    if (turnVal && turnSub) {
         if (isHatching) {
-            rotateBtn.disabled = true;
-            rotateBtn.classList.add('disabled-lockdown');
-            rotateBtn.innerText = 'Locked';
-            rotateBtn.title = 'Egg turning disabled for hatching safety';
+            turnVal.innerText = 'LOCKED';
+            turnVal.classList.add('locked');
+            turnSub.innerText = 'OFF FOR HATCHING';
+            if (turnCard) turnCard.style.opacity = '0.7';
         } else {
-            rotateBtn.disabled = false;
-            rotateBtn.classList.remove('disabled-lockdown');
-            rotateBtn.innerText = 'Rotate (15s)';
-            rotateBtn.title = 'Trigger 15-second egg turn';
+            turnVal.innerText = isHardwareTurning ? 'TURNING' : 'ROTATE';
+            turnVal.classList.remove('locked');
+            turnSub.innerText = 'EGG TURNER (15s)';
+            if (turnCard) turnCard.style.opacity = '1';
         }
     }
-    if (turnerNote) {
-        turnerNote.innerText = isHatching ? 'Locked stationary for hatching safety' : 'Active hourly rotation (15s)';
-    }
 
-    // 6. Home Phase subtitle
+    // 4. Sync Home Phase subtitle
     const homePhaseSub = document.getElementById('homePhaseSub');
     if (homePhaseSub) {
-        homePhaseSub.innerText = isHatching ? `Hatching Phase (Day ${day} of 21)` : `Setting Phase (Day ${day} of 21)`;
+        homePhaseSub.innerText = isHatching ? `Hatching Phase (Day ${protocolState.day} of 21)` : `Setting Phase (Day ${protocolState.day} of 21)`;
         if (isHatching) homePhaseSub.classList.add('hatching');
         else homePhaseSub.classList.remove('hatching');
     }
 }
 
 async function saveProtocolSettings() {
-    const dayInput = document.getElementById('menuDayInput');
-    const day = Math.max(1, Math.min(21, parseInt(dayInput ? dayInput.value : 1) || 1));
-    const isHatching = (day >= 19);
+    const isHatching = (protocolState.day >= 19);
+    protocolState.phase = isHatching ? 'HATCHING' : 'SETTING';
 
-    const tempIn = document.getElementById('menuTempInput');
-    const rhIn = document.getElementById('menuRHInput');
-    const co2In = document.getElementById('menuCO2Input');
-
-    const temp = parseFloat(tempIn ? tempIn.value : (isHatching ? 36.9 : 37.5)) || (isHatching ? 36.9 : 37.5);
-    const rh = parseFloat(rhIn ? rhIn.value : (isHatching ? 70 : 58)) || (isHatching ? 70 : 58);
-    const co2 = parseInt(co2In ? co2In.value : (isHatching ? 7500 : 5000)) || (isHatching ? 7500 : 5000);
-
-    currentDay = day;
-    currentPhase = isHatching ? 'HATCHING' : 'SETTING';
+    currentDay = protocolState.day;
+    currentPhase = protocolState.phase;
 
     const daysLeft = Math.max(0, 21 - currentDay);
     const dayEl = document.getElementById('homeDaysLeft');
     if (dayEl) dayEl.innerText = `${daysLeft} Days Left`;
 
-    updateCleanProtocolUI(day, currentPhase, false);
+    renderProtocolCards();
     updateTurningDisplay();
 
     try {
-        // 1. Send Day update
+        // 1. Send Day update to coordinator & ESP32
         await fetch('/api/control/day', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ day: day })
+            body: JSON.stringify({ day: currentDay })
         });
 
-        // 2. Send Setpoints update
+        // 2. Send Target Setpoints update
         await fetch('/api/control/setpoints', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ temp: temp, rh: rh, co2: co2 })
+            body: JSON.stringify({
+                temp: protocolState.temp,
+                rh: protocolState.rh,
+                co2: protocolState.co2
+            })
         });
 
-        showToast(`Protocol saved! Day ${day} (${isHatching ? 'Hatching, 36.9°C, 70% RH' : 'Setting, 37.5°C, 58% RH'})`);
+        showToast(`Protocol Saved! Day ${currentDay} (${isHatching ? 'Hatching, 36.9°C, 70% RH' : 'Setting, 37.5°C, 58% RH'})`);
     } catch (e) {
-        showToast("Settings applied locally (controller syncing).");
+        showToast("Settings saved locally (controller syncing).");
     }
 }
 
 // Aliases for compatibility
-const onMenuDayInputChanged = onDayInputDirect;
-const applyProtocolPreset = selectIncubationPhase;
-const updateMenuProtocolDisplay = updateCleanProtocolUI;
+const onMenuDayInputChanged = (val) => stepDay((parseInt(val) || 1) - protocolState.day);
+const applyProtocolPreset = setProtocolPhase;
+const updateMenuProtocolDisplay = renderProtocolCards;
+const updateCleanProtocolUI = renderProtocolCards;
 const setIncubationDayFromMenu = saveProtocolSettings;
 const saveMenuSetpoints = saveProtocolSettings;
 

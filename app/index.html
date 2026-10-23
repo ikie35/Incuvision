@@ -9,8 +9,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Poppins:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
     <link rel="icon" type="image/png" href="./icons/logo.png">
-    <link rel="stylesheet" href="/dashboard/style.css?v=22">
-    <link rel="stylesheet" href="./style.css?v=22">
+    <link rel="stylesheet" href="/dashboard/style.css?v=23">
+    <link rel="stylesheet" href="./style.css?v=23">
     <style>
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 :root {
@@ -601,97 +601,84 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
                  SCREEN 5: MENU / PROTOCOL SETTINGS
                  ========================================================== -->
             <section id="screenMenu" class="app-screen">
-                <div class="card card-protocol-clean">
-                    <!-- Clean Header -->
-                    <div class="protocol-header">
-                        <div class="protocol-header-text">
-                            <h3 class="protocol-title">Incubation Protocol</h3>
-                            <span class="protocol-badge" id="protocolStatusPill">Setting Phase</span>
-                        </div>
-                    </div>
-
-                    <!-- Clean Segmented Phase Switcher -->
-                    <div class="phase-segmented-control">
-                        <button type="button" class="phase-segment-btn active" id="btnPhaseSetting" onclick="selectIncubationPhase('SETTING')">
+                <!-- 1. Phase & Day Selector Card -->
+                <div class="card card-protocol-top">
+                    <div class="phase-tabs-row">
+                        <button type="button" class="phase-tab-pill active" id="btnPhaseSetting" onclick="setProtocolPhase('SETTING')">
                             Setting (Days 1–18)
                         </button>
-                        <button type="button" class="phase-segment-btn" id="btnPhaseHatching" onclick="selectIncubationPhase('HATCHING')">
+                        <button type="button" class="phase-tab-pill" id="btnPhaseHatching" onclick="setProtocolPhase('HATCHING')">
                             Hatching (Days 19–21)
                         </button>
                     </div>
-
-                    <!-- Active Day Row with Clean Stepper -->
-                    <div class="clean-param-row day-picker-row">
-                        <div class="param-meta">
-                            <span class="param-name">Current Day</span>
-                            <span class="param-sub" id="paramDaySub">Incubation Day 1 of 21</span>
+                    
+                    <div class="protocol-day-stepper">
+                        <div class="stepper-bubble-clock">
+                            <img src="./icons/clock.png" alt="Clock" class="stepper-clock-img">
                         </div>
-                        <div class="day-stepper-control">
-                            <button type="button" class="btn-stepper" onclick="adjustMenuDay(-1)" title="Previous Day">−</button>
-                            <input type="number" id="menuDayInput" min="1" max="21" value="1" oninput="onDayInputDirect(this.value)">
-                            <button type="button" class="btn-stepper" onclick="adjustMenuDay(1)" title="Next Day">+</button>
+                        <div class="stepper-controls">
+                            <button type="button" class="btn-step-circle" onclick="stepDay(-1)" title="Previous Day">−</button>
+                            <span class="stepper-day-text" id="dispProtocolDay">Day 1</span>
+                            <button type="button" class="btn-step-circle" onclick="stepDay(1)" title="Next Day">+</button>
                         </div>
                     </div>
-
-                    <div class="protocol-section-divider"></div>
-
-                    <!-- Clean Target Setpoint Rows -->
-                    <div class="setpoints-group">
-                        <!-- Temperature -->
-                        <div class="clean-param-row">
-                            <div class="param-meta">
-                                <span class="param-name">Target Temperature</span>
-                                <span class="param-sub" id="targetTempSub">37.5°C recommended</span>
-                            </div>
-                            <div class="param-input-wrap">
-                                <input type="number" id="menuTempInput" step="0.1" min="35.0" max="40.0" value="37.5">
-                                <span class="param-unit">°C</span>
-                            </div>
-                        </div>
-
-                        <!-- Humidity -->
-                        <div class="clean-param-row">
-                            <div class="param-meta">
-                                <span class="param-name">Target Humidity</span>
-                                <span class="param-sub" id="targetRHSub">58% RH recommended</span>
-                            </div>
-                            <div class="param-input-wrap">
-                                <input type="number" id="menuRHInput" step="1" min="40" max="95" value="58">
-                                <span class="param-unit">%</span>
-                            </div>
-                        </div>
-
-                        <!-- CO2 -->
-                        <div class="clean-param-row">
-                            <div class="param-meta">
-                                <span class="param-name">CO₂ Ceiling</span>
-                                <span class="param-sub" id="targetCO2Sub">Exhaust purges above 5000 ppm</span>
-                            </div>
-                            <div class="param-input-wrap">
-                                <input type="number" id="menuCO2Input" step="100" min="1000" max="10000" value="5000">
-                                <span class="param-unit">ppm</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="protocol-section-divider"></div>
-
-                    <!-- Egg Turner Action Row -->
-                    <div class="clean-param-row egg-turn-row">
-                        <div class="param-meta">
-                            <span class="param-name">Egg Turner</span>
-                            <span class="param-sub" id="eggTurnerStatusNote">Active hourly rotation (15s)</span>
-                        </div>
-                        <button type="button" class="btn-tray-turn" id="menuRotateBtn" onclick="manualEggTurn()">
-                            Rotate (15s)
-                        </button>
-                    </div>
-
-                    <!-- Single Clean Save Button -->
-                    <button class="btn-save-protocol" id="btnSaveProtocol" onclick="saveProtocolSettings()">
-                        Save & Apply Settings
-                    </button>
                 </div>
+
+                <!-- 2. The 2x2 Target Setpoints Grid (Same visual layout as Home screen) -->
+                <div class="metrics-grid">
+                    <!-- Temperature Card -->
+                    <div class="metric-box box-temp">
+                        <div class="metric-icon-wrap">
+                            <img src="./icons/temp.png" alt="Temperature" class="metric-icon-img">
+                        </div>
+                        <div class="metric-stepper-row">
+                            <button type="button" class="btn-mini-step" onclick="stepTemp(-0.1)">−</button>
+                            <span class="metric-val" id="dispTargetTemp">37.5°C</span>
+                            <button type="button" class="btn-mini-step" onclick="stepTemp(0.1)">+</button>
+                        </div>
+                        <span class="metric-lbl">TARGET TEMP</span>
+                    </div>
+
+                    <!-- Humidity Card -->
+                    <div class="metric-box box-rh">
+                        <div class="metric-icon-wrap">
+                            <img src="./icons/humidity.png" alt="Humidity" class="metric-icon-img">
+                        </div>
+                        <div class="metric-stepper-row">
+                            <button type="button" class="btn-mini-step" onclick="stepRH(-1)">−</button>
+                            <span class="metric-val" id="dispTargetRH">58.0%</span>
+                            <button type="button" class="btn-mini-step" onclick="stepRH(1)">+</button>
+                        </div>
+                        <span class="metric-lbl">TARGET HUMIDITY</span>
+                    </div>
+
+                    <!-- Carbon Dioxide Card -->
+                    <div class="metric-box box-co2">
+                        <div class="metric-icon-wrap">
+                            <img src="./icons/co2.png" alt="CO2" class="metric-icon-img">
+                        </div>
+                        <div class="metric-stepper-row">
+                            <button type="button" class="btn-mini-step" onclick="stepCO2(-500)">−</button>
+                            <span class="metric-val" id="dispTargetCO2">5,000</span>
+                            <button type="button" class="btn-mini-step" onclick="stepCO2(500)">+</button>
+                        </div>
+                        <span class="metric-lbl">PPM (MAX CEILING)</span>
+                    </div>
+
+                    <!-- Egg Turner Card -->
+                    <div class="metric-box box-turner" id="cardTurnerTrigger" onclick="manualEggTurn()" title="Tap to test 15s turn">
+                        <div class="metric-icon-wrap">
+                            <img src="./icons/turner.png" alt="Turner" class="metric-icon-img">
+                        </div>
+                        <span class="metric-val text-turn-val" id="dispTurnerStatus">ROTATE</span>
+                        <span class="metric-lbl" id="dispTurnerSub">EGG TURNER (15s)</span>
+                    </div>
+                </div>
+
+                <!-- 3. Full-width Apply Button -->
+                <button class="btn-protocol-apply" id="btnSaveProtocol" onclick="saveProtocolSettings()">
+                    Save & Apply Protocol
+                </button>
             </section>
 
         </main>
@@ -750,10 +737,10 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
     <!-- Toast Notification Container -->
     <div id="appToast" class="app-toast"></div>
 
-    <script src="/dashboard/app.js?v=22"></script>
+    <script src="/dashboard/app.js?v=23"></script>
     <script>
         if (typeof switchNav === 'undefined') {
-            document.write('<script src="./app.js?v=22"><\/script>');
+            document.write('<script src="./app.js?v=23"><\/script>');
         }
     </script>
 </body>
