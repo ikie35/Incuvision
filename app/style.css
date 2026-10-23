@@ -593,6 +593,112 @@ body {
     min-height: 480px;
 }
 
+/* Push Notification Bar */
+.notif-bar-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #FFFDF8;
+    border: 1.5px solid #F3DFC1;
+    border-radius: 14px;
+    padding: 12px 14px;
+    margin-bottom: 16px;
+    gap: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+.notif-bar-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.icon-circle-notif {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #FEF3C7;
+    color: #D97706;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+}
+
+.icon-circle-notif.active {
+    background: #D1FAE5;
+    color: #059669;
+}
+
+.notif-bar-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.notif-bar-title {
+    font-size: 0.82rem;
+    font-weight: 800;
+    color: #1A1615;
+    letter-spacing: -0.01em;
+}
+
+.notif-bar-sub {
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: #78716C;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.notif-bar-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.btn-notif-action {
+    background: #E09930;
+    color: #FFFFFF;
+    font-size: 0.74rem;
+    font-weight: 800;
+    border: none;
+    padding: 7px 12px;
+    border-radius: 20px;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(224, 153, 48, 0.3);
+    transition: transform 0.15s ease, background 0.2s;
+}
+
+.btn-notif-action.active {
+    background: #059669;
+    box-shadow: 0 2px 6px rgba(5, 150, 105, 0.25);
+}
+
+.btn-notif-action:active {
+    transform: scale(0.95);
+}
+
+.btn-notif-test {
+    background: #F5E8C7;
+    color: #8C6D23;
+    font-size: 0.72rem;
+    font-weight: 700;
+    border: none;
+    padding: 7px 10px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.btn-notif-test:active {
+    transform: scale(0.95);
+}
+
 .alerts-scroll-area {
     display: flex;
     flex-direction: column;

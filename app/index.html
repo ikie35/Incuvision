@@ -9,8 +9,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Poppins:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
     <link rel="icon" type="image/png" href="./icons/logo.png">
-    <link rel="stylesheet" href="/dashboard/style.css?v=25">
-    <link rel="stylesheet" href="./style.css?v=25">
+    <link rel="stylesheet" href="/dashboard/style.css?v=26">
+    <link rel="stylesheet" href="./style.css?v=26">
     <style>
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 :root {
@@ -397,6 +397,26 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
                  ========================================================== -->
             <section id="screenAlerts" class="app-screen">
                 <div class="card card-alerts-container">
+                    <!-- Push Notification Quick Bar -->
+                    <div class="notif-bar-card" id="notifStatusCard">
+                        <div class="notif-bar-left">
+                            <div class="icon-circle-notif" id="notifIconBadge">
+                                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                                </svg>
+                            </div>
+                            <div class="notif-bar-info">
+                                <span class="notif-bar-title" id="notifStatusTitle">Push Notifications</span>
+                                <span class="notif-bar-sub" id="notifStatusSub">Tap enable to receive phone & lockscreen alerts</span>
+                            </div>
+                        </div>
+                        <div class="notif-bar-actions">
+                            <button type="button" class="btn-notif-action" id="btnToggleNotif" onclick="togglePushNotifications()">Enable</button>
+                            <button type="button" class="btn-notif-test" id="btnTestNotif" onclick="testPushNotification()" title="Send sample test alert">Test</button>
+                        </div>
+                    </div>
+
                     <div class="alerts-scroll-area" id="alertsList">
                         <!-- Dynamic Smart Alerts -->
                         <div class="alert-time-group">
@@ -736,10 +756,10 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
     <!-- Toast Notification Container -->
     <div id="appToast" class="app-toast"></div>
 
-    <script src="/dashboard/app.js?v=25"></script>
+    <script src="/dashboard/app.js?v=26"></script>
     <script>
         if (typeof switchNav === 'undefined') {
-            document.write('<script src="./app.js?v=25"><\/script>');
+            document.write('<script src="./app.js?v=26"><\/script>');
         }
     </script>
 </body>

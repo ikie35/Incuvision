@@ -68,6 +68,14 @@ def root_style():
 def root_app():
     return FileResponse(str(app_dir / "app.js"), media_type="application/javascript")
 
+@app.get("/sw.js")
+def service_worker():
+    return FileResponse(
+        str(app_dir / "sw.js"),
+        media_type="application/javascript",
+        headers={"Service-Worker-Allowed": "/"}
+    )
+
 @app.get("/api/telemetry")
 def get_telemetry():
     if not coordinator or not mqtt_bridge:

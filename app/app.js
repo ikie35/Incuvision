@@ -35,6 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
     startTurningCountdown();
     drawTempWaveChart();
     renderProtocolCards();
+    initPushNotifications();
 });
 
 // =============================================================================
@@ -153,8 +154,23 @@ function handleIncomingTelemetry(data) {
         const dayEl = document.getElementById('homeDaysLeft');
         if (dayEl) dayEl.innerText = `${daysLeft} Days Left`;
     }
+
+    const previousPhase = currentPhase;
     if (data.phase) {
         currentPhase = data.phase;
+    }
+    if (currentDay >= 19) {
+        currentPhase = 'HATCHING';
+    }
+
+    if (previousPhase === 'SETTING' && currentPhase === 'HATCHING') {
+        sendPushNotification({
+            title: "🐣 Lockdown Transition (Day 19)",
+            body: "Incubator entered Hatching phase! Targets updated to 36.9°C & 70% RH. Egg turner locked.",
+            tag: "phase-transition-lockdown",
+            soundType: "chime",
+            cooldownSeconds: 3600
+        });
     }
 
     // Update Home & Protocol Phase Indicators
@@ -677,6 +693,17 @@ function evaluateSmartAlerts(temp, rh, o2, actuators) {
             </div>
         `;
     }
+
+    // Trigger push notification if out-of-bounds alerts are active
+    if (alerts.length > 0) {
+        sendPushNotification({
+            title: isHatching ? "⚠️ Hatching Alert (Lockdown)" : "⚠️ Incubation Alert",
+            body: alerts[0].msg,
+            tag: "alert-" + (isHatching ? "hatch" : "set"),
+            soundType: "alert",
+            cooldownSeconds: 180
+        });
+    }
 }
 
 // =============================================================================
@@ -906,6 +933,16 @@ function renderAuditScores(audit, switchToAudit = true) {
             if (slot) slot.className = 'egg-slot-pill ' + egg.status;
         });
     }
+
+    if (switchToAudit && audit && !audit.error) {
+        sendPushNotification({
+            title: `🔬 Candling Audit (Day ${audit.day || currentDay})`,
+            body: `Fertility: ${rate.toFixed(1)}% (${fertileCount}/${total} Fertile Eggs).`,
+            tag: `audit-result-day-${audit.day || currentDay}`,
+            soundType: "chime",
+            cooldownSeconds: 60
+        });
+    }
 }
 
 // 56-Egg Matrix Drawer
@@ -998,6 +1035,197 @@ function showToast(message, isError = false) {
     toastTimer = setTimeout(() => {
         toast.classList.remove('show');
     }, 3200);
+}
+
+// =============================================================================
+// PUSH & SYSTEM NOTIFICATIONS (WEB AUDIO CHIME + SERVICE WORKER)
+// =============================================================================
+let swRegistration = null;
+let pushEnabled = false;
+const lastPushTimestamps = {};
+
+function playNotificationSound(type = 'chime') {
+    try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        if (type === 'alert') {
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+            osc.frequency.setValueAtTime(880.00, ctx.currentTime + 0.12);
+            gain.gain.setValueAtTime(0.18, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.35);
+        } else {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(523.25, ctx.currentTime);
+            osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.10);
+            osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.20);
+            gain.gain.setValueAtTime(0.18, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.55);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.55);
+        }
+    } catch (e) {
+        // AudioContext can be suspended before user interaction
+    }
+}
+
+function initPushNotifications() {
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js').then(reg => {
+            swRegistration = reg;
+            console.log("[PUSH] Service Worker active with scope:", reg.scope);
+        }).catch(() => {
+            navigator.serviceWorker.register('./sw.js').then(reg => {
+                swRegistration = reg;
+            }).catch(e => console.warn("[PUSH] SW fallback registration:", e));
+        });
+    }
+
+    if ('Notification' in window) {
+        pushEnabled = (Notification.permission === 'granted');
+    }
+    updatePushUI();
+}
+
+function updatePushUI() {
+    const badge = document.getElementById('notifIconBadge');
+    const title = document.getElementById('notifStatusTitle');
+    const sub = document.getElementById('notifStatusSub');
+    const btnToggle = document.getElementById('btnToggleNotif');
+    const btnTest = document.getElementById('btnTestNotif');
+
+    if (!('Notification' in window)) {
+        if (title) title.innerText = 'Push Unavailable';
+        if (sub) sub.innerText = 'Browser does not support notifications';
+        if (btnToggle) btnToggle.style.display = 'none';
+        if (btnTest) btnTest.style.display = 'none';
+        return;
+    }
+
+    const perm = Notification.permission;
+    if (perm === 'granted') {
+        pushEnabled = true;
+        if (badge) badge.classList.add('active');
+        if (title) title.innerText = 'Push Active';
+        if (sub) sub.innerText = 'Alerts enabled on lockscreen & phone';
+        if (btnToggle) {
+            btnToggle.innerText = 'Active ✓';
+            btnToggle.classList.add('active');
+        }
+        if (btnTest) btnTest.style.display = 'inline-block';
+    } else if (perm === 'denied') {
+        pushEnabled = false;
+        if (badge) badge.classList.remove('active');
+        if (title) title.innerText = 'Push Blocked';
+        if (sub) sub.innerText = 'Notifications blocked in browser settings';
+        if (btnToggle) {
+            btnToggle.innerText = 'Blocked';
+            btnToggle.classList.remove('active');
+        }
+        if (btnTest) btnTest.style.display = 'none';
+    } else {
+        pushEnabled = false;
+        if (badge) badge.classList.remove('active');
+        if (title) title.innerText = 'Push Notifications';
+        if (sub) sub.innerText = 'Tap enable to receive phone alerts';
+        if (btnToggle) {
+            btnToggle.innerText = 'Enable';
+            btnToggle.classList.remove('active');
+        }
+        if (btnTest) btnTest.style.display = 'inline-block';
+    }
+}
+
+async function togglePushNotifications() {
+    if (!('Notification' in window)) {
+        showToast("Your browser does not support Web Notifications.", true);
+        return;
+    }
+
+    if (Notification.permission === 'granted') {
+        showToast("Push notifications are already active!");
+        testPushNotification();
+        return;
+    }
+
+    try {
+        const permission = await Notification.requestPermission();
+        updatePushUI();
+        if (permission === 'granted') {
+            showToast("🔔 Push notifications enabled successfully!");
+            playNotificationSound('chime');
+            sendPushNotification({
+                title: "IncuVision Push Active",
+                body: "You will now receive instant push alerts for critical incubator events.",
+                tag: "system-welcome",
+                soundType: "chime",
+                cooldownSeconds: 0
+            });
+        } else if (permission === 'denied') {
+            showToast("Notification permission was denied in your browser settings.", true);
+        }
+    } catch (e) {
+        console.warn("[PUSH] Request error:", e);
+        showToast("Could not request notification permission.", true);
+    }
+}
+
+function sendPushNotification({ title, body, tag = 'incuvision-alert', soundType = 'alert', cooldownSeconds = 180 }) {
+    const now = Date.now();
+    if (lastPushTimestamps[tag] && (now - lastPushTimestamps[tag]) < (cooldownSeconds * 1000)) {
+        return;
+    }
+    lastPushTimestamps[tag] = now;
+
+    // 1. Play audio chime
+    playNotificationSound(soundType);
+
+    // 2. In-App toast
+    showToast(`🔔 ${title}: ${body}`);
+
+    // 3. Dispatch native system push notification
+    if ('Notification' in window && Notification.permission === 'granted') {
+        const options = {
+            body: body,
+            icon: '/dashboard/icons/logo.png',
+            badge: '/dashboard/icons/logo.png',
+            tag: tag,
+            renotify: true,
+            vibrate: [200, 100, 200],
+            data: { url: '/dashboard/' }
+        };
+
+        if (swRegistration && swRegistration.showNotification) {
+            swRegistration.showNotification(title, options).catch(() => {
+                try { new Notification(title, options); } catch (e) {}
+            });
+        } else {
+            try {
+                new Notification(title, options);
+            } catch (e) {
+                console.warn("[PUSH] Native notification error:", e);
+            }
+        }
+    }
+}
+
+function testPushNotification() {
+    playNotificationSound('chime');
+    sendPushNotification({
+        title: "IncuVision Test Alert",
+        body: `Day ${currentDay} (${currentPhase}): Incubator system operational.`,
+        tag: "test-" + Date.now(),
+        soundType: "chime",
+        cooldownSeconds: 0
+    });
 }
 
 // =============================================================================
