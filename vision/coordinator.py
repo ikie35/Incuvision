@@ -9,14 +9,20 @@ from logger import logger
 from lcd_manager import lcd_display
 from candling_pipeline import CandlingVisionPipeline
 
+import json
+from pathlib import Path
+
 class IncubationCoordinator:
     def __init__(self, mqtt_bridge):
         self.mqtt = mqtt_bridge
         self.pipeline = CandlingVisionPipeline()
+        self.state_file = Path(__file__).resolve().parent / "coordinator_state.json"
         
         self.start_time = datetime.now()
         self.current_day = 1
         self.phase = "SETTING"  # "SETTING" or "HATCHING"
+        self._load_state()
+
         self.is_running = False
         self.is_auditing_now = False
         
@@ -24,16 +30,51 @@ class IncubationCoordinator:
         self.latest_audit_result = logger.get_latest_audit()
         self._lock = threading.Lock()
 
+    def _save_state(self):
+        try:
+            with open(self.state_file, "w") as f:
+                json.dump({
+                    "day": self.current_day,
+                    "phase": self.phase,
+                    "start_time": self.start_time.isoformat()
+                }, f, indent=2)
+        except Exception as e:
+            print(f"[COORDINATOR] Could not save state: {e}")
+
+    def _load_state(self):
+        if self.state_file.exists():
+            try:
+                with open(self.state_file, "r") as f:
+                    data = json.load(f)
+                    self.current_day = max(1, min(TOTAL_INCUBATION_DAYS, data.get("day", 1)))
+                    self.phase = data.get("phase", "HATCHING" if self.current_day >= HATCHING_DAYS_START else "SETTING")
+                    if "start_time" in data:
+                        self.start_time = datetime.fromisoformat(data["start_time"])
+                    else:
+                        self.start_time = datetime.now() - timedelta(days=(self.current_day - 1))
+                    print(f"[COORDINATOR] Restored persistent incubation state: Day {self.current_day} ({self.phase})")
+                    return
+            except Exception as e:
+                print(f"[COORDINATOR] State load failed ({e}), starting fresh.")
+        self.start_time = datetime.now()
+        self.current_day = 1
+        self.phase = "SETTING"
+
     def start(self):
         self.is_running = True
         self.worker_thread = threading.Thread(target=self._run_loop, daemon=True)
         self.worker_thread.start()
-        print("[COORDINATOR] Incubation Master Supervisor started.")
+        print(f"[COORDINATOR] Incubation Master Supervisor started (Day {self.current_day}, {self.phase}).")
+        # Ensure ESP32 starts with the active day, phase, and in AUTO mode
+        self.mqtt.set_phase(self.phase)
+        self.mqtt.send_command({"cmd": "SET_DAY", "day": self.current_day})
+        self.mqtt.send_command({"cmd": "SET_MODE", "mode": "AUTO"})
 
     def set_start_date(self, start_dt: datetime):
         with self._lock:
             self.start_time = start_dt
             self._update_day_and_phase()
+            self._save_state()
 
     def set_manual_day(self, day: int):
         with self._lock:
@@ -41,8 +82,10 @@ class IncubationCoordinator:
             self.start_time = datetime.now() - timedelta(days=(self.current_day - 1))
             self.phase = "HATCHING" if self.current_day >= HATCHING_DAYS_START else "SETTING"
             print(f"[COORDINATOR] Day set to: {self.current_day} (Phase: {self.phase})")
+            self._save_state()
             self.mqtt.set_phase(self.phase)
             self.mqtt.send_command({"cmd": "SET_DAY", "day": self.current_day})
+            self.mqtt.send_command({"cmd": "SET_MODE", "mode": "AUTO"})
 
     def _update_day_and_phase(self):
         elapsed = datetime.now() - self.start_time

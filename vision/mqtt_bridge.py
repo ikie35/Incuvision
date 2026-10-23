@@ -360,9 +360,13 @@ class MQTTBridge:
                         self.serial_conn.write(b"EXHAUST ON\n" if st else b"EXHAUST OFF\n")
                     elif act in ("motor", "turner"):
                         self.serial_conn.write(b"TURN ON\n" if st else b"TURN OFF\n")
+                elif cmd == "SET_MODE":
+                    m = cmd_dict.get("mode", "AUTO").upper()
+                    self.serial_conn.write(f"MODE {m}\n".encode("utf-8"))
                 elif cmd in ("SET_DAY", "DAY"):
                     d = cmd_dict.get("day", 1)
                     self.serial_conn.write(f"DAY {d}\n".encode("utf-8"))
+                    self.serial_conn.write(b"MODE AUTO\n")
                 elif cmd == "TURN_EGGS":
                     dur = cmd_dict.get("duration", 15)
                     self.serial_conn.write(f"TURN {dur}\n".encode("utf-8"))
@@ -370,6 +374,7 @@ class MQTTBridge:
                     p = cmd_dict.get("phase", "SETTING")
                     d = 19 if p == "HATCHING" else 1
                     self.serial_conn.write(f"DAY {d}\n".encode("utf-8"))
+                    self.serial_conn.write(b"MODE AUTO\n")
 
                 print(f"[SERIAL] Command sent to ESP32: {payload}")
             except Exception as e:
