@@ -39,7 +39,10 @@ class IncubationCoordinator:
         with self._lock:
             self.current_day = max(1, min(TOTAL_INCUBATION_DAYS, day))
             self.start_time = datetime.now() - timedelta(days=(self.current_day - 1))
-            self._update_day_and_phase()
+            self.phase = "HATCHING" if self.current_day >= HATCHING_DAYS_START else "SETTING"
+            print(f"[COORDINATOR] Day set to: {self.current_day} (Phase: {self.phase})")
+            self.mqtt.set_phase(self.phase)
+            self.mqtt.send_command({"cmd": "SET_DAY", "day": self.current_day})
 
     def _update_day_and_phase(self):
         elapsed = datetime.now() - self.start_time

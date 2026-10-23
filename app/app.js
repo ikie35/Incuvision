@@ -153,10 +153,26 @@ function handleIncomingTelemetry(data) {
         if (dayEl) dayEl.innerText = `${daysLeft} Days Left`;
         
         const menuDay = document.getElementById('menuDayInput');
-        if (menuDay) menuDay.value = currentDay;
+        if (menuDay && document.activeElement !== menuDay) {
+            menuDay.value = currentDay;
+        }
     }
     if (data.phase) {
         currentPhase = data.phase;
+    }
+
+    // Update Home & Menu Protocol Phase Indicators
+    const homePhaseSub = document.getElementById('homePhaseSub');
+    if (homePhaseSub) {
+        const isHatching = (currentPhase === 'HATCHING' || currentDay >= 19);
+        homePhaseSub.innerText = isHatching ? `Lockdown Phase (Day ${currentDay} of 21)` : `Setting Phase (Day ${currentDay} of 21)`;
+        if (isHatching) homePhaseSub.classList.add('hatching');
+        else homePhaseSub.classList.remove('hatching');
+    }
+
+    const menuDayEl = document.getElementById('menuDayInput');
+    if (menuDayEl && document.activeElement !== menuDayEl) {
+        updateMenuProtocolDisplay(currentDay, currentPhase, false);
     }
 
     const telem = data.telemetry;
@@ -337,14 +353,21 @@ function updateTurningDisplay() {
 }
 
 async function manualEggTurn() {
+    if (currentPhase === 'HATCHING' || currentDay >= 19) {
+        showToast("🔒 Egg turning is locked out during Hatching Phase (Days 19–21).", true);
+        return;
+    }
+
     isHardwareTurning = true;
     turningSecondsLeft = 3600;
     updateTurningDisplay();
 
     try {
         await fetch('/api/control/egg_turning', { method: 'POST' });
+        showToast("Egg turning initiated (15s rotation).");
     } catch (e) {
         console.warn("Egg turn error:", e);
+        showToast("Failed to trigger egg turning.", true);
     }
 }
 
@@ -379,7 +402,7 @@ const metricConfigs = {
         title: 'TEMPERATURE',
         tabId: 'gTabTemp',
         pillText: () => `${parseFloat(currentTelemetry.temp || 37.5).toFixed(1)}°C`,
-        targetText: 'Target: 37.5°C (Setting)',
+        targetText: () => (currentPhase === 'HATCHING' || currentDay >= 19) ? 'Target: 36.9°C (Hatching)' : 'Target: 37.5°C (Setting)',
         strokeColor: '#E09930',
         gradTop: 'rgba(250, 217, 128, 0.45)',
         minVal: 30.0,
@@ -396,7 +419,7 @@ const metricConfigs = {
         title: 'HUMIDITY',
         tabId: 'gTabRH',
         pillText: () => `${parseFloat(currentTelemetry.rh || 58.0).toFixed(1)}%`,
-        targetText: 'Target: 58.0% (Setting)',
+        targetText: () => (currentPhase === 'HATCHING' || currentDay >= 19) ? 'Target: 70.0% (Hatching)' : 'Target: 58.0% (Setting)',
         strokeColor: '#0284C7',
         gradTop: 'rgba(186, 230, 253, 0.55)',
         minVal: 40.0,
@@ -409,10 +432,10 @@ const metricConfigs = {
         ]
     },
     co2: {
-        title: 'COâ‚‚ LEVEL',
+        title: 'CO₂ LEVEL',
         tabId: 'gTabCO2',
         pillText: () => `${parseInt(currentTelemetry.co2 || 3200).toLocaleString()} ppm`,
-        targetText: 'Safe Threshold: <5,000 ppm',
+        targetText: () => (currentPhase === 'HATCHING' || currentDay >= 19) ? 'Max Threshold: <7,500 ppm' : 'Safe Threshold: <5,000 ppm',
         strokeColor: '#059669',
         gradTop: 'rgba(167, 243, 208, 0.55)',
         minVal: 0,
@@ -466,7 +489,10 @@ function setGraphMetric(metricType) {
 
     if (titleEl) titleEl.innerText = metricConfigs[metricType].title;
     if (pillEl) pillEl.innerText = metricConfigs[metricType].pillText();
-    if (targetEl) targetEl.innerText = metricConfigs[metricType].targetText;
+    if (targetEl) {
+        const tVal = metricConfigs[metricType].targetText;
+        targetEl.innerText = typeof tVal === 'function' ? tVal() : tVal;
+    }
 
     // 3. Update Y-Axis labels
     const yAxisEl = document.getElementById('chartYAxis');
@@ -883,40 +909,194 @@ function closeModal(e) {
 }
 
 // =============================================================================
-// MENU SETPOINTS & PROTOCOL
+// TOAST NOTIFICATIONS
 // =============================================================================
+let toastTimer = null;
+function showToast(message, isError = false) {
+    const toast = document.getElementById('appToast');
+    if (!toast) return;
+    toast.innerText = message;
+    if (isError) {
+        toast.classList.add('toast-error');
+    } else {
+        toast.classList.remove('toast-error');
+    }
+    toast.classList.add('show');
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+        toast.classList.remove('show');
+    }, 3200);
+}
+
+// =============================================================================
+// MENU SETPOINTS & PROTOCOL (AUTOMATIC DAY 18 TRANSITION)
+// =============================================================================
+function onMenuDayInputChanged(val) {
+    const day = parseInt(val) || 1;
+    const isHatching = day >= 19;
+    updateMenuProtocolDisplay(day, isHatching ? 'HATCHING' : 'SETTING', true);
+}
+
+function applyProtocolPreset(phase) {
+    const day = (phase === 'HATCHING') ? 19 : 1;
+    const dayInput = document.getElementById('menuDayInput');
+    if (dayInput) dayInput.value = day;
+    updateMenuProtocolDisplay(day, phase, true);
+    showToast(`Loaded ${phase === 'HATCHING' ? 'Hatching / Lockdown (36.9°C, 70% RH)' : 'Setting (37.5°C, 58% RH)'} preset. Tap "Save Day" to activate.`);
+}
+
+function updateMenuProtocolDisplay(day, phase, updateInputs = false) {
+    const isHatching = (phase === 'HATCHING' || day >= 19);
+
+    // 1. Update Phase Banner & Status Dot
+    const banner = document.getElementById('protocolPhaseBanner');
+    const badge = document.getElementById('protocolPhaseBadge');
+    const desc = document.getElementById('protocolPhaseDesc');
+    const dot = document.getElementById('phaseStatusDot');
+
+    if (banner) {
+        if (isHatching) banner.classList.add('banner-hatching');
+        else banner.classList.remove('banner-hatching');
+    }
+    if (badge) {
+        badge.innerText = isHatching ? 'HATCHING / LOCKDOWN (Days 19–21)' : 'SETTING PHASE (Days 1–18)';
+        if (isHatching) badge.classList.add('badge-hatching');
+        else badge.classList.remove('badge-hatching');
+    }
+    if (desc) {
+        desc.innerText = isHatching 
+            ? 'Lockdown Active: Target 36.9°C, 70% RH. Egg turning is locked OFF so chicks can orient and pip safely.'
+            : 'Standard Setting: 37.5°C, 58% RH with automatic egg turning every 60m.';
+    }
+    if (dot) {
+        if (isHatching) dot.classList.add('indicator-hatching');
+        else dot.classList.remove('indicator-hatching');
+    }
+
+    // 2. Preset Tabs state
+    const btnSetting = document.getElementById('btnPresetSetting');
+    const btnHatching = document.getElementById('btnPresetHatching');
+    if (btnSetting) {
+        if (isHatching) btnSetting.classList.remove('active');
+        else btnSetting.classList.add('active');
+    }
+    if (btnHatching) {
+        if (isHatching) btnHatching.classList.add('active');
+        else btnHatching.classList.remove('active');
+    }
+
+    // 3. Hint tags
+    const hintDay = document.getElementById('menuDayHintTag');
+    if (hintDay) {
+        hintDay.innerText = `Day ${day} of 21 (${isHatching ? 'Lockdown' : 'Setting'})`;
+    }
+
+    const recTemp = document.getElementById('recTempTag');
+    const recRH = document.getElementById('recRHTag');
+    const recCO2 = document.getElementById('recCO2Tag');
+    if (recTemp) recTemp.innerText = isHatching ? 'Lockdown: 36.9°C' : 'Setting: 37.5°C';
+    if (recRH) recRH.innerText = isHatching ? 'Lockdown: 70% RH' : 'Setting: 58% RH';
+    if (recCO2) recCO2.innerText = isHatching ? 'Lockdown: 7500 ppm' : 'Setting: 5000 ppm';
+
+    // 4. Update input values if requested
+    if (updateInputs) {
+        const tempIn = document.getElementById('menuTempInput');
+        const rhIn = document.getElementById('menuRHInput');
+        const co2In = document.getElementById('menuCO2Input');
+        if (tempIn) tempIn.value = isHatching ? '36.9' : '37.5';
+        if (rhIn) rhIn.value = isHatching ? '70' : '58';
+        if (co2In) co2In.value = isHatching ? '7500' : '5000';
+    }
+
+    // 5. Egg Turning Button Safeguard & Warning notice
+    const rotateBtn = document.getElementById('menuRotateBtn');
+    const warnNotice = document.getElementById('lockdownWarningNotice');
+
+    if (rotateBtn) {
+        if (isHatching) {
+            rotateBtn.disabled = true;
+            rotateBtn.classList.add('disabled-lockdown');
+            rotateBtn.innerHTML = '🔒 Egg Turning Locked (Day 19–21)';
+        } else {
+            rotateBtn.disabled = false;
+            rotateBtn.classList.remove('disabled-lockdown');
+            rotateBtn.innerHTML = 'Rotate Egg Tray Now (15s)';
+        }
+    }
+    if (warnNotice) {
+        warnNotice.style.display = isHatching ? 'flex' : 'none';
+    }
+}
+
 async function setIncubationDayFromMenu() {
-    const day = parseInt(document.getElementById('menuDayInput').value);
+    const dayInput = document.getElementById('menuDayInput');
+    const day = parseInt(dayInput ? dayInput.value : 1) || 1;
     currentDay = day;
+    currentPhase = day >= 19 ? 'HATCHING' : 'SETTING';
+
     const daysLeft = Math.max(0, 21 - currentDay);
-    document.getElementById('homeDaysLeft').innerText = `${daysLeft} Days Left`;
+    const dayEl = document.getElementById('homeDaysLeft');
+    if (dayEl) dayEl.innerText = `${daysLeft} Days Left`;
+
+    // Automatically apply appropriate phase setpoints
+    const isHatching = day >= 19;
+    const targetTemp = isHatching ? 36.9 : 37.5;
+    const targetRH = isHatching ? 70.0 : 58.0;
+    const targetCO2 = isHatching ? 7500 : 5000;
+
+    const tempIn = document.getElementById('menuTempInput');
+    const rhIn = document.getElementById('menuRHInput');
+    const co2In = document.getElementById('menuCO2Input');
+    if (tempIn) tempIn.value = targetTemp;
+    if (rhIn) rhIn.value = targetRH;
+    if (co2In) co2In.value = targetCO2;
+
+    updateMenuProtocolDisplay(day, currentPhase, false);
+    updateTurningDisplay();
 
     try {
-        await fetch('/api/control/day', {
+        // Send Day to coordinator & ESP32
+        const resDay = await fetch('/api/control/day', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ day: day })
         });
-        alert(`Day set to ${day}. Protocol updated.`);
+
+        // Also sync setpoints for this phase
+        await fetch('/api/control/setpoints', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ temp: targetTemp, rh: targetRH, co2: targetCO2 })
+        });
+
+        if (resDay.ok) {
+            showToast(`Day ${day} applied! Switched to ${isHatching ? 'Lockdown (36.9°C, 70% RH, Motor Locked)' : 'Setting (37.5°C, 58% RH)'}`);
+        } else {
+            showToast("Saved with warning: Coordinator reconnecting...");
+        }
     } catch (e) {
-        alert("Error saving day: " + e);
+        showToast("Error saving day: " + e.message, true);
     }
 }
 
 async function saveMenuSetpoints() {
-    const temp = parseFloat(document.getElementById('menuTempInput').value);
-    const rh = parseFloat(document.getElementById('menuRHInput').value);
-    const co2 = parseInt(document.getElementById('menuCO2Input').value);
+    const temp = parseFloat(document.getElementById('menuTempInput').value) || 37.5;
+    const rh = parseFloat(document.getElementById('menuRHInput').value) || 58.0;
+    const co2 = parseInt(document.getElementById('menuCO2Input').value) || 5000;
 
     try {
-        await fetch('/api/control/setpoints', {
+        const res = await fetch('/api/control/setpoints', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ temp, rh, co2 })
         });
-        alert("Setpoints sent to ESP32 incubator controller.");
+        if (res.ok) {
+            showToast(`Setpoints updated: ${temp.toFixed(1)}°C, ${rh.toFixed(0)}% RH, ${co2} ppm`);
+        } else {
+            showToast("Setpoints sent to controller.");
+        }
     } catch (e) {
-        alert("Error updating setpoints: " + e);
+        showToast("Error updating setpoints: " + e.message, true);
     }
 }
 

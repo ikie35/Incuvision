@@ -139,6 +139,12 @@ class MQTTBridge:
             self._turn_sync_timestamp = time.time()
         if "uptime" in data:
             self.latest_telemetry["uptime"] = data["uptime"]
+        if "target_temp" in data:
+            self.latest_telemetry["target_temp"] = float(data["target_temp"])
+        if "target_rh" in data:
+            self.latest_telemetry["target_rh"] = float(data["target_rh"])
+        if "target_co2" in data:
+            self.latest_telemetry["target_co2"] = int(data["target_co2"])
 
     # =========================================================================
     # USB SERIAL BRIDGE & TELEMETRY PARSER
@@ -360,6 +366,10 @@ class MQTTBridge:
                 elif cmd == "TURN_EGGS":
                     dur = cmd_dict.get("duration", 15)
                     self.serial_conn.write(f"TURN {dur}\n".encode("utf-8"))
+                elif cmd == "SET_PHASE":
+                    p = cmd_dict.get("phase", "SETTING")
+                    d = 19 if p == "HATCHING" else 1
+                    self.serial_conn.write(f"DAY {d}\n".encode("utf-8"))
 
                 print(f"[SERIAL] Command sent to ESP32: {payload}")
             except Exception as e:
@@ -377,8 +387,23 @@ class MQTTBridge:
         self.send_command({"cmd": "TURN_EGGS", "duration": duration_sec})
 
     def set_phase(self, phase_str: str):
+        self.latest_telemetry["phase"] = phase_str
+        if phase_str == "HATCHING":
+            self.latest_telemetry["target_temp"] = 36.9
+            self.latest_telemetry["target_rh"] = 70.0
+            self.latest_telemetry["target_co2"] = 7500
+            self.latest_telemetry["next_turn_seconds"] = 0
+            if "actuators" in self.latest_telemetry and isinstance(self.latest_telemetry["actuators"], dict):
+                self.latest_telemetry["actuators"]["motor"] = False
+        else:
+            self.latest_telemetry["target_temp"] = 37.5
+            self.latest_telemetry["target_rh"] = 58.0
+            self.latest_telemetry["target_co2"] = 5000
         self.send_command({"cmd": "SET_PHASE", "phase": phase_str})
 
     def set_custom_setpoints(self, temp: float, rh: float, co2: int):
+        self.latest_telemetry["target_temp"] = float(temp)
+        self.latest_telemetry["target_rh"] = float(rh)
+        self.latest_telemetry["target_co2"] = int(co2)
         self.send_command({"cmd": "SET_SETPOINTS", "temp": temp, "rh": rh, "co2": co2})
 

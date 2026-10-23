@@ -1100,12 +1100,109 @@ body {
     gap: 14px;
 }
 
+.menu-header-group {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
 .menu-heading {
     font-family: var(--font-heading);
-    font-size: 1.1rem;
+    font-size: 1.15rem;
     font-weight: 800;
     color: #1A1615;
-    margin-bottom: 4px;
+}
+
+.menu-subtext {
+    font-size: 0.74rem;
+    font-weight: 500;
+    color: var(--text-muted);
+}
+
+/* Phase Banner */
+.protocol-phase-banner {
+    background: #FEF3C7;
+    border: 1.5px solid #FCD34D;
+    border-radius: 14px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+.protocol-phase-banner.banner-hatching {
+    background: #FFF7ED;
+    border-color: #FDBA74;
+}
+
+.phase-banner-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.phase-status-indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #10B981;
+    display: inline-block;
+    box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
+}
+
+.phase-status-indicator.indicator-hatching {
+    background: #F97316;
+    box-shadow: 0 0 6px rgba(249, 115, 22, 0.6);
+}
+
+.badge-phase-pill {
+    font-family: var(--font-heading);
+    font-size: 0.76rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    color: #92400E;
+    text-transform: uppercase;
+}
+
+.badge-phase-pill.badge-hatching {
+    color: #C2410C;
+}
+
+.protocol-phase-desc {
+    font-size: 0.74rem;
+    font-weight: 500;
+    color: #4B5563;
+    line-height: 1.35;
+}
+
+/* Preset Tabs */
+.protocol-preset-tabs {
+    display: flex;
+    background: #F3F4F6;
+    border-radius: 12px;
+    padding: 4px;
+    gap: 6px;
+}
+
+.preset-btn {
+    flex: 1;
+    border: none;
+    background: transparent;
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-family: var(--font-heading);
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #6B7280;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.preset-btn.active {
+    background: #FFFFFF;
+    color: #111827;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
 }
 
 .form-row {
@@ -1114,10 +1211,22 @@ body {
     gap: 6px;
 }
 
-.form-row label {
+.label-with-hint {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.label-with-hint label {
     font-size: 0.75rem;
     font-weight: 700;
     color: var(--text-muted);
+}
+
+.hint-tag, .setpoint-rec-tag {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #D97706;
 }
 
 .form-row input {
@@ -1129,6 +1238,12 @@ body {
     font-family: var(--font-heading);
     font-weight: 700;
     color: #111827;
+}
+
+.form-row input:focus {
+    outline: none;
+    border-color: #D97706;
+    background: #FFFFFF;
 }
 
 .input-btn-group {
@@ -1151,6 +1266,11 @@ body {
     border: none;
     cursor: pointer;
     margin-top: 6px;
+    transition: opacity 0.15s ease;
+}
+
+.btn-primary-action:active {
+    opacity: 0.85;
 }
 
 .btn-secondary-action {
@@ -1163,12 +1283,96 @@ body {
     border-radius: var(--radius-pill);
     border: 1px solid #D1D5DB;
     cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.btn-secondary-action.disabled-lockdown {
+    background: #F3F4F6;
+    color: #9CA3AF;
+    border-color: #E5E7EB;
+    cursor: not-allowed;
+    opacity: 0.75;
+}
+
+.lockdown-warning-card {
+    background: #FEF2F2;
+    border: 1.5px solid #FCA5A5;
+    border-radius: 12px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.lockdown-warn-icon {
+    font-size: 1.25rem;
+    line-height: 1;
+}
+
+.lockdown-warn-text strong {
+    display: block;
+    font-family: var(--font-heading);
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: #991B1B;
+    margin-bottom: 2px;
+}
+
+.lockdown-warn-text p {
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: #7F1D1D;
+    line-height: 1.35;
 }
 
 .divider {
     border: none;
     border-top: 1px solid #E5E7EB;
     margin: 4px 0;
+}
+
+/* Countdown phase subtitle on home card */
+.countdown-phase-sub {
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: #78350F;
+    margin-top: 2px;
+}
+
+.countdown-phase-sub.hatching {
+    color: #C2410C;
+    font-weight: 800;
+}
+
+/* Floating Toast Notification */
+.app-toast {
+    position: fixed;
+    bottom: 84px;
+    left: 50%;
+    transform: translateX(-50%) translateY(30px);
+    background: #1F2937;
+    color: #FFFFFF;
+    font-family: var(--font-heading);
+    font-size: 0.82rem;
+    font-weight: 700;
+    padding: 10px 18px;
+    border-radius: 9999px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+    z-index: 99999;
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.25s ease, opacity 0.25s ease;
+    max-width: 90vw;
+    text-align: center;
+}
+
+.app-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+.app-toast.toast-error {
+    background: #DC2626;
 }
 
 /* ==========================================================================

@@ -9,8 +9,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Poppins:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
     <link rel="icon" type="image/png" href="./icons/logo.png">
-    <link rel="stylesheet" href="/dashboard/style.css?v=11">
-    <link rel="stylesheet" href="./style.css?v=11">
+    <link rel="stylesheet" href="/dashboard/style.css?v=21">
+    <link rel="stylesheet" href="./style.css?v=21">
     <style>
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 :root {
@@ -210,6 +210,7 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
                     </div>
                     <div class="countdown-text">
                         <span id="homeDaysLeft">12 Days Left</span>
+                        <span class="countdown-phase-sub" id="homePhaseSub">Setting Phase (Day 1 of 21)</span>
                     </div>
                 </div>
 
@@ -601,38 +602,84 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
                  ========================================================== -->
             <section id="screenMenu" class="app-screen">
                 <div class="card card-menu-settings">
-                    <h3 class="menu-heading">Incubation Protocol Settings</h3>
+                    <div class="menu-header-group">
+                        <h3 class="menu-heading">Incubation Protocol Settings</h3>
+                        <p class="menu-subtext">Automatic setpoint scheduling & phase control</p>
+                    </div>
 
+                    <!-- Active Phase Status Banner -->
+                    <div class="protocol-phase-banner" id="protocolPhaseBanner">
+                        <div class="phase-banner-header">
+                            <span class="phase-status-indicator" id="phaseStatusDot"></span>
+                            <span class="badge-phase-pill" id="protocolPhaseBadge">SETTING PHASE (Days 1–18)</span>
+                        </div>
+                        <div class="protocol-phase-desc" id="protocolPhaseDesc">
+                            Standard Incubation: 37.5°C, 58% RH with automatic egg turning every 60m.
+                        </div>
+                    </div>
+
+                    <!-- Quick Protocol Phase Preset Switcher -->
+                    <div class="protocol-preset-tabs">
+                        <button type="button" class="preset-btn active" id="btnPresetSetting" onclick="applyProtocolPreset('SETTING')">
+                            Setting (Days 1–18)
+                        </button>
+                        <button type="button" class="preset-btn" id="btnPresetHatching" onclick="applyProtocolPreset('HATCHING')">
+                            Lockdown (Days 19–21)
+                        </button>
+                    </div>
+
+                    <!-- Active Incubation Day Input -->
                     <div class="form-row">
-                        <label>Active Incubation Day</label>
+                        <div class="label-with-hint">
+                            <label for="menuDayInput">Active Incubation Day</label>
+                            <span class="hint-tag" id="menuDayHintTag">Day 1 of 21 (Setting)</span>
+                        </div>
                         <div class="input-btn-group">
-                            <input type="number" id="menuDayInput" min="1" max="21" value="1">
+                            <input type="number" id="menuDayInput" min="1" max="21" value="1" oninput="onMenuDayInputChanged(this.value)" onchange="onMenuDayInputChanged(this.value)">
                             <button class="btn-pill-gold" onclick="setIncubationDayFromMenu()">Save Day</button>
                         </div>
                     </div>
 
+                    <!-- Setpoint Inputs (Auto-filled based on Day, or customizable) -->
                     <div class="form-row">
-                        <label>Target Temperature (°C)</label>
-                        <input type="number" id="menuTempInput" step="0.1" value="37.5">
+                        <div class="label-with-hint">
+                            <label for="menuTempInput">Target Temperature (°C)</label>
+                            <span class="setpoint-rec-tag" id="recTempTag">Setting: 37.5°C</span>
+                        </div>
+                        <input type="number" id="menuTempInput" step="0.1" min="35.0" max="40.0" value="37.5">
                     </div>
 
                     <div class="form-row">
-                        <label>Target Humidity (% RH)</label>
-                        <input type="number" id="menuRHInput" step="1" value="58">
+                        <div class="label-with-hint">
+                            <label for="menuRHInput">Target Humidity (% RH)</label>
+                            <span class="setpoint-rec-tag" id="recRHTag">Setting: 58% RH</span>
+                        </div>
+                        <input type="number" id="menuRHInput" step="1" min="40" max="95" value="58">
                     </div>
 
                     <div class="form-row">
-                        <label>Max CO<sub>2</sub> (ppm)</label>
-                        <input type="number" id="menuCO2Input" step="100" value="5000">
+                        <div class="label-with-hint">
+                            <label for="menuCO2Input">Max CO<sub>2</sub> (ppm)</label>
+                            <span class="setpoint-rec-tag" id="recCO2Tag">Setting: 5000 ppm</span>
+                        </div>
+                        <input type="number" id="menuCO2Input" step="100" min="1000" max="10000" value="5000">
                     </div>
 
                     <button class="btn-primary-action" onclick="saveMenuSetpoints()">Update All Setpoints</button>
                     
                     <hr class="divider">
 
-                    <button class="btn-secondary-action" onclick="manualEggTurn()">
+                    <!-- Egg Turning Section with Lockdown Protection -->
+                    <button class="btn-secondary-action" id="menuRotateBtn" onclick="manualEggTurn()">
                         Rotate Egg Tray Now (15s)
                     </button>
+                    <div class="lockdown-warning-card" id="lockdownWarningNotice" style="display: none;">
+                        <span class="lockdown-warn-icon">🔒</span>
+                        <div class="lockdown-warn-text">
+                            <strong>Lockdown Protocol Active (Days 19–21)</strong>
+                            <p>Egg turning is automatically locked out so developing chicks can properly position and pip without mechanical disturbance.</p>
+                        </div>
+                    </div>
                 </div>
             </section>
 
@@ -689,10 +736,13 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
         </div>
     </div>
 
-    <script src="/dashboard/app.js?v=20"></script>
+    <!-- Toast Notification Container -->
+    <div id="appToast" class="app-toast"></div>
+
+    <script src="/dashboard/app.js?v=21"></script>
     <script>
         if (typeof switchNav === 'undefined') {
-            document.write('<script src="./app.js?v=20"><\/script>');
+            document.write('<script src="./app.js?v=21"><\/script>');
         }
     </script>
 </body>
