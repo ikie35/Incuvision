@@ -9,8 +9,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Poppins:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
     <link rel="icon" type="image/png" href="./icons/logo.png">
-    <link rel="stylesheet" href="/dashboard/style.css?v=29">
-    <link rel="stylesheet" href="./style.css?v=29">
+    <link rel="stylesheet" href="/dashboard/style.css?v=30">
+    <link rel="stylesheet" href="./style.css?v=30">
     <style>
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 :root {
@@ -148,7 +148,7 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
 .btn-matrix-toggle { background: var(--card-bg); border: none; border-radius: 12px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem; font-weight: 700; color: #1A1615; cursor: pointer; box-shadow: var(--shadow-card); }
 .matrix-drawer { display: none; background: var(--card-bg); border-radius: var(--radius-card); padding: 14px; box-shadow: var(--shadow-card); }
 .matrix-drawer.open { display: block; }
-.egg-matrix-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 5px; }
+.egg-matrix-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
 .egg-slot-pill { aspect-ratio: 1; border-radius: 6px; background: #F3F4F6; border: 1px solid #E5E7EB; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 700; cursor: pointer; transition: transform 0.1s ease; }
 .egg-slot-pill:active { transform: scale(0.9); }
 .egg-slot-pill.fertile { background: #DCFCE7; border-color: #86EFAC; color: #166534; }
@@ -756,10 +756,10 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
     <!-- Toast Notification Container -->
     <div id="appToast" class="app-toast"></div>
 
-    <script src="/dashboard/app.js?v=29"></script>
+    <script src="/dashboard/app.js?v=30"></script>
     <script>
         if (typeof switchNav === 'undefined') {
-            document.write('<script src="./app.js?v=29"><\/script>');
+            document.write('<script src="./app.js?v=30"><\/script>');
         }
     </script>
 </body>
