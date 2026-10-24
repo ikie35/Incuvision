@@ -125,25 +125,17 @@ class CameraManager:
         return frame
 
     def get_snapshot_jpeg(self, overlay_telemetry: dict = None) -> bytes:
-        """Captures a frame, applies timestamp and optional telemetry watermarking, returns JPEG bytes."""
+        """Captures a frame, applies optional telemetry watermarking, returns JPEG bytes."""
         frame = self.capture_raw_frame().copy()
         h, w = frame.shape[:2]
 
-        now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        cv2.rectangle(frame, (0, 0), (w, 42), (15, 18, 22), -1)
-        
-        info_text = f"INCUVISION LIVE INTERIOR  |  {now_str}"
         if overlay_telemetry:
             t = overlay_telemetry.get("temp", 37.5)
             rh = overlay_telemetry.get("rh", 58.0)
             co2 = overlay_telemetry.get("co2", 3200)
-            info_text += f"  |  {t:.1f} C  |  {rh:.1f}% RH  |  {co2} ppm"
-
-        cv2.putText(frame, info_text, (20, 28), 
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 240, 255), 2, cv2.LINE_AA)
-
-        cv2.putText(frame, "STATUS: OK (LIVE)", (w - 180, h - 20),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 120), 2, cv2.LINE_AA)
+            info_text = f"{t:.1f} C  |  {rh:.1f}% RH  |  {co2} ppm"
+            cv2.putText(frame, info_text, (20, h - 20),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 240, 255), 2, cv2.LINE_AA)
 
         _, jpeg_bytes = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
         return jpeg_bytes.tobytes()
