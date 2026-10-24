@@ -790,6 +790,23 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
         </div>
     </div>
 
+    <!-- Phone Notifications & Lockscreen Setup Modal -->
+    <div class="modal-backdrop" id="notifHelpModal" onclick="closeNotifHelpModal(event)">
+        <div class="modal-box" onclick="event.stopPropagation()" style="max-width: 400px; font-size: 0.88rem; line-height: 1.5; color: #374151;">
+            <div class="modal-header">
+                <h3 style="display: flex; align-items: center; gap: 8px; font-size: 1.1rem; color: #1E1B18;">
+                    <span>🔔</span> Phone Notification Setup
+                </h3>
+                <button class="modal-close" onclick="closeNotifHelpModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="notifHelpBody"></div>
+            <div style="margin-top: 16px; display: flex; gap: 8px;">
+                <button type="button" class="btn-notif-action" style="flex: 1; padding: 10px; font-weight: 700; border-radius: 10px;" onclick="testPushNotification()">🔊 Test Chime & Vibrate</button>
+                <button type="button" class="btn-notif-test" style="padding: 10px 16px; border-radius: 10px;" onclick="closeNotifHelpModal()">Done</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Notification Container -->
     <div id="appToast" class="app-toast"></div>
 

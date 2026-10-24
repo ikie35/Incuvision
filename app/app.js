@@ -682,7 +682,7 @@ function evaluateSmartAlerts(temp, rh, o2, actuators) {
 
         if (rh < 62.0) {
             hasAlert = true;
-            alerts.push({ msg: `HUMIDITY IS ${rh.toFixed(1)}%, BELOW HATCHING TARGET (70%). HUMIDIFIER ENGAGED.` });
+            alerts.push({ msg: `HUMIDITY IS ${rh.toFixed(1)}%, BELOW HATCHING TARGET (70%). CHECK WATER LEVEL IN WATER TRAY.` });
         } else if (rh > 80.0) {
             hasAlert = true;
             alerts.push({ msg: `HUMIDITY IS ${rh.toFixed(1)}%, ABOVE HATCHING TARGET (70%). EXHAUST VENTING.` });
@@ -704,7 +704,7 @@ function evaluateSmartAlerts(temp, rh, o2, actuators) {
 
         if (rh < 50.0) {
             hasAlert = true;
-            alerts.push({ msg: `HUMIDITY IS ${rh.toFixed(1)}%, BELOW SETTING TARGET (58%). HUMIDIFIER ENGAGED.` });
+            alerts.push({ msg: `HUMIDITY IS ${rh.toFixed(1)}%, BELOW SETTING TARGET (58%). CHECK WATER LEVEL IN WATER TRAY.` });
         } else if (rh > 65.0) {
             hasAlert = true;
             alerts.push({ msg: `HUMIDITY IS ${rh.toFixed(1)}%, ABOVE SETTING TARGET (58%). EXHAUST VENTING.` });
@@ -1101,17 +1101,48 @@ function showToast(message, isError = false) {
 }
 
 // =============================================================================
-// PUSH & SYSTEM NOTIFICATIONS (WEB AUDIO CHIME + SERVICE WORKER)
+// PUSH & SYSTEM NOTIFICATIONS (AUDIO CHIME, VIBRATION & SERVICE WORKER)
 // =============================================================================
 let swRegistration = null;
 let pushEnabled = false;
 const lastPushTimestamps = {};
+let audioCtxInstance = null;
+
+function getAudioContext() {
+    try {
+        if (!audioCtxInstance) {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (AudioCtx) audioCtxInstance = new AudioCtx();
+        }
+        if (audioCtxInstance && audioCtxInstance.state === 'suspended') {
+            audioCtxInstance.resume().catch(() => {});
+        }
+        return audioCtxInstance;
+    } catch (e) {
+        return null;
+    }
+}
+
+// Ensure audio context is unlocked upon user interaction (required by mobile browsers)
+window.addEventListener('click', () => { getAudioContext(); }, { passive: true });
+window.addEventListener('touchstart', () => { getAudioContext(); }, { passive: true });
 
 function playNotificationSound(type = 'chime') {
     try {
-        const AudioCtx = window.AudioContext || window.webkitAudioContext;
-        if (!AudioCtx) return;
-        const ctx = new AudioCtx();
+        // 1. Phone Vibration (works on Android Chrome even if OS Push is blocked)
+        if ('vibrate' in navigator) {
+            try {
+                if (type === 'alert') {
+                    navigator.vibrate([300, 150, 300]);
+                } else {
+                    navigator.vibrate([180, 80, 180]);
+                }
+            } catch (ve) {}
+        }
+
+        // 2. Web Audio Chime / Alarm
+        const ctx = getAudioContext();
+        if (!ctx) return;
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
         osc.connect(gain);
@@ -1121,7 +1152,7 @@ function playNotificationSound(type = 'chime') {
             osc.type = 'sawtooth';
             osc.frequency.setValueAtTime(587.33, ctx.currentTime);
             osc.frequency.setValueAtTime(880.00, ctx.currentTime + 0.12);
-            gain.gain.setValueAtTime(0.18, ctx.currentTime);
+            gain.gain.setValueAtTime(0.25, ctx.currentTime);
             gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
             osc.start();
             osc.stop(ctx.currentTime + 0.35);
@@ -1130,13 +1161,13 @@ function playNotificationSound(type = 'chime') {
             osc.frequency.setValueAtTime(523.25, ctx.currentTime);
             osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.10);
             osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.20);
-            gain.gain.setValueAtTime(0.18, ctx.currentTime);
+            gain.gain.setValueAtTime(0.22, ctx.currentTime);
             gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.55);
             osc.start();
             osc.stop(ctx.currentTime + 0.55);
         }
     } catch (e) {
-        // AudioContext can be suspended before user interaction
+        // Handled silently
     }
 }
 
@@ -1165,57 +1196,115 @@ function updatePushUI() {
     const btnToggle = document.getElementById('btnToggleNotif');
     const btnTest = document.getElementById('btnTestNotif');
 
+    if (btnTest) btnTest.style.display = 'inline-block';
+
     if (!('Notification' in window)) {
-        if (title) title.innerText = 'Push Unavailable';
-        if (sub) sub.innerText = 'Browser does not support notifications';
-        if (btnToggle) btnToggle.style.display = 'none';
-        if (btnTest) btnTest.style.display = 'none';
+        if (title) title.innerText = 'In-App Alerts Active';
+        if (sub) sub.innerText = 'Sound & vibration active (No OS push)';
+        if (btnToggle) {
+            btnToggle.innerText = 'Guide ℹ️';
+            btnToggle.classList.remove('active');
+        }
         return;
     }
 
     const perm = Notification.permission;
+    const isSecure = (window.isSecureContext || location.hostname === 'localhost' || location.hostname === '127.0.0.1');
+
     if (perm === 'granted') {
         pushEnabled = true;
         if (badge) badge.classList.add('active');
-        if (title) title.innerText = 'Push Active';
+        if (title) title.innerText = 'Push Active ✓';
         if (sub) sub.innerText = 'Alerts enabled on lockscreen & phone';
         if (btnToggle) {
             btnToggle.innerText = 'Active ✓';
             btnToggle.classList.add('active');
         }
-        if (btnTest) btnTest.style.display = 'inline-block';
-    } else if (perm === 'denied') {
+    } else if (perm === 'denied' || !isSecure) {
         pushEnabled = false;
-        if (badge) badge.classList.remove('active');
-        if (title) title.innerText = 'Push Blocked';
-        if (sub) sub.innerText = 'Notifications blocked in browser settings';
+        if (badge) badge.classList.add('active');
+        if (title) title.innerText = 'In-App Alerts Active';
+        if (sub) sub.innerText = isSecure ? 'Sound & vibrate active (Tap Guide to unblock)' : 'Sound & vibrate active (HTTP connection)';
         if (btnToggle) {
-            btnToggle.innerText = 'Blocked';
+            btnToggle.innerText = 'Guide ℹ️';
             btnToggle.classList.remove('active');
         }
-        if (btnTest) btnTest.style.display = 'none';
     } else {
         pushEnabled = false;
         if (badge) badge.classList.remove('active');
         if (title) title.innerText = 'Push Notifications';
-        if (sub) sub.innerText = 'Tap enable to receive phone alerts';
+        if (sub) sub.innerText = 'Tap enable to receive lockscreen alerts';
         if (btnToggle) {
             btnToggle.innerText = 'Enable';
             btnToggle.classList.remove('active');
         }
-        if (btnTest) btnTest.style.display = 'inline-block';
     }
 }
 
+function openNotifHelpModal() {
+    const modal = document.getElementById('notifHelpModal');
+    const body = document.getElementById('notifHelpBody');
+    if (!modal || !body) return;
+
+    const currentHost = location.origin;
+
+    body.innerHTML = `
+        <div style="background: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 12px; padding: 12px; margin-bottom: 14px;">
+            <div style="font-weight: 700; color: #065F46; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+                <span>✅</span> In-App Alerts Are 100% Working
+            </div>
+            <p style="margin: 0; color: #047857; font-size: 0.82rem;">
+                Even without lockscreen permissions, <strong>Sound Chimes, Phone Vibration, and Live Banners</strong> alert you immediately whenever temperature, humidity, or turning need attention.
+            </p>
+        </div>
+
+        <div style="font-weight: 700; color: #1E1B18; margin-bottom: 6px;">
+            Why did Android Chrome block OS push?
+        </div>
+        <p style="margin: 0 0 10px 0; color: #4B5563; font-size: 0.82rem;">
+            Google Chrome on phones strictly blocks lockscreen notifications on local network IP addresses (<code>${location.hostname}</code>) because the connection is <strong>HTTP</strong> instead of HTTPS.
+        </p>
+
+        <div style="background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 12px; padding: 12px;">
+            <div style="font-weight: 700; color: #111827; margin-bottom: 6px;">
+                How to Enable Lockscreen Push on Chrome:
+            </div>
+            <ol style="margin: 0; padding-left: 18px; font-size: 0.82rem; color: #4B5563;">
+                <li style="margin-bottom: 6px;">Open a new tab in Chrome and go to: <strong style="color: #1F2937;">chrome://flags</strong></li>
+                <li style="margin-bottom: 6px;">Search: <strong style="color: #1F2937;">unsafely-treat-insecure-origin-as-secure</strong></li>
+                <li style="margin-bottom: 6px;">Enter: <code style="background: #E5E7EB; padding: 2px 5px; border-radius: 4px; color: #B45309;">${currentHost}</code></li>
+                <li style="margin-bottom: 6px;">Change dropdown to <strong>Enabled</strong>, then tap <strong>Relaunch</strong>.</li>
+                <li>Return here and tap <strong>Enable</strong>!</li>
+            </ol>
+        </div>
+    `;
+
+    modal.classList.add('open');
+}
+
+function closeNotifHelpModal(e) {
+    if (e && e.target && e.target !== e.currentTarget && !e.target.classList.contains('modal-close')) return;
+    const modal = document.getElementById('notifHelpModal');
+    if (modal) modal.classList.remove('open');
+}
+
 async function togglePushNotifications() {
+    getAudioContext();
+
     if (!('Notification' in window)) {
-        showToast("Your browser does not support Web Notifications.", true);
+        openNotifHelpModal();
         return;
     }
 
     if (Notification.permission === 'granted') {
-        showToast("Push notifications are already active!");
+        showToast("🔔 Push notifications are active!");
         testPushNotification();
+        return;
+    }
+
+    if (Notification.permission === 'denied' || !window.isSecureContext) {
+        // Directly open the step-by-step guidance modal instead of hitting a dead-end
+        openNotifHelpModal();
         return;
     }
 
@@ -1232,12 +1321,12 @@ async function togglePushNotifications() {
                 soundType: "chime",
                 cooldownSeconds: 0
             });
-        } else if (permission === 'denied') {
-            showToast("Notification permission was denied in your browser settings.", true);
+        } else {
+            openNotifHelpModal();
         }
     } catch (e) {
         console.warn("[PUSH] Request error:", e);
-        showToast("Could not request notification permission.", true);
+        openNotifHelpModal();
     }
 }
 
@@ -1248,13 +1337,13 @@ function sendPushNotification({ title, body, tag = 'incuvision-alert', soundType
     }
     lastPushTimestamps[tag] = now;
 
-    // 1. Play audio chime
+    // 1. Play audio chime & vibrate device
     playNotificationSound(soundType);
 
     // 2. In-App toast
     showToast(`🔔 ${title}: ${body}`);
 
-    // 3. Dispatch native system push notification
+    // 3. Dispatch native system push notification if allowed
     if ('Notification' in window && Notification.permission === 'granted') {
         const options = {
             body: body,
@@ -1262,7 +1351,7 @@ function sendPushNotification({ title, body, tag = 'incuvision-alert', soundType
             badge: '/dashboard/icons/logo.png',
             tag: tag,
             renotify: true,
-            vibrate: [200, 100, 200],
+            vibrate: [250, 100, 250],
             data: { url: '/dashboard/' }
         };
 
@@ -1281,10 +1370,11 @@ function sendPushNotification({ title, body, tag = 'incuvision-alert', soundType
 }
 
 function testPushNotification() {
+    getAudioContext();
     playNotificationSound('chime');
     sendPushNotification({
         title: "IncuVision Test Alert",
-        body: `Day ${currentDay} (${currentPhase}): Incubator system operational.`,
+        body: `Day ${currentDay} (${currentPhase}): Incubator system operational. Sound & vibration confirmed.`,
         tag: "test-" + Date.now(),
         soundType: "chime",
         cooldownSeconds: 0
