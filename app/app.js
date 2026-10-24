@@ -193,8 +193,8 @@ function handleIncomingTelemetry(data) {
 
     if (previousPhase === 'SETTING' && currentPhase === 'HATCHING') {
         sendPushNotification({
-            title: "🐣 Lockdown Transition (Day 19)",
-            body: "Incubator entered Hatching phase! Targets updated to 36.9°C & 70% RH. Egg turner locked.",
+            title: "🐣 Lockdown · Day 19",
+            body: "Targets: 36.9°C & 70% RH · Turner locked",
             tag: "phase-transition-lockdown",
             soundType: "chime",
             cooldownSeconds: 3600
@@ -674,51 +674,95 @@ function evaluateSmartAlerts(temp, rh, o2, actuators) {
         // Hatching Phase Targets: Temp ~36.9°C, RH ~70%, CO2 <= 7500ppm
         if (temp < 36.2) {
             hasAlert = true;
-            alerts.push({ msg: `TEMPERATURE IS ${temp.toFixed(1)}°C, BELOW HATCHING TARGET (36.9°C). HEATER ENGAGED.` });
+            alerts.push({
+                shortTitle: `🌡️ Low Temp · ${temp.toFixed(1)}°C`,
+                shortBody: `Target: 36.9°C · Heater ON`,
+                msg: `Temperature is ${temp.toFixed(1)}°C, below hatching target (36.9°C). Heater engaged.`
+            });
         } else if (temp > 37.6) {
             hasAlert = true;
-            alerts.push({ msg: `TEMPERATURE IS ${temp.toFixed(1)}°C, ABOVE HATCHING TARGET (36.9°C). COOLING.` });
+            alerts.push({
+                shortTitle: `🌡️ High Temp · ${temp.toFixed(1)}°C`,
+                shortBody: `Target: 36.9°C · Cooling active`,
+                msg: `Temperature is ${temp.toFixed(1)}°C, above hatching target (36.9°C). Cooling.`
+            });
         }
 
         if (rh < 62.0) {
             hasAlert = true;
-            alerts.push({ msg: `HUMIDITY IS ${rh.toFixed(1)}%, BELOW HATCHING TARGET (70%). CHECK WATER LEVEL IN WATER TRAY.` });
+            alerts.push({
+                shortTitle: `💧 Low Humidity · ${rh.toFixed(1)}%`,
+                shortBody: `Target: 70% · Check water tray`,
+                msg: `Humidity is ${rh.toFixed(1)}%, below hatching target (70%). Check water level in water tray.`
+            });
         } else if (rh > 80.0) {
             hasAlert = true;
-            alerts.push({ msg: `HUMIDITY IS ${rh.toFixed(1)}%, ABOVE HATCHING TARGET (70%). EXHAUST VENTING.` });
+            alerts.push({
+                shortTitle: `💧 High Humidity · ${rh.toFixed(1)}%`,
+                shortBody: `Target: 70% · Exhaust venting`,
+                msg: `Humidity is ${rh.toFixed(1)}%, above hatching target (70%). Exhaust venting.`
+            });
         }
 
         if (currentTelemetry.co2 && currentTelemetry.co2 > 7500) {
             hasAlert = true;
-            alerts.push({ msg: `CO₂ LEVEL IS ${currentTelemetry.co2} PPM, EXCEEDS HATCHING LIMIT (7,500 PPM). EXHAUST ON.` });
+            alerts.push({
+                shortTitle: `⚠️ High CO₂ · ${currentTelemetry.co2} ppm`,
+                shortBody: `Limit: 7,500 ppm · Exhaust ON`,
+                msg: `CO₂ level is ${currentTelemetry.co2} ppm, exceeds hatching limit (7,500 ppm). Exhaust on.`
+            });
         }
     } else {
         // Setting Phase Targets: Temp ~37.5°C, RH ~58%, CO2 <= 5000ppm
         if (temp < 36.8) {
             hasAlert = true;
-            alerts.push({ msg: `TEMPERATURE IS ${temp.toFixed(1)}°C, BELOW SETTING TARGET (37.5°C). HEATER ENGAGED.` });
+            alerts.push({
+                shortTitle: `🌡️ Low Temp · ${temp.toFixed(1)}°C`,
+                shortBody: `Target: 37.5°C · Heater ON`,
+                msg: `Temperature is ${temp.toFixed(1)}°C, below setting target (37.5°C). Heater engaged.`
+            });
         } else if (temp > 38.2) {
             hasAlert = true;
-            alerts.push({ msg: `TEMPERATURE IS ${temp.toFixed(1)}°C, ABOVE SETTING TARGET (37.5°C). VENTING.` });
+            alerts.push({
+                shortTitle: `🌡️ High Temp · ${temp.toFixed(1)}°C`,
+                shortBody: `Target: 37.5°C · Exhaust cooling`,
+                msg: `Temperature is ${temp.toFixed(1)}°C, above setting target (37.5°C). Venting.`
+            });
         }
 
         if (rh < 50.0) {
             hasAlert = true;
-            alerts.push({ msg: `HUMIDITY IS ${rh.toFixed(1)}%, BELOW SETTING TARGET (58%). CHECK WATER LEVEL IN WATER TRAY.` });
+            alerts.push({
+                shortTitle: `💧 Low Humidity · ${rh.toFixed(1)}%`,
+                shortBody: `Target: 58% · Check water tray`,
+                msg: `Humidity is ${rh.toFixed(1)}%, below setting target (58%). Check water level in water tray.`
+            });
         } else if (rh > 65.0) {
             hasAlert = true;
-            alerts.push({ msg: `HUMIDITY IS ${rh.toFixed(1)}%, ABOVE SETTING TARGET (58%). EXHAUST VENTING.` });
+            alerts.push({
+                shortTitle: `💧 High Humidity · ${rh.toFixed(1)}%`,
+                shortBody: `Target: 58% · Exhaust venting`,
+                msg: `Humidity is ${rh.toFixed(1)}%, above setting target (58%). Exhaust venting.`
+            });
         }
 
         if (currentTelemetry.co2 && currentTelemetry.co2 > 5000) {
             hasAlert = true;
-            alerts.push({ msg: `CO₂ LEVEL IS ${currentTelemetry.co2} PPM, EXCEEDS SETTING LIMIT (5,000 PPM). EXHAUST ON.` });
+            alerts.push({
+                shortTitle: `⚠️ High CO₂ · ${currentTelemetry.co2} ppm`,
+                shortBody: `Limit: 5,000 ppm · Exhaust ON`,
+                msg: `CO₂ level is ${currentTelemetry.co2} ppm, exceeds setting limit (5,000 ppm). Exhaust on.`
+            });
         }
     }
 
     if (o2 > 0 && o2 < 20.0) {
         hasAlert = true;
-        alerts.push({ msg: `OXYGEN LEVEL IS ${o2.toFixed(1)}%, BELOW 20.0%. EXHAUST FAN ENGAGED.` });
+        alerts.push({
+            shortTitle: `⚠️ Low O₂ · ${o2.toFixed(1)}%`,
+            shortBody: `Threshold: 20% · Exhaust active`,
+            msg: `Oxygen level is ${o2.toFixed(1)}%, below 20.0%. Exhaust fan engaged.`
+        });
     }
 
     if (bellDot) {
@@ -759,9 +803,10 @@ function evaluateSmartAlerts(temp, rh, o2, actuators) {
 
     // Trigger push notification if out-of-bounds alerts are active
     if (alerts.length > 0) {
+        const top = alerts[0];
         sendPushNotification({
-            title: isHatching ? "⚠️ Hatching Alert (Lockdown)" : "⚠️ Incubation Alert",
-            body: alerts[0].msg,
+            title: top.shortTitle || (isHatching ? "⚠️ Hatching Alert" : "⚠️ Incubation Alert"),
+            body: top.shortBody || top.msg,
             tag: "alert-" + (isHatching ? "hatch" : "set"),
             soundType: "alert",
             cooldownSeconds: 180
@@ -999,8 +1044,8 @@ function renderAuditScores(audit, switchToAudit = true) {
 
     if (switchToAudit && audit && !audit.error) {
         sendPushNotification({
-            title: `🔬 Candling Audit (Day ${audit.day || currentDay})`,
-            body: `Fertility: ${rate.toFixed(1)}% (${fertileCount}/${total} Fertile Eggs).`,
+            title: `🔬 Candling · Day ${audit.day || currentDay}`,
+            body: `Fertility: ${rate.toFixed(1)}% (${fertileCount}/${total} fertile)`,
             tag: `audit-result-day-${audit.day || currentDay}`,
             soundType: "chime",
             cooldownSeconds: 60
@@ -1347,8 +1392,8 @@ function sendPushNotification({ title, body, tag = 'incuvision-alert', soundType
     if ('Notification' in window && Notification.permission === 'granted') {
         const options = {
             body: body,
-            icon: '/dashboard/icons/logo.png',
-            badge: '/dashboard/icons/logo.png',
+            icon: '/dashboard/icons/icon-192.png',
+            badge: '/dashboard/icons/icon-192.png',
             tag: tag,
             renotify: true,
             vibrate: [250, 100, 250],
@@ -1373,8 +1418,8 @@ function testPushNotification() {
     getAudioContext();
     playNotificationSound('chime');
     sendPushNotification({
-        title: "IncuVision Test Alert",
-        body: `Day ${currentDay} (${currentPhase}): Incubator system operational. Sound & vibration confirmed.`,
+        title: `IncuVision · Day ${currentDay}`,
+        body: `System active (${currentPhase}) · Audio & alerts verified`,
         tag: "test-" + Date.now(),
         soundType: "chime",
         cooldownSeconds: 0

@@ -34,8 +34,8 @@ self.addEventListener('push', (event) => {
     let data = {
         title: 'IncuVision Alert',
         body: 'Incubator status update',
-        icon: '/dashboard/icons/logo.png',
-        badge: '/dashboard/icons/logo.png'
+        icon: '/dashboard/icons/icon-192.png',
+        badge: '/dashboard/icons/icon-192.png'
     };
 
     if (event.data) {
@@ -48,8 +48,8 @@ self.addEventListener('push', (event) => {
 
     const options = {
         body: data.body,
-        icon: data.icon || '/dashboard/icons/logo.png',
-        badge: data.badge || '/dashboard/icons/logo.png',
+        icon: data.icon || '/dashboard/icons/icon-192.png',
+        badge: data.badge || '/dashboard/icons/icon-192.png',
         tag: data.tag || 'incuvision-alert',
         renotify: true,
         vibrate: [200, 100, 200],
