@@ -50,7 +50,7 @@
 #define DEFAULT_TEMP_SETTING       37.5f  // °C Target center
 #define DEFAULT_RH_SETTING         58.0f  // % Target center
 #define DEFAULT_CO2_MAX_SETTING    5000   // ppm
-#define DEFAULT_O2_MIN_SETTING     21.0f  // %
+#define DEFAULT_O2_MIN_SETTING     19.5f  // % (Normal atmospheric air is ~20.9%)
 
 #define HATCHING_START_DAY         19
 #define HATCHING_END_DAY           21
@@ -58,7 +58,7 @@
 #define DEFAULT_TEMP_HATCHING      36.9f  // °C Target center
 #define DEFAULT_RH_HATCHING        70.0f  // % Target center
 #define DEFAULT_CO2_MAX_HATCHING   7500   // ppm
-#define DEFAULT_O2_MIN_HATCHING    21.0f  // %
+#define DEFAULT_O2_MIN_HATCHING    19.5f  // % (Normal atmospheric air is ~20.9%)
 
 // Precision Hysteresis Temperature Bands (Cutoff at target to prevent residual overshoot)
 #define SET_TEMP_CONTROL_LOW       37.3f  // °C (Heater turns ON below this)

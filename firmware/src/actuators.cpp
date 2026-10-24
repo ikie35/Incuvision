@@ -95,7 +95,7 @@ void ActuatorManager::processHeating(float currentTemp) {
 }
 
 void ActuatorManager::processVentilation(uint16_t currentCO2, float currentO2, float currentTemp, float currentRH) {
-    // If exhaust fan is already forced ON due to overheat, do not turn off
+    // 1. Critical Overheat Hard Failsafe: always force exhaust ON if overheating
     if (currentTemp >= CRITICAL_TEMP_MAX) {
         setRelay(PIN_RELAY_EXHAUST, true);
         state.exhaustFan = true;
@@ -103,16 +103,25 @@ void ActuatorManager::processVentilation(uint16_t currentCO2, float currentO2, f
     }
 
     float maxRH = (currentPhase == PHASE_SETTING) ? (targetRH + 2.0f) : (targetRH + 5.0f);
+    float o2Min = (currentPhase == PHASE_SETTING) ? DEFAULT_O2_MIN_SETTING : DEFAULT_O2_MIN_HATCHING;
+
+    // Thermal priority interlock:
+    // If chamber is cold (under-temperature below target - 0.25°C), heat preservation MUST take priority.
+    // The exhaust fan must NOT run for humidity or minor O2/CO2 fluctuations, which would blow all heat away!
+    bool isUnderTemp = (currentTemp < (targetTemp - 0.25f));
 
     // Ventilation triggers:
-    // 1. CO2 exceeds threshold (> 5000 ppm in Setting, > 7500 ppm in Hatching)
-    // 2. O2 drops below 21.0%
-    // 3. Proactive over-temperature venting (>= targetTemp + 0.3°C, e.g. 37.8°C in Setting) to prevent reaching 38.0°C
-    // 4. Relative humidity exceeds high target (> 60% in Setting, > 75% in Hatching)
-    bool needVentilation = (currentCO2 > targetCO2) || 
-                           (currentO2 > 0.0f && currentO2 < DEFAULT_O2_MIN_SETTING) ||
-                           (currentTemp >= (targetTemp + 0.3f)) ||
-                           (currentRH > maxRH);
+    // a) Critical over-temperature venting (>= targetTemp + 0.3°C)
+    // b) Critical toxic CO2 emergency (>= 8500 ppm)
+    // c) Normal ventilation (CO2 > target, O2 < min, RH > max) ONLY permitted if chamber is NOT under-temperature
+    bool criticalVent = (currentTemp >= (targetTemp + 0.3f)) || (currentCO2 >= 8500);
+    bool normalVent = (!isUnderTemp) && (
+        (currentCO2 > targetCO2) || 
+        (currentO2 > 0.0f && currentO2 < o2Min) ||
+        (currentRH > maxRH)
+    );
+
+    bool needVentilation = criticalVent || normalVent;
 
     if (needVentilation) {
         setRelay(PIN_RELAY_EXHAUST, true);

@@ -119,7 +119,7 @@ class IncubationCoordinator:
         try:
             # 1. Turn ON high-intensity candling LED array on ESP32
             self.mqtt.set_candling_light(True)
-            time.sleep(1.0)  # Wait for lighting and mechanical stabilization
+            time.sleep(3.0)  # Wait for lighting and mechanical stabilization (3s for camera AE/AWB settle)
 
             # 2. Update LCD status
             lcd_display.display_candling_progress(target_day, "YOLOv8 Scanning...")
