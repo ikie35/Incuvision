@@ -125,18 +125,8 @@ class CameraManager:
         return frame
 
     def get_snapshot_jpeg(self, overlay_telemetry: dict = None) -> bytes:
-        """Captures a frame, applies optional telemetry watermarking, returns JPEG bytes."""
-        frame = self.capture_raw_frame().copy()
-        h, w = frame.shape[:2]
-
-        if overlay_telemetry:
-            t = overlay_telemetry.get("temp", 37.5)
-            rh = overlay_telemetry.get("rh", 58.0)
-            co2 = overlay_telemetry.get("co2", 3200)
-            info_text = f"{t:.1f} C  |  {rh:.1f}% RH  |  {co2} ppm"
-            cv2.putText(frame, info_text, (20, h - 20),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 240, 255), 2, cv2.LINE_AA)
-
+        """Captures a raw frame and returns it as JPEG bytes with no overlays."""
+        frame = self.capture_raw_frame()
         _, jpeg_bytes = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
         return jpeg_bytes.tobytes()
 
