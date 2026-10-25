@@ -2,7 +2,7 @@
 // Connected to Raspberry Pi 5 Master Vision & Coordinator Engine
 
 let ws = null;
-let currentDay = 1;
+let currentDay = 0;
 let currentPhase = 'SETTING';
 let currentTelemetry = {
     temp: 37.5,
@@ -185,7 +185,7 @@ function handleIncomingTelemetry(data) {
     if (!data) return;
 
     // Day & Phase
-    if (data.day) {
+    if (data.day !== undefined && data.day !== null) {
         currentDay = data.day;
         const daysLeft = Math.max(0, 21 - currentDay);
         const dayEl = document.getElementById('homeDaysLeft');
@@ -452,6 +452,7 @@ async function manualEggTurn() {
 
     isHardwareTurning = true;
     updateTurningDisplay();
+    renderProtocolCards();
 
     addDashboardNotification({
         type: 'info',
@@ -467,6 +468,12 @@ async function manualEggTurn() {
         console.warn("Egg turn error:", e);
         showToast("Failed to trigger egg turning.", true);
     }
+
+    setTimeout(() => {
+        isHardwareTurning = false;
+        updateTurningDisplay();
+        renderProtocolCards();
+    }, 15000);
 }
 
 function startTurningCountdown() {
@@ -1688,7 +1695,7 @@ function testPushNotification() {
 // =============================================================================
 let protocolStateInitialized = false;
 let protocolState = {
-    day: 1,
+    day: 0,
     phase: 'SETTING',
     temp: 37.5,
     rh: 58.0,
@@ -1702,7 +1709,7 @@ function setProtocolPhase(phase) {
     if (isHatching && protocolState.day < 19) {
         protocolState.day = 19;
     } else if (!isHatching && protocolState.day >= 19) {
-        protocolState.day = 1;
+        protocolState.day = 0;
     }
 
     protocolState.temp = isHatching ? 36.9 : 37.5;
@@ -1714,7 +1721,7 @@ function setProtocolPhase(phase) {
 }
 
 function stepDay(delta) {
-    protocolState.day = Math.max(1, Math.min(21, protocolState.day + delta));
+    protocolState.day = Math.max(0, Math.min(21, protocolState.day + delta));
     const isHatching = (protocolState.day >= 19);
     protocolState.phase = isHatching ? 'HATCHING' : 'SETTING';
     
@@ -1751,9 +1758,23 @@ function stepCO2(delta) {
 function renderProtocolCards() {
     const isHatching = (protocolState.phase === 'HATCHING' || protocolState.day >= 19);
 
-    // 1. Day & Phase Tabs
+    // 1. Day & Phase Tabs & Status Badge
     const dispDay = document.getElementById('dispProtocolDay');
     if (dispDay) dispDay.innerText = `Day ${protocolState.day}`;
+
+    const dispDayBadge = document.getElementById('dispProtocolDayBadge');
+    if (dispDayBadge) {
+        if (protocolState.day === 0) {
+            dispDayBadge.innerText = '🥚 Egg Setting Day · 21 Days to Hatch';
+            dispDayBadge.className = 'protocol-day-badge setting-day';
+        } else if (protocolState.day < 19) {
+            dispDayBadge.innerText = `🌱 Incubation Phase (Day ${protocolState.day} of 21) · Turning Active`;
+            dispDayBadge.className = 'protocol-day-badge incubation-day';
+        } else {
+            dispDayBadge.innerText = `🐣 Lockdown Phase (Day ${protocolState.day} of 21) · Turning Ceased`;
+            dispDayBadge.className = 'protocol-day-badge lockdown-day';
+        }
+    }
 
     const btnSetting = document.getElementById('btnPhaseSetting');
     const btnHatching = document.getElementById('btnPhaseHatching');
@@ -1775,7 +1796,7 @@ function renderProtocolCards() {
     if (dispRH) dispRH.innerText = `${protocolState.rh.toFixed(1)}%`;
     if (dispCO2) dispCO2.innerText = protocolState.co2.toLocaleString();
 
-    // 3. Turner Control Card
+    // 3. Dedicated Turner Control Card
     const turnVal = document.getElementById('dispTurnerStatus');
     const turnSub = document.getElementById('dispTurnerSub');
     const turnCard = document.getElementById('cardTurnerTrigger');
@@ -1783,14 +1804,12 @@ function renderProtocolCards() {
     if (turnVal && turnSub) {
         if (isHatching) {
             turnVal.innerText = 'LOCKED';
-            turnVal.classList.add('locked');
-            turnSub.innerText = 'OFF FOR HATCHING';
-            if (turnCard) turnCard.style.opacity = '0.7';
+            turnSub.innerText = 'Turning disabled during hatching lockdown';
+            if (turnCard) turnCard.classList.add('is-locked');
         } else {
             turnVal.innerText = isHardwareTurning ? 'TURNING' : 'ROTATE';
-            turnVal.classList.remove('locked');
-            turnSub.innerText = 'EGG TURNER (15s)';
-            if (turnCard) turnCard.style.opacity = '1';
+            turnSub.innerText = isHardwareTurning ? 'Tilt motor engaged (15s rotation)' : 'Auto-turns hourly · Tap to test 15s';
+            if (turnCard) turnCard.classList.remove('is-locked');
         }
     }
 

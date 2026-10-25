@@ -181,7 +181,7 @@ void CommManager::parseCommand(const char* payload) {
             publishStatus("PHASE_UPDATED");
         }
         else if (strcmp(cmd, "SET_DAY") == 0) {
-            int d = doc["day"] | 1;
+            int d = doc["day"] | 0;
             actuators.setManualOverride(false);
             if (d >= 19) {
                 actuators.setPhase(PHASE_HATCHING);

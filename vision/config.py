@@ -36,8 +36,9 @@ LCD_ROWS = 4
 
 # Incubation Schedule & Parameters
 TOTAL_INCUBATION_DAYS = 21
-SETTING_DAYS_END = 18       # Day 1 to 18
-HATCHING_DAYS_START = 19    # Day 19 to 21
+SETTING_START_DAY = 0
+SETTING_DAYS_END = 18       # Day 0 to 18 (Egg setting day through Day 18)
+HATCHING_DAYS_START = 19    # Day 19 to 21 (Lockdown phase)
 
 # Automated Candling Audit Schedule (Days)
 CANDLING_SCHEDULE_DAYS = [7, 10, 18]

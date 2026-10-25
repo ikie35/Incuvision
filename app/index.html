@@ -212,8 +212,8 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
                         <img src="./icons/clock.png" alt="Countdown Clock" class="icon-clock">
                     </div>
                     <div class="countdown-text">
-                        <span id="homeDaysLeft">12 Days Left</span>
-                        <span class="countdown-phase-sub" id="homePhaseSub">Setting Phase (Day 1 of 21)</span>
+                        <span id="homeDaysLeft">21 Days Left</span>
+                        <span class="countdown-phase-sub" id="homePhaseSub">Setting Phase (Day 0 of 21)</span>
                     </div>
                 </div>
 
@@ -599,7 +599,7 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
                 <div class="card card-protocol-top">
                     <div class="phase-tabs-row">
                         <button type="button" class="phase-tab-pill active" id="btnPhaseSetting" onclick="setProtocolPhase('SETTING')">
-                            Setting (Days 1–18)
+                            Setting (Days 0–18)
                         </button>
                         <button type="button" class="phase-tab-pill" id="btnPhaseHatching" onclick="setProtocolPhase('HATCHING')">
                             Hatching (Days 19–21)
@@ -612,14 +612,24 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
                         </div>
                         <div class="stepper-controls">
                             <button type="button" class="btn-step-circle" onclick="stepDay(-1)" title="Previous Day">−</button>
-                            <span class="stepper-day-text" id="dispProtocolDay">Day 1</span>
+                            <span class="stepper-day-text" id="dispProtocolDay">Day 0</span>
                             <button type="button" class="btn-step-circle" onclick="stepDay(1)" title="Next Day">+</button>
                         </div>
                     </div>
+
+                    <!-- Dynamic Day Phase Status Badge -->
+                    <div class="protocol-day-badge-wrap">
+                        <span class="protocol-day-badge setting-day" id="dispProtocolDayBadge">🥚 Egg Setting Day · 21 Days to Hatch</span>
+                    </div>
                 </div>
 
-                <!-- 2. The 2x2 Target Setpoints Grid (Same visual layout as Home screen) -->
-                <div class="metrics-grid">
+                <!-- 2. Environmental Setpoints Section -->
+                <div class="protocol-section-header">
+                    <span class="protocol-section-title">TARGET ENVIRONMENTAL SETPOINTS</span>
+                </div>
+
+                <!-- Setpoints Grid: Temp & RH side-by-side, CO2 spanning full width -->
+                <div class="protocol-setpoints-grid">
                     <!-- Temperature Card -->
                     <div class="metric-box box-temp">
                         <div class="metric-icon-wrap">
@@ -646,8 +656,8 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
                         <span class="metric-lbl">TARGET HUMIDITY</span>
                     </div>
 
-                    <!-- Carbon Dioxide Card -->
-                    <div class="metric-box box-co2">
+                    <!-- Carbon Dioxide Card (Spans across full width cleanly) -->
+                    <div class="metric-box box-co2 box-co2-wide">
                         <div class="metric-icon-wrap">
                             <img src="./icons/co2.png" alt="CO2" class="metric-icon-img">
                         </div>
@@ -656,35 +666,45 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
                             <span class="metric-val" id="dispTargetCO2">5,000</span>
                             <button type="button" class="btn-mini-step" onclick="stepCO2(500)">+</button>
                         </div>
-                        <span class="metric-lbl">PPM (MAX CEILING)</span>
-                    </div>
-
-                    <!-- Egg Turner Card -->
-                    <div class="metric-box box-turner" id="cardTurnerTrigger" onclick="manualEggTurn()" title="Tap to test 15s turn">
-                        <div class="metric-icon-wrap">
-                            <img src="./icons/turner.png" alt="Turner" class="metric-icon-img">
-                        </div>
-                        <span class="metric-val text-turn-val" id="dispTurnerStatus">ROTATE</span>
-                        <span class="metric-lbl" id="dispTurnerSub">EGG TURNER (15s)</span>
+                        <span class="metric-lbl">PPM (MAX SAFETY CEILING)</span>
                     </div>
                 </div>
 
-                <!-- 3. Full-width Apply Button -->
+                <!-- 3. Primary Action Button: Save & Apply Protocol -->
                 <button class="btn-protocol-apply" id="btnSaveProtocol" onclick="saveProtocolSettings()">
                     Save & Apply Protocol
                 </button>
 
-                <!-- 4. Export Telemetry CSV Button -->
-                <div style="margin-top: 14px;">
-                    <a href="/api/export/csv" download="incuvision_telemetry_log.csv" class="card" style="display: flex; align-items: center; justify-content: center; gap: 10px; padding: 14px 18px; text-decoration: none; background: #FFFBEB; border: 1.5px solid #F59E0B; border-radius: var(--radius-card); box-shadow: var(--shadow-card); transition: transform 0.15s ease;">
+                <!-- 4. Actuator Quick Controls: Egg Turner Mechanism -->
+                <div class="protocol-section-header" style="margin-top: 18px;">
+                    <span class="protocol-section-title">ACTUATOR QUICK CONTROLS</span>
+                </div>
+
+                <div class="card card-protocol-turner" id="cardTurnerTrigger" onclick="manualEggTurn()" title="Tap to test 15s turn">
+                    <div class="turner-left">
+                        <div class="turner-icon-bubble">
+                            <img src="./icons/turner.png" alt="Turner" class="turner-icon-img">
+                        </div>
+                        <div class="turner-info">
+                            <span class="turner-title">Egg Turning Mechanism</span>
+                            <span class="turner-sub" id="dispTurnerSub">Auto-turns hourly · Tap to test 15s</span>
+                        </div>
+                    </div>
+                    <button type="button" class="turner-action-pill" id="dispTurnerStatus">ROTATE</button>
+                </div>
+
+                <!-- 5. Export Telemetry CSV Section -->
+                <div class="protocol-section-header" style="margin-top: 18px;">
+                    <span class="protocol-section-title">DATA LOGS & EXPORT</span>
+                </div>
+                <div>
+                    <a href="/api/export/csv" download="incuvision_telemetry_log.csv" class="card card-export-csv">
                         <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#D97706" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                             <polyline points="7 10 12 15 17 10"></polyline>
                             <line x1="12" y1="15" x2="12" y2="3"></line>
                         </svg>
-                        <span style="font-family: var(--font-heading); font-size: 0.88rem; font-weight: 800; color: #92400E;">
-                            Download Sensor & Actuator Data (.CSV)
-                        </span>
+                        <span>Download Sensor & Actuator Data (.CSV)</span>
                     </a>
                 </div>
             </section>

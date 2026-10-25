@@ -19,7 +19,7 @@ class IncubationCoordinator:
         self.state_file = Path(__file__).resolve().parent / "coordinator_state.json"
         
         self.start_time = datetime.now()
-        self.current_day = 1
+        self.current_day = 0
         self.phase = "SETTING"  # "SETTING" or "HATCHING"
         self._load_state()
 
@@ -47,18 +47,18 @@ class IncubationCoordinator:
             try:
                 with open(self.state_file, "r") as f:
                     data = json.load(f)
-                    self.current_day = max(1, min(TOTAL_INCUBATION_DAYS, data.get("day", 1)))
+                    self.current_day = max(0, min(TOTAL_INCUBATION_DAYS, data.get("day", 0)))
                     self.phase = data.get("phase", "HATCHING" if self.current_day >= HATCHING_DAYS_START else "SETTING")
                     if "start_time" in data:
                         self.start_time = datetime.fromisoformat(data["start_time"])
                     else:
-                        self.start_time = datetime.now() - timedelta(days=(self.current_day - 1))
+                        self.start_time = datetime.now() - timedelta(days=self.current_day)
                     print(f"[COORDINATOR] Restored persistent incubation state: Day {self.current_day} ({self.phase})")
                     return
             except Exception as e:
                 print(f"[COORDINATOR] State load failed ({e}), starting fresh.")
         self.start_time = datetime.now()
-        self.current_day = 1
+        self.current_day = 0
         self.phase = "SETTING"
 
     def start(self):
@@ -79,8 +79,8 @@ class IncubationCoordinator:
 
     def set_manual_day(self, day: int):
         with self._lock:
-            self.current_day = max(1, min(TOTAL_INCUBATION_DAYS, day))
-            self.start_time = datetime.now() - timedelta(days=(self.current_day - 1))
+            self.current_day = max(0, min(TOTAL_INCUBATION_DAYS, day))
+            self.start_time = datetime.now() - timedelta(days=self.current_day)
             self.phase = "HATCHING" if self.current_day >= HATCHING_DAYS_START else "SETTING"
             print(f"[COORDINATOR] Day set to: {self.current_day} (Phase: {self.phase})")
             self._save_state()
@@ -90,8 +90,8 @@ class IncubationCoordinator:
 
     def _update_day_and_phase(self):
         elapsed = datetime.now() - self.start_time
-        calc_day = int(elapsed.total_seconds() // 86400) + 1
-        calc_day = max(1, min(TOTAL_INCUBATION_DAYS, calc_day))
+        calc_day = int(elapsed.total_seconds() // 86400)
+        calc_day = max(0, min(TOTAL_INCUBATION_DAYS, calc_day))
 
         day_changed = (calc_day != self.current_day)
         self.current_day = calc_day

@@ -1436,18 +1436,193 @@ body {
     transform: scale(0.9);
 }
 
-.box-turner {
+/* Protocol Day Badge below stepper */
+.protocol-day-badge-wrap {
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+}
+
+.protocol-day-badge {
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 4px 14px;
+    border-radius: var(--radius-pill);
+    letter-spacing: 0.02em;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+.protocol-day-badge.setting-day {
+    background: #FEF3C7;
+    color: #92400E;
+    border: 1px solid #FCD34D;
+}
+
+.protocol-day-badge.incubation-day {
+    background: #ECFDF5;
+    color: #065F46;
+    border: 1px solid #A7F3D0;
+}
+
+.protocol-day-badge.lockdown-day {
+    background: #FEE2E2;
+    color: #991B1B;
+    border: 1px solid #FECACA;
+}
+
+/* Protocol Section Headers */
+.protocol-section-header {
+    margin: 16px 4px 6px 4px;
+}
+
+.protocol-section-title {
+    font-family: var(--font-heading);
+    font-size: 0.72rem;
+    font-weight: 800;
+    color: #8C6D23;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+/* Protocol Setpoints Grid (Temp & RH 2-col, CO2 full-width) */
+.protocol-setpoints-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.box-co2-wide {
+    grid-column: span 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Egg Turner Quick Action Card */
+.card-protocol-turner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 13px 16px;
     cursor: pointer;
+    background: #FFFFFF;
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+    border: 1.5px solid transparent;
+    transition: transform 0.12s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    margin-bottom: 4px;
 }
 
-.text-turn-val {
-    font-size: 1.15rem !important;
+.card-protocol-turner:hover {
+    border-color: #FCD34D;
+}
+
+.card-protocol-turner:active {
+    transform: scale(0.98);
+}
+
+.turner-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.turner-icon-bubble {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: #FFFBEB;
+    border: 1px solid #FDE68A;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.turner-icon-img {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+}
+
+.turner-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.turner-title {
+    font-family: var(--font-heading);
+    font-size: 0.88rem;
+    font-weight: 800;
+    color: #1A1615;
+}
+
+.turner-sub {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #786C5A;
+}
+
+.turner-action-pill {
+    background: #7A1D16;
+    color: #FFFFFF;
+    font-family: var(--font-heading);
+    font-size: 0.78rem;
+    font-weight: 800;
     letter-spacing: 0.04em;
-    color: #7A1D16 !important;
+    padding: 8px 16px;
+    border-radius: var(--radius-pill);
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(122, 29, 22, 0.25);
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+    pointer-events: none;
 }
 
-.text-turn-val.locked {
-    color: #9CA3AF !important;
+.card-protocol-turner.is-locked {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+.card-protocol-turner.is-locked .turner-action-pill {
+    background: #9CA3AF;
+    box-shadow: none;
+}
+
+/* CSV Export Card */
+.card-export-csv {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 14px 18px;
+    text-decoration: none;
+    background: #FFFBEB;
+    border: 1.5px solid #F59E0B;
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+    transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.card-export-csv:hover {
+    background: #FEF3C7;
+}
+
+.card-export-csv:active {
+    transform: scale(0.98);
+}
+
+.card-export-csv span {
+    font-family: var(--font-heading);
+    font-size: 0.86rem;
+    font-weight: 800;
+    color: #92400E;
 }
 
 /* Full Width Apply Button */

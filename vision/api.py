@@ -176,7 +176,7 @@ def set_incubation_phase(payload: PhasePayload):
     if p == "HATCHING" and coordinator.current_day < 19:
         coordinator.set_manual_day(19)
     elif p == "SETTING" and coordinator.current_day >= 19:
-        coordinator.set_manual_day(1)
+        coordinator.set_manual_day(0)
     else:
         coordinator.phase = p
         mqtt_bridge.set_phase(p)
