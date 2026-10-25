@@ -195,7 +195,7 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
                 <svg viewBox="0 0 24 24" width="22" height="22" fill="#7A1D16">
                     <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
                 </svg>
-                <span class="bell-alert-dot" id="bellDot"></span>
+                <span class="bell-alert-dot" id="bellDot" style="display: none;"></span>
             </button>
         </header>
 
@@ -416,9 +416,12 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
                 <div class="card card-alerts-container">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #F3F4F6;">
                         <span style="font-family: var(--font-heading); font-size: 0.95rem; font-weight: 800; color: #1E1B18;">Notifications & Smart Alerts</span>
-                        <button type="button" onclick="toggleNotifications()" title="Minimize Notifications" style="background: #F3F4F6; border: none; border-radius: 8px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #4B5563;">
-                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                        </button>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <button type="button" class="btn-clear-alerts" onclick="clearNotificationHistory()" title="Clear notifications">Clear</button>
+                            <button type="button" onclick="toggleNotifications()" title="Minimize Notifications" style="background: #F3F4F6; border: none; border-radius: 8px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #4B5563;">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                            </button>
+                        </div>
                     </div>
                     <!-- Push Notification Quick Bar -->
                     <div class="notif-bar-card" id="notifStatusCard">
@@ -441,58 +444,7 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
                     </div>
 
                     <div class="alerts-scroll-area" id="alertsList">
-                        <!-- Dynamic Smart Alerts -->
-                        <div class="alert-time-group">
-                            <span class="time-header">10:00 AM</span>
-                            
-                            <div class="alert-box">
-                                <span class="alert-warn-badge">
-                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#D97706" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                                        <line x1="12" y1="9" x2="12" y2="13"/>
-                                        <line x1="12" y1="17" x2="12.01" y2="17"/>
-                                    </svg>
-                                </span>
-                                <p class="alert-msg">OXYGEN LEVEL IS 22%, IT'S ABOVE NORMAL. EXHAUST FAN IS TURNED ON.</p>
-                            </div>
-
-                            <div class="alert-box">
-                                <span class="alert-warn-badge">
-                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#D97706" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                                        <line x1="12" y1="9" x2="12" y2="13"/>
-                                        <line x1="12" y1="17" x2="12.01" y2="17"/>
-                                    </svg>
-                                </span>
-                                <p class="alert-msg">TEMPERATURE IS 35°, IT'S BELOW NORMAL. PTC HEATER IS TURNED ON.</p>
-                            </div>
-                        </div>
-
-                        <div class="alert-time-group">
-                            <span class="time-header">10:15 AM</span>
-                            
-                            <div class="alert-box">
-                                <span class="alert-warn-badge">
-                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#D97706" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                                        <line x1="12" y1="9" x2="12" y2="13"/>
-                                        <line x1="12" y1="17" x2="12.01" y2="17"/>
-                                    </svg>
-                                </span>
-                                <p class="alert-msg">OXYGEN LEVEL IS STILL 22%, IT'S ABOVE NORMAL. MANUAL INTERVENTION IS NEEDED!</p>
-                            </div>
-
-                            <div class="alert-box">
-                                <span class="alert-warn-badge">
-                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#D97706" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                                        <line x1="12" y1="9" x2="12" y2="13"/>
-                                        <line x1="12" y1="17" x2="12.01" y2="17"/>
-                                    </svg>
-                                </span>
-                                <p class="alert-msg">TEMPERATURE IS NOW 37.5°, IT'S NORMAL. PTC HEATER IS TURNED OFF.</p>
-                            </div>
-                        </div>
+                        <!-- Populated dynamically with latest notification first -->
                     </div>
                 </div>
             </section>

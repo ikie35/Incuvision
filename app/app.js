@@ -36,6 +36,8 @@ document.addEventListener('DOMContentLoaded', () => {
     drawTempWaveChart();
     renderProtocolCards();
     initPushNotifications();
+    loadNotificationHistory();
+    renderAlertsList();
 });
 
 // =============================================================================
@@ -90,7 +92,11 @@ function switchNav(screenId) {
     }
 
     // Screen specific triggers
-    if (screenId === 'analytics') {
+    if (screenId === 'alerts') {
+        const bellDot = document.getElementById('bellDot');
+        if (bellDot) bellDot.style.display = 'none';
+        renderAlertsList();
+    } else if (screenId === 'analytics') {
         setTimeout(drawTempWaveChart, 50);
     } else if (screenId === 'fertility') {
         refreshLiveStream();
@@ -104,6 +110,9 @@ function toggleNotifications() {
     } else {
         // Open notifications
         switchNav('alerts');
+        const bellDot = document.getElementById('bellDot');
+        if (bellDot) bellDot.style.display = 'none';
+        renderAlertsList();
     }
 }
 
@@ -192,12 +201,13 @@ function handleIncomingTelemetry(data) {
     }
 
     if (previousPhase === 'SETTING' && currentPhase === 'HATCHING') {
-        sendPushNotification({
-            title: "🐣 Lockdown · Day 19",
-            body: "Targets: 36.9°C & 70% RH · Turner locked",
-            tag: "phase-transition-lockdown",
-            soundType: "chime",
-            cooldownSeconds: 3600
+        addDashboardNotification({
+            type: 'info',
+            category: 'phase',
+            msg: `HATCHING PHASE LOCKDOWN STARTED (DAY 19-21). TARGETS: 36.9°C & 70% RH. TURNER DISENGAGED.`,
+            pushTitle: "🐣 Lockdown · Day 19",
+            pushBody: "Targets: 36.9°C & 70% RH · Turner locked",
+            cooldownSecs: 3600
         });
     }
 
@@ -442,6 +452,13 @@ async function manualEggTurn() {
     turningSecondsLeft = 3600;
     updateTurningDisplay();
 
+    addDashboardNotification({
+        type: 'info',
+        category: 'turning',
+        msg: "MANUAL EGG ROTATION TRIGGERED (15S TRAY TILT).",
+        push: false
+    });
+
     try {
         await fetch('/api/control/egg_turning', { method: 'POST' });
         showToast("Egg turning initiated (15s rotation).");
@@ -655,163 +672,409 @@ function drawTempWaveChart() {
 }
 
 // =============================================================================
-// SMART ALERTS & LOGS
+// SMART ALERTS & NOTIFICATION HISTORY ENGINE (LATEST FIRST)
 // =============================================================================
-let alertLogCache = [];
+const NOTIF_STORAGE_KEY = 'incuvision_notification_history';
+let notificationHistory = [];
 
-function evaluateSmartAlerts(temp, rh, o2, actuators) {
-    const now = new Date();
-    const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const bellDot = document.getElementById('bellDot');
+let paramStateHistory = {
+    tempState: 'NORMAL', // 'NORMAL' | 'LOW' | 'HIGH' | 'CRITICAL'
+    rhState: 'NORMAL',   // 'NORMAL' | 'LOW' | 'HIGH'
+    co2State: 'NORMAL',  // 'NORMAL' | 'HIGH'
+    o2State: 'NORMAL',   // 'NORMAL' | 'LOW'
+    motorState: false
+};
 
-    const isHatching = (currentPhase === 'HATCHING' || currentDay >= 19);
+function formatNotifTime(ts) {
+    const d = new Date(ts);
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
 
-    let hasAlert = false;
-    let alerts = [];
-
-    // Phase-specific target evaluations
-    if (isHatching) {
-        // Hatching Phase Targets: Temp ~36.9°C, RH ~70%, CO2 <= 7500ppm
-        if (temp < 36.2) {
-            hasAlert = true;
-            alerts.push({
-                shortTitle: `🌡️ Low Temp · ${temp.toFixed(1)}°C`,
-                shortBody: `Target: 36.9°C · Heater ON`,
-                msg: `Temperature is ${temp.toFixed(1)}°C, below hatching target (36.9°C). Heater engaged.`
-            });
-        } else if (temp > 37.6) {
-            hasAlert = true;
-            alerts.push({
-                shortTitle: `🌡️ High Temp · ${temp.toFixed(1)}°C`,
-                shortBody: `Target: 36.9°C · Cooling active`,
-                msg: `Temperature is ${temp.toFixed(1)}°C, above hatching target (36.9°C). Cooling.`
-            });
+function loadNotificationHistory() {
+    try {
+        const raw = localStorage.getItem(NOTIF_STORAGE_KEY);
+        if (raw) {
+            notificationHistory = JSON.parse(raw);
         }
-
-        if (rh < 62.0) {
-            hasAlert = true;
-            alerts.push({
-                shortTitle: `💧 Low Humidity · ${rh.toFixed(1)}%`,
-                shortBody: `Target: 70% · Check water tray`,
-                msg: `Humidity is ${rh.toFixed(1)}%, below hatching target (70%). Check water level in water tray.`
-            });
-        } else if (rh > 80.0) {
-            hasAlert = true;
-            alerts.push({
-                shortTitle: `💧 High Humidity · ${rh.toFixed(1)}%`,
-                shortBody: `Target: 70% · Exhaust venting`,
-                msg: `Humidity is ${rh.toFixed(1)}%, above hatching target (70%). Exhaust venting.`
-            });
-        }
-
-        if (currentTelemetry.co2 && currentTelemetry.co2 > 7500) {
-            hasAlert = true;
-            alerts.push({
-                shortTitle: `⚠️ High CO₂ · ${currentTelemetry.co2} ppm`,
-                shortBody: `Limit: 7,500 ppm · Exhaust ON`,
-                msg: `CO₂ level is ${currentTelemetry.co2} ppm, exceeds hatching limit (7,500 ppm). Exhaust on.`
-            });
-        }
-    } else {
-        // Setting Phase Targets: Temp ~37.5°C, RH ~58%, CO2 <= 5000ppm
-        if (temp < 36.8) {
-            hasAlert = true;
-            alerts.push({
-                shortTitle: `🌡️ Low Temp · ${temp.toFixed(1)}°C`,
-                shortBody: `Target: 37.5°C · Heater ON`,
-                msg: `Temperature is ${temp.toFixed(1)}°C, below setting target (37.5°C). Heater engaged.`
-            });
-        } else if (temp > 38.2) {
-            hasAlert = true;
-            alerts.push({
-                shortTitle: `🌡️ High Temp · ${temp.toFixed(1)}°C`,
-                shortBody: `Target: 37.5°C · Exhaust cooling`,
-                msg: `Temperature is ${temp.toFixed(1)}°C, above setting target (37.5°C). Venting.`
-            });
-        }
-
-        if (rh < 50.0) {
-            hasAlert = true;
-            alerts.push({
-                shortTitle: `💧 Low Humidity · ${rh.toFixed(1)}%`,
-                shortBody: `Target: 58% · Check water tray`,
-                msg: `Humidity is ${rh.toFixed(1)}%, below setting target (58%). Check water level in water tray.`
-            });
-        } else if (rh > 65.0) {
-            hasAlert = true;
-            alerts.push({
-                shortTitle: `💧 High Humidity · ${rh.toFixed(1)}%`,
-                shortBody: `Target: 58% · Exhaust venting`,
-                msg: `Humidity is ${rh.toFixed(1)}%, above setting target (58%). Exhaust venting.`
-            });
-        }
-
-        if (currentTelemetry.co2 && currentTelemetry.co2 > 5000) {
-            hasAlert = true;
-            alerts.push({
-                shortTitle: `⚠️ High CO₂ · ${currentTelemetry.co2} ppm`,
-                shortBody: `Limit: 5,000 ppm · Exhaust ON`,
-                msg: `CO₂ level is ${currentTelemetry.co2} ppm, exceeds setting limit (5,000 ppm). Exhaust on.`
-            });
-        }
+    } catch (e) {
+        notificationHistory = [];
     }
 
-    if (o2 > 0 && o2 < 20.0) {
-        hasAlert = true;
-        alerts.push({
-            shortTitle: `⚠️ Low O₂ · ${o2.toFixed(1)}%`,
-            shortBody: `Threshold: 20% · Exhaust active`,
-            msg: `Oxygen level is ${o2.toFixed(1)}%, below 20.0%. Exhaust fan engaged.`
+    // Default starter history if none exists — explicitly sorted LATEST FIRST!
+    if (!Array.isArray(notificationHistory) || notificationHistory.length === 0) {
+        const now = Date.now();
+        notificationHistory = [
+            {
+                id: 'init-2',
+                timestamp: now - 3 * 60 * 1000,
+                timeStr: formatNotifTime(now - 3 * 60 * 1000),
+                type: 'success',
+                category: 'temp',
+                msg: "TEMPERATURE IS NOW 37.5°, IT'S NORMAL. PTC HEATER IS TURNED OFF."
+            },
+            {
+                id: 'init-1',
+                timestamp: now - 18 * 60 * 1000,
+                timeStr: formatNotifTime(now - 18 * 60 * 1000),
+                type: 'warning',
+                category: 'temp',
+                msg: "TEMPERATURE WAS 35.0°, BELOW NORMAL. PTC HEATER IS TURNED ON."
+            }
+        ];
+        saveNotificationHistory();
+    }
+}
+
+function saveNotificationHistory() {
+    try {
+        if (notificationHistory.length > 60) {
+            notificationHistory = notificationHistory.slice(0, 60);
+        }
+        localStorage.setItem(NOTIF_STORAGE_KEY, JSON.stringify(notificationHistory));
+    } catch (e) {}
+}
+
+function clearNotificationHistory() {
+    notificationHistory = [];
+    saveNotificationHistory();
+    renderAlertsList();
+    showToast("Cleared notification history.");
+}
+
+function addDashboardNotification({ type = 'warning', category = 'system', msg, title = '', push = true, pushTitle = '', pushBody = '', cooldownSecs = 180 }) {
+    if (!msg) return;
+
+    const now = Date.now();
+    const timeStr = formatNotifTime(now);
+
+    // Prevent duplicate spam within 30 seconds for identical message
+    const isRecentDuplicate = notificationHistory.length > 0 && 
+        notificationHistory[0].msg === msg && 
+        (now - notificationHistory[0].timestamp) < 30000;
+
+    if (isRecentDuplicate) return;
+
+    const newNotif = {
+        id: 'notif-' + now + '-' + Math.floor(Math.random() * 1000),
+        timestamp: now,
+        timeStr: timeStr,
+        type: type, // 'warning' | 'critical' | 'success' | 'info'
+        category: category,
+        msg: msg,
+        title: title
+    };
+
+    // ALWAYS PREPEND: LATEST MUST BE FIRST!
+    notificationHistory.unshift(newNotif);
+    saveNotificationHistory();
+    renderAlertsList();
+
+    // Show bell badge if not on alerts screen
+    const bellDot = document.getElementById('bellDot');
+    if (bellDot && currentActiveScreen !== 'alerts') {
+        bellDot.style.display = 'block';
+    }
+
+    if (push) {
+        sendPushNotification({
+            title: pushTitle || (type === 'critical' ? '🚨 IncuVision Alert' : (type === 'warning' ? '⚠️ IncuVision Alert' : 'IncuVision Update')),
+            body: pushBody || msg,
+            tag: `incuvision-${category}`,
+            soundType: (type === 'critical' || type === 'warning') ? 'alert' : 'chime',
+            cooldownSeconds: cooldownSecs
         });
     }
+}
 
-    if (bellDot) {
-        bellDot.style.display = hasAlert ? 'block' : 'none';
+function evaluateSmartAlerts(temp, rh, o2, actuators) {
+    const isHatching = (currentPhase === 'HATCHING' || currentDay >= 19);
+    const targetTemp = isHatching ? 36.9 : 37.5;
+    const targetRH = isHatching ? 70.0 : 58.0;
+    const co2Limit = isHatching ? 7500 : 5000;
+
+    let hasActiveAlert = false;
+
+    // 1. Temperature Evaluation & State Transition
+    let currentTempState = 'NORMAL';
+    const tempLow = isHatching ? 36.2 : 36.8;
+    const tempHigh = isHatching ? 37.6 : 38.2;
+
+    if (temp >= 38.0 && isManualMode) {
+        currentTempState = 'CRITICAL';
+        hasActiveAlert = true;
+    } else if (temp < tempLow) {
+        currentTempState = 'LOW';
+        hasActiveAlert = true;
+    } else if (temp > tempHigh) {
+        currentTempState = 'HIGH';
+        hasActiveAlert = true;
     }
 
-    const alertsListEl = document.getElementById('alertsList');
-    if (alertsListEl && alerts.length > 0) {
-        alertsListEl.innerHTML = `
-            <div class="alert-time-group">
-                <span class="time-header">${timeStr} · ${isHatching ? 'HATCHING PHASE (LOCKDOWN)' : 'SETTING PHASE'}</span>
-                ${alerts.map(a => `
-                    <div class="alert-box">
-                        <span class="alert-warn-badge">
-                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#D97706" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                                <line x1="12" y1="9" x2="12" y2="13"/>
-                                <line x1="12" y1="17" x2="12.01" y2="17"/>
-                            </svg>
-                        </span>
-                        <p class="alert-msg">${a.msg}</p>
-                    </div>
-                `).join('')}
-            </div>
-            <div class="alert-time-group" style="opacity:0.6;">
-                <span class="time-header">OPERATING STATUS</span>
-                <div class="alert-box">
-                    <span class="alert-warn-badge">
-                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#059669" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M20 6L9 17l-5-5"/>
-                        </svg>
-                    </span>
-                    <p class="alert-msg">${isHatching ? 'SYSTEM OPERATING UNDER HATCHING LOCKDOWN SETPOINTS (36.9°C / 70% RH / NO TURN).' : 'SYSTEM OPERATING UNDER SETTING PHASE SETPOINTS (37.5°C / 58% RH / 1-HR ROTATE).'}</p>
+    if (currentTempState !== paramStateHistory.tempState) {
+        if (currentTempState === 'LOW') {
+            addDashboardNotification({
+                type: 'warning',
+                category: 'temp',
+                msg: `TEMPERATURE IS ${temp.toFixed(1)}°C, BELOW ${isHatching ? 'HATCHING' : 'SETTING'} TARGET (${targetTemp}°C). PTC HEATER IS TURNED ON.`,
+                pushTitle: `🌡️ Low Temp · ${temp.toFixed(1)}°C`,
+                pushBody: `Target: ${targetTemp}°C · PTC Heater ON`
+            });
+        } else if (currentTempState === 'HIGH') {
+            addDashboardNotification({
+                type: 'warning',
+                category: 'temp',
+                msg: `TEMPERATURE IS ${temp.toFixed(1)}°C, ABOVE ${isHatching ? 'HATCHING' : 'SETTING'} TARGET (${targetTemp}°C). EXHAUST FAN IS ENGAGED.`,
+                pushTitle: `🌡️ High Temp · ${temp.toFixed(1)}°C`,
+                pushBody: `Target: ${targetTemp}°C · Cooling Active`
+            });
+        } else if (currentTempState === 'CRITICAL') {
+            addDashboardNotification({
+                type: 'critical',
+                category: 'temp',
+                msg: `CRITICAL TEMPERATURE (${temp.toFixed(1)}°C) REACHED! AUTOMATIC SAFETY ENGAGED.`,
+                pushTitle: `🚨 Critical Overheat · ${temp.toFixed(1)}°C`,
+                pushBody: `Exceeded 38.0°C! Safety system reverted to AUTO.`
+            });
+        } else if (currentTempState === 'NORMAL' && paramStateHistory.tempState !== 'NORMAL') {
+            addDashboardNotification({
+                type: 'success',
+                category: 'temp',
+                msg: `TEMPERATURE IS NOW ${temp.toFixed(1)}°C, IT'S NORMAL. PTC HEATER IS TURNED OFF.`,
+                push: false
+            });
+        }
+        paramStateHistory.tempState = currentTempState;
+    }
+
+    // 2. Humidity Evaluation & State Transition
+    let currentRHState = 'NORMAL';
+    const rhLow = isHatching ? 62.0 : 50.0;
+    const rhHigh = isHatching ? 80.0 : 65.0;
+
+    if (rh < rhLow) {
+        currentRHState = 'LOW';
+        hasActiveAlert = true;
+    } else if (rh > rhHigh) {
+        currentRHState = 'HIGH';
+        hasActiveAlert = true;
+    }
+
+    if (currentRHState !== paramStateHistory.rhState) {
+        if (currentRHState === 'LOW') {
+            addDashboardNotification({
+                type: 'warning',
+                category: 'rh',
+                msg: `HUMIDITY IS ${rh.toFixed(1)}%, BELOW ${isHatching ? 'HATCHING' : 'SETTING'} TARGET (${targetRH}%). PLEASE REFILL WATER RESERVOIR.`,
+                pushTitle: `💧 Low Humidity · ${rh.toFixed(1)}%`,
+                pushBody: `Target: ${targetRH}% · Please refill water reservoir`
+            });
+        } else if (currentRHState === 'HIGH') {
+            addDashboardNotification({
+                type: 'warning',
+                category: 'rh',
+                msg: `HUMIDITY IS ${rh.toFixed(1)}%, ABOVE ${isHatching ? 'HATCHING' : 'SETTING'} TARGET (${targetRH}%). EXHAUST VENTING.`,
+                pushTitle: `💧 High Humidity · ${rh.toFixed(1)}%`,
+                pushBody: `Target: ${targetRH}% · Exhaust venting`
+            });
+        } else if (currentRHState === 'NORMAL' && paramStateHistory.rhState !== 'NORMAL') {
+            addDashboardNotification({
+                type: 'success',
+                category: 'rh',
+                msg: `HUMIDITY IS NOW ${rh.toFixed(1)}%, IT'S NORMAL.`,
+                push: false
+            });
+        }
+        paramStateHistory.rhState = currentRHState;
+    }
+
+    // 3. CO2 Evaluation & State Transition
+    const currentCO2 = (currentTelemetry && currentTelemetry.co2) ? currentTelemetry.co2 : 0;
+    let currentCO2State = 'NORMAL';
+    if (currentCO2 > co2Limit) {
+        currentCO2State = 'HIGH';
+        hasActiveAlert = true;
+    }
+
+    if (currentCO2State !== paramStateHistory.co2State) {
+        if (currentCO2State === 'HIGH') {
+            addDashboardNotification({
+                type: 'warning',
+                category: 'co2',
+                msg: `CO2 LEVEL IS ${currentCO2} PPM, EXCEEDS ${isHatching ? 'HATCHING' : 'SETTING'} LIMIT (${co2Limit} PPM). EXHAUST FAN IS TURNED ON.`,
+                pushTitle: `⚠️ High CO2 · ${currentCO2} ppm`,
+                pushBody: `Limit: ${co2Limit} ppm · Exhaust fan active`
+            });
+        } else if (currentCO2State === 'NORMAL' && paramStateHistory.co2State !== 'NORMAL') {
+            addDashboardNotification({
+                type: 'success',
+                category: 'co2',
+                msg: `CO2 LEVEL IS NOW ${currentCO2} PPM, IT'S NORMAL. EXHAUST FAN TURNED OFF.`,
+                push: false
+            });
+        }
+        paramStateHistory.co2State = currentCO2State;
+    }
+
+    // 4. Oxygen Evaluation & State Transition
+    let currentO2State = 'NORMAL';
+    if (o2 > 0 && o2 < 20.0) {
+        currentO2State = 'LOW';
+        hasActiveAlert = true;
+    }
+
+    if (currentO2State !== paramStateHistory.o2State) {
+        if (currentO2State === 'LOW') {
+            addDashboardNotification({
+                type: 'warning',
+                category: 'o2',
+                msg: `OXYGEN LEVEL IS ${o2.toFixed(1)}%, BELOW NORMAL (20.0%). EXHAUST FAN ENGAGED.`,
+                pushTitle: `⚠️ Low O2 · ${o2.toFixed(1)}%`,
+                pushBody: `Below 20.0% · Exhaust active`
+            });
+        } else if (currentO2State === 'NORMAL' && paramStateHistory.o2State !== 'NORMAL') {
+            addDashboardNotification({
+                type: 'success',
+                category: 'o2',
+                msg: `OXYGEN LEVEL IS NOW ${o2.toFixed(1)}%, IT'S NORMAL.`,
+                push: false
+            });
+        }
+        paramStateHistory.o2State = currentO2State;
+    }
+
+    // 5. Motor (Egg Turning) State Detection
+    const isMotorOn = Boolean(actuators && actuators.motor);
+    if (isMotorOn !== paramStateHistory.motorState) {
+        if (isMotorOn) {
+            addDashboardNotification({
+                type: 'info',
+                category: 'turning',
+                msg: `EGG TURNING CYCLE INITIATED (45° TRAY TILT · 15 SECONDS).`,
+                push: false
+            });
+        } else if (paramStateHistory.motorState) {
+            addDashboardNotification({
+                type: 'success',
+                category: 'turning',
+                msg: `EGG TURNING CYCLE COMPLETED. NEXT ROTATION IN 60 MINUTES.`,
+                push: false
+            });
+        }
+        paramStateHistory.motorState = isMotorOn;
+    }
+
+    // Header Bell Dot
+    const bellDot = document.getElementById('bellDot');
+    if (bellDot && currentActiveScreen !== 'alerts') {
+        bellDot.style.display = hasActiveAlert ? 'block' : 'none';
+    }
+}
+
+function renderAlertsList() {
+    const listEl = document.getElementById('alertsList');
+    if (!listEl) return;
+
+    if (!notificationHistory || notificationHistory.length === 0) {
+        const isHatching = (currentPhase === 'HATCHING' || currentDay >= 19);
+        listEl.innerHTML = `
+            <div class="alert-empty-card">
+                <div class="alert-empty-icon">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 6L9 17l-5-5"/>
+                    </svg>
+                </div>
+                <div class="alert-empty-title">ALL SYSTEMS OPTIMAL</div>
+                <div class="alert-empty-desc">
+                    Operating under ${isHatching ? 'Hatching Phase' : 'Setting Phase'} conditions (${isHatching ? '36.9°C · 70% RH' : '37.5°C · 58% RH'}). All sensor readings and controls are normal.
                 </div>
             </div>
         `;
+        return;
     }
 
-    // Trigger push notification if out-of-bounds alerts are active
-    if (alerts.length > 0) {
-        const top = alerts[0];
-        sendPushNotification({
-            title: top.shortTitle || (isHatching ? "⚠️ Hatching Alert" : "⚠️ Incubation Alert"),
-            body: top.shortBody || top.msg,
-            tag: "alert-" + (isHatching ? "hatch" : "set"),
-            soundType: "alert",
-            cooldownSeconds: 180
-        });
+    // CRITICAL: Sort descending by timestamp — LATEST ALWAYS FIRST!
+    const sorted = [...notificationHistory].sort((a, b) => b.timestamp - a.timestamp);
+
+    // Group by time header
+    const groups = {};
+    const groupOrder = [];
+
+    sorted.forEach(notif => {
+        const timeHeader = notif.timeStr || formatNotifTime(notif.timestamp);
+        if (!groups[timeHeader]) {
+            groups[timeHeader] = [];
+            groupOrder.push(timeHeader); // preserves latest-first order
+        }
+        groups[timeHeader].push(notif);
+    });
+
+    // Render groups with the newest/latest time group at the very top
+    let html = '';
+    groupOrder.forEach((timeHeader, idx) => {
+        const items = groups[timeHeader];
+        const isLatestGroup = (idx === 0);
+
+        html += `
+            <div class="alert-time-group">
+                <span class="time-header">${timeHeader}${isLatestGroup ? ' · LATEST' : ''}</span>
+                ${items.map(item => renderAlertBoxHtml(item)).join('')}
+            </div>
+        `;
+    });
+
+    listEl.innerHTML = html;
+}
+
+function renderAlertBoxHtml(item) {
+    const type = item.type || 'warning';
+    let boxClass = 'alert-box';
+    let iconSvg = '';
+
+    if (type === 'critical') {
+        boxClass += ' alert-critical';
+        iconSvg = `
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#DC2626" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+        `;
+    } else if (type === 'success') {
+        boxClass += ' alert-success';
+        iconSvg = `
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#059669" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 6L9 17l-5-5"/>
+            </svg>
+        `;
+    } else if (type === 'info') {
+        boxClass += ' alert-info';
+        iconSvg = `
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#2563EB" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="16" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+        `;
+    } else {
+        // Warning
+        boxClass += ' alert-warning';
+        iconSvg = `
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#D97706" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+        `;
     }
+
+    return `
+        <div class="${boxClass}">
+            <span class="alert-warn-badge">
+                ${iconSvg}
+            </span>
+            <p class="alert-msg">${item.msg}</p>
+        </div>
+    `;
 }
 
 // =============================================================================
@@ -1043,12 +1306,13 @@ function renderAuditScores(audit, switchToAudit = true) {
     }
 
     if (switchToAudit && audit && !audit.error) {
-        sendPushNotification({
-            title: `🔬 Candling · Day ${audit.day || currentDay}`,
-            body: `Fertility: ${rate.toFixed(1)}% (${fertileCount}/${total} fertile)`,
-            tag: `audit-result-day-${audit.day || currentDay}`,
-            soundType: "chime",
-            cooldownSeconds: 60
+        addDashboardNotification({
+            type: 'info',
+            category: 'candling',
+            msg: `DAY ${audit.day || currentDay} CANDLING AUDIT: ${fertileCount} FERTILE (${rate.toFixed(1)}%), ${infertileCount} INFERTILE.`,
+            pushTitle: `🔬 Candling · Day ${audit.day || currentDay}`,
+            pushBody: `Fertility: ${rate.toFixed(1)}% (${fertileCount}/${total} fertile)`,
+            cooldownSecs: 60
         });
     }
 }
@@ -1417,6 +1681,12 @@ function sendPushNotification({ title, body, tag = 'incuvision-alert', soundType
 function testPushNotification() {
     getAudioContext();
     playNotificationSound('chime');
+    addDashboardNotification({
+        type: 'info',
+        category: 'test',
+        msg: `SYSTEM TEST: AUDIBLE CHIME & VIBRATION VERIFIED. DAY ${currentDay} (${currentPhase}).`,
+        push: false
+    });
     sendPushNotification({
         title: `IncuVision · Day ${currentDay}`,
         body: `System active (${currentPhase}) · Audio & alerts verified`,
