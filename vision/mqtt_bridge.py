@@ -56,19 +56,15 @@ class MQTTBridge:
         self.has_received_live_telemetry = False
 
     def get_telemetry(self) -> dict:
-        """Returns the latest telemetry dictionary with dynamically updated next_turn_seconds."""
+        """Returns the latest telemetry dictionary with dynamically updated next_turn_seconds to the start of the next hour."""
         if self.latest_telemetry.get("phase") == "HATCHING":
             self.latest_telemetry["next_turn_seconds"] = 0
         elif self.latest_telemetry.get("actuators", {}).get("motor", False):
             self.latest_telemetry["next_turn_seconds"] = 0
         else:
-            elapsed = int(time.time() - self._turn_sync_timestamp)
-            rem = max(0, self._turn_interval_remaining - elapsed)
-            if rem == 0 and self._turn_interval_remaining > 0:
-                self._turn_sync_timestamp = time.time()
-                self._turn_interval_remaining = 3600
-                rem = 3600
-            self.latest_telemetry["next_turn_seconds"] = rem
+            now_dt = datetime.now()
+            seconds_into_hour = now_dt.minute * 60 + now_dt.second
+            self.latest_telemetry["next_turn_seconds"] = max(0, 3600 - seconds_into_hour)
         return self.latest_telemetry
 
     def start(self):

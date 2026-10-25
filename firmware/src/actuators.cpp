@@ -1,5 +1,6 @@
 #include "actuators.h"
 #include "config.h"
+#include <time.h>
 
 ActuatorManager actuators;
 
@@ -16,6 +17,7 @@ ActuatorManager::ActuatorManager() {
     heaterRestTimestamp = 0;
 
     lastTurnTimestamp = 0;
+    lastTurnedHour = -1;
     isTurningNow = false;
     turnStartTimestamp = 0;
     turnDurationMs = DEFAULT_TURNING_DURATION_S * 1000;
@@ -162,10 +164,24 @@ void ActuatorManager::processEggTurning() {
         return;
     }
 
-    // Check if interval has elapsed (Hourly 45° tilt)
-    if (now - lastTurnTimestamp >= (DEFAULT_TURNING_INTERVAL_S * 1000UL)) {
-        Serial.println("[ACTUATORS] Triggering hourly egg turning cycle...");
-        triggerEggTurnManual(DEFAULT_TURNING_DURATION_S);
+    // Top-of-the-hour turning check via NTP wall clock
+    time_t nowSec = time(nullptr);
+    if (nowSec > 100000) {
+        struct tm timeinfo;
+        if (localtime_r(&nowSec, &timeinfo)) {
+            if (timeinfo.tm_min == 0 && lastTurnedHour != timeinfo.tm_hour) {
+                lastTurnedHour = timeinfo.tm_hour;
+                Serial.printf("[ACTUATORS] Top of the hour (%02d:00): Triggering hourly egg turning cycle...\n", timeinfo.tm_hour);
+                triggerEggTurnManual(DEFAULT_TURNING_DURATION_S);
+                return;
+            }
+        }
+    } else {
+        // Fallback to interval timer if NTP is not yet synchronized
+        if (now - lastTurnTimestamp >= (DEFAULT_TURNING_INTERVAL_S * 1000UL)) {
+            Serial.println("[ACTUATORS] Triggering hourly egg turning cycle (interval fallback)...");
+            triggerEggTurnManual(DEFAULT_TURNING_DURATION_S);
+        }
     }
 }
 
@@ -278,6 +294,17 @@ void ActuatorManager::setCustomSetpoints(float temp, float rh, uint16_t co2) {
 uint32_t ActuatorManager::getSecondsToNextTurn() const {
     if (currentPhase == PHASE_HATCHING) return 0;
     if (isTurningNow) return 0;
+
+    time_t nowSec = time(nullptr);
+    if (nowSec > 100000) {
+        struct tm timeinfo;
+        if (localtime_r(&nowSec, &timeinfo)) {
+            uint32_t secIntoHour = timeinfo.tm_min * 60 + timeinfo.tm_sec;
+            return (secIntoHour >= 3600) ? 0 : (3600 - secIntoHour);
+        }
+    }
+
+    // Fallback if clock not synced
     uint32_t elapsed = (millis() - lastTurnTimestamp) / 1000UL;
     if (elapsed >= DEFAULT_TURNING_INTERVAL_S) return 0;
     return DEFAULT_TURNING_INTERVAL_S - elapsed;

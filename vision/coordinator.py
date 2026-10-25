@@ -28,6 +28,7 @@ class IncubationCoordinator:
         
         self.completed_audits = set()  # Tracks which scheduled days have been completed (e.g. {7, 10, 18})
         self.latest_audit_result = logger.get_latest_audit()
+        self.last_turned_hour = datetime.now().hour if datetime.now().minute > 0 else None
         self._lock = threading.Lock()
 
     def _save_state(self):
@@ -217,7 +218,17 @@ class IncubationCoordinator:
                     self.mqtt.send_command({"cmd": "SET_RELAY", "actuator": "heater", "state": False})
                     self.mqtt.send_command({"cmd": "SET_RELAY", "actuator": "exhaust", "state": True})
 
-            # 4. Check for Automated Scheduled Candling Audits (Day 7, 10, 18)
+            # 4. Top-of-the-Hour Automatic Egg Turning (XX:00:00 every hour in Setting Phase)
+            now_dt = datetime.now()
+            current_hour = now_dt.hour
+            if self.phase != "HATCHING" and not self.is_auditing_now:
+                if now_dt.minute == 0 and self.last_turned_hour != current_hour:
+                    print(f"[COORDINATOR] Top of the hour ({now_dt.strftime('%H:%M')}): Triggering automatic egg turning.")
+                    self.last_turned_hour = current_hour
+                    if self.mqtt:
+                        self.mqtt.trigger_egg_turning(15)
+
+            # 5. Check for Automated Scheduled Candling Audits (Day 7, 10, 18)
             if self.current_day in CANDLING_SCHEDULE_DAYS and self.current_day not in self.completed_audits:
                 print(f"[COORDINATOR] Scheduled Day {self.current_day} Candling Audit triggered!")
                 self.trigger_candling_audit_now(self.current_day)

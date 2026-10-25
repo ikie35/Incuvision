@@ -62,6 +62,7 @@ private:
 
     // Turning timing
     uint32_t lastTurnTimestamp;
+    int lastTurnedHour;
     bool isTurningNow;
     uint32_t turnStartTimestamp;
     uint32_t turnDurationMs;

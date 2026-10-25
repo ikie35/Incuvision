@@ -3,6 +3,7 @@
 #include <WiFi.h>
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
+#include <time.h>
 
 static WiFiClient espClient;
 static PubSubClient mqttClient(espClient);
@@ -34,6 +35,8 @@ void CommManager::setupWiFi() {
 
     if (WiFi.status() == WL_CONNECTED) {
         Serial.printf("\n[COMM] Wi-Fi Connected! IP Address: %s\n", WiFi.localIP().toString().c_str());
+        // Synchronize NTP clock (UTC+8 Philippine Standard Time)
+        configTime(8 * 3600, 0, "pool.ntp.org", "time.google.com");
     } else {
         Serial.println("\n[COMM] Wi-Fi connection timed out. Serial fallback active.");
     }

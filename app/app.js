@@ -273,14 +273,6 @@ function handleIncomingTelemetry(data) {
         try {
             const motorActive = Boolean(telem.actuators && telem.actuators.motor);
             isHardwareTurning = motorActive;
-
-            if (telem.next_turn_seconds !== undefined) {
-                const serverSecs = parseInt(telem.next_turn_seconds);
-                if (!isTurningInitialized || Math.abs(turningSecondsLeft - serverSecs) > 3 || motorActive) {
-                    turningSecondsLeft = serverSecs;
-                    isTurningInitialized = true;
-                }
-            }
             updateTurningDisplay();
         } catch (e) {
             console.warn("[TURNING] update error:", e);
@@ -423,6 +415,15 @@ async function toggleActuatorMode() {
     }
 }
 
+function getSecondsToNextTurn() {
+    if (currentPhase === 'HATCHING' || currentDay >= 19) {
+        return 0;
+    }
+    const now = new Date();
+    const secondsIntoHour = now.getMinutes() * 60 + now.getSeconds();
+    return Math.max(0, 3600 - secondsIntoHour);
+}
+
 function updateTurningDisplay() {
     const turnEl = document.getElementById('turningCountdown');
     if (!turnEl) return;
@@ -437,8 +438,9 @@ function updateTurningDisplay() {
         return;
     }
 
-    const m = Math.floor(turningSecondsLeft / 60).toString().padStart(2, '0');
-    const s = (turningSecondsLeft % 60).toString().padStart(2, '0');
+    const secs = getSecondsToNextTurn();
+    const m = Math.floor(secs / 60).toString().padStart(2, '0');
+    const s = (secs % 60).toString().padStart(2, '0');
     turnEl.innerText = `${m}:${s}`;
 }
 
@@ -449,7 +451,6 @@ async function manualEggTurn() {
     }
 
     isHardwareTurning = true;
-    turningSecondsLeft = 3600;
     updateTurningDisplay();
 
     addDashboardNotification({
@@ -469,22 +470,8 @@ async function manualEggTurn() {
 }
 
 function startTurningCountdown() {
+    updateTurningDisplay();
     setInterval(() => {
-        if (currentPhase === 'HATCHING' || currentDay >= 19) {
-            updateTurningDisplay();
-            return;
-        }
-
-        if (isHardwareTurning) {
-            updateTurningDisplay();
-            return;
-        }
-
-        if (turningSecondsLeft > 0) {
-            turningSecondsLeft--;
-        } else {
-            turningSecondsLeft = 3600;
-        }
         updateTurningDisplay();
     }, 1000);
 }
