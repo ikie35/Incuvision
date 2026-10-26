@@ -228,18 +228,12 @@ function handleIncomingTelemetry(data) {
         protocolState.co2 = (currentPhase === 'HATCHING' || currentDay >= 19) ? 7500 : 5000;
         protocolState.o2 = (currentPhase === 'HATCHING' || currentDay >= 19) ? 20.5 : 20.9;
         if (data.time_into_day) {
-            const timeEl = document.getElementById('inputProtocolTime');
-            if (timeEl) timeEl.value = data.time_into_day;
+            setElapsedTimeString(data.time_into_day);
         }
         protocolStateInitialized = true;
         renderProtocolCards();
-        updateProtocolTimeDesc();
-    } else if (data.time_into_day) {
-        const timeInputEl = document.getElementById('inputProtocolTime');
-        if (timeInputEl && document.activeElement !== timeInputEl && protocolState.day === currentDay) {
-            timeInputEl.value = data.time_into_day;
-            updateProtocolTimeDesc();
-        }
+    } else if (data.time_into_day && protocolState.day === currentDay) {
+        setElapsedTimeString(data.time_into_day);
     }
 
     const telem = data.telemetry;
@@ -1731,7 +1725,6 @@ function setProtocolPhase(phase) {
     protocolState.o2 = isHatching ? 20.5 : 20.9;
 
     renderProtocolCards();
-    updateProtocolTimeDesc();
     showToast(`Loaded ${isHatching ? 'Hatching (36.9°C, 70% RH, 20.5% O₂)' : 'Setting (37.5°C, 58% RH, 20.9% O₂)'} targets.`);
 }
 
@@ -1758,31 +1751,61 @@ function stepDay(delta) {
     }
 
     renderProtocolCards();
-    updateProtocolTimeDesc();
 }
 
-function updateProtocolTimeDesc() {
-    const inputEl = document.getElementById('inputProtocolTime');
-    const descEl = document.getElementById('dispProtocolTimeSummary');
-    if (!inputEl || !descEl) return;
-    const val = inputEl.value || '00:00';
-    const parts = val.split(':');
-    const h = parseInt(parts[0], 10) || 0;
-    const m = parseInt(parts[1], 10) || 0;
-    descEl.innerText = `${h}h ${m}m elapsed into Day ${protocolState.day}`;
-}
-
-function syncProtocolTimeWithClock() {
-    const now = new Date();
-    const hh = String(now.getHours()).padStart(2, '0');
-    const mm = String(now.getMinutes()).padStart(2, '0');
-    const inputEl = document.getElementById('inputProtocolTime');
-    if (inputEl) {
-        inputEl.value = `${hh}:${mm}`;
+function validateElapsedInputs() {
+    const hEl = document.getElementById('inputElapsedHours');
+    const mEl = document.getElementById('inputElapsedMins');
+    if (hEl) {
+        let h = parseInt(hEl.value, 10);
+        if (isNaN(h)) h = 0;
+        hEl.value = Math.max(0, Math.min(23, h));
     }
-    updateProtocolTimeDesc();
-    showToast(`Time set to device clock: ${hh}:${mm}`);
+    if (mEl) {
+        let m = parseInt(mEl.value, 10);
+        if (isNaN(m)) m = 0;
+        mEl.value = Math.max(0, Math.min(59, m));
+    }
 }
+
+function stepElapsedHours(delta) {
+    const el = document.getElementById('inputElapsedHours');
+    if (!el) return;
+    let val = parseInt(el.value, 10) || 0;
+    val = Math.max(0, Math.min(23, val + delta));
+    el.value = val;
+}
+
+function stepElapsedMins(delta) {
+    const el = document.getElementById('inputElapsedMins');
+    if (!el) return;
+    let val = parseInt(el.value, 10) || 0;
+    val = Math.max(0, Math.min(59, val + delta));
+    el.value = val;
+}
+
+function getElapsedTimeString() {
+    const hEl = document.getElementById('inputElapsedHours');
+    const mEl = document.getElementById('inputElapsedMins');
+    const h = Math.max(0, Math.min(23, parseInt(hEl ? hEl.value : 0, 10) || 0));
+    const m = Math.max(0, Math.min(59, parseInt(mEl ? mEl.value : 0, 10) || 0));
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
+
+function setElapsedTimeString(timeStr) {
+    if (!timeStr || !timeStr.includes(':')) return;
+    const parts = timeStr.split(':');
+    const h = Math.max(0, Math.min(23, parseInt(parts[0], 10) || 0));
+    const m = Math.max(0, Math.min(59, parseInt(parts[1], 10) || 0));
+    const hEl = document.getElementById('inputElapsedHours');
+    const mEl = document.getElementById('inputElapsedMins');
+    if (hEl && document.activeElement !== hEl) hEl.value = h;
+    if (mEl && document.activeElement !== mEl) mEl.value = m;
+}
+
+// Deprecated alias for backwards compatibility
+const updateProtocolTimeDesc = () => {};
+const syncProtocolTimeWithClock = () => {};
 
 function stepTemp(delta) {
     protocolState.temp = Math.round((protocolState.temp + delta) * 10) / 10;
@@ -1875,8 +1898,10 @@ async function saveIncubationSchedule() {
     renderProtocolCards();
     updateTurningDisplay();
 
-    const timeInput = document.getElementById('inputProtocolTime');
-    const timeVal = (timeInput && timeInput.value) ? timeInput.value : '00:00';
+    const timeVal = getElapsedTimeString();
+    const parts = timeVal.split(':');
+    const h = parseInt(parts[0], 10) || 0;
+    const m = parseInt(parts[1], 10) || 0;
 
     try {
         const resp = await fetch('/api/control/schedule', {
@@ -1890,7 +1915,7 @@ async function saveIncubationSchedule() {
         });
 
         if (resp.ok) {
-            showToast(`Schedule Applied: Day ${currentDay} (${timeVal}) · ${protocolState.phase}`);
+            showToast(`Schedule Applied: Day ${currentDay} (${h}h ${m}m elapsed)`);
         } else {
             // Fallback to legacy endpoint if schedule endpoint is unavailable
             await fetch('/api/control/day', {
@@ -1903,11 +1928,11 @@ async function saveIncubationSchedule() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ phase: protocolState.phase })
             });
-            showToast(`Schedule Applied: Day ${currentDay} (${protocolState.phase})`);
+            showToast(`Schedule Applied: Day ${currentDay}`);
         }
     } catch (e) {
         console.warn("Schedule save error:", e);
-        showToast(`Schedule updated locally: Day ${currentDay} at ${timeVal}`);
+        showToast(`Schedule saved locally: Day ${currentDay} (${h}h ${m}m)`);
     }
 }
 
