@@ -1405,6 +1405,148 @@ body {
     text-align: center;
 }
 
+/* Protocol Time / Resumption Box */
+.protocol-time-box {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: #FFFDF7;
+    border: 1px solid #FDE68A;
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-top: 4px;
+}
+
+.protocol-time-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.protocol-time-label {
+    font-family: var(--font-heading);
+    font-size: 0.68rem;
+    font-weight: 800;
+    color: #92400E;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.btn-time-sync {
+    background: #FEF3C7;
+    color: #92400E;
+    border: 1px solid #FCD34D;
+    border-radius: var(--radius-pill);
+    padding: 4px 10px;
+    font-size: 0.68rem;
+    font-family: var(--font-heading);
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.btn-time-sync:hover {
+    background: #FDE68A;
+}
+
+.btn-time-sync:active {
+    transform: scale(0.96);
+}
+
+.protocol-time-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.protocol-time-input {
+    background: #FFFFFF;
+    border: 1.5px solid #D1D5DB;
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-family: var(--font-heading);
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #111827;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.15s ease;
+}
+
+.protocol-time-input:focus {
+    border-color: #D97706;
+    box-shadow: 0 0 0 2px rgba(217, 119, 6, 0.2);
+}
+
+.protocol-time-desc {
+    font-family: var(--font-heading);
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #4B5563;
+}
+
+.protocol-time-hint {
+    font-size: 0.68rem;
+    font-weight: 500;
+    color: #9CA3AF;
+    line-height: 1.35;
+}
+
+.btn-schedule-apply {
+    background: linear-gradient(135deg, #D97706 0%, #B45309 100%);
+    color: #FFFFFF;
+    font-family: var(--font-heading);
+    font-size: 0.84rem;
+    font-weight: 800;
+    padding: 11px 16px;
+    border-radius: var(--radius-pill);
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(180, 83, 9, 0.25);
+    transition: all 0.15s ease;
+    text-align: center;
+    width: 100%;
+    margin-top: 4px;
+}
+
+.btn-schedule-apply:hover {
+    box-shadow: 0 4px 12px rgba(180, 83, 9, 0.35);
+    transform: translateY(-1px);
+}
+
+.btn-schedule-apply:active {
+    transform: scale(0.98);
+}
+
+.btn-protocol-apply {
+    background: linear-gradient(135deg, #7A1D16 0%, #991B1B 100%);
+    color: #FFFFFF;
+    font-family: var(--font-heading);
+    font-size: 0.88rem;
+    font-weight: 800;
+    padding: 13px 20px;
+    border-radius: var(--radius-pill);
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 3px 10px rgba(122, 29, 22, 0.3);
+    transition: all 0.15s ease;
+    text-align: center;
+    width: 100%;
+    margin-top: 4px;
+    margin-bottom: 8px;
+}
+
+.btn-protocol-apply:hover {
+    box-shadow: 0 5px 14px rgba(122, 29, 22, 0.4);
+    transform: translateY(-1px);
+}
+
+.btn-protocol-apply:active {
+    transform: scale(0.98);
+}
+
 /* Metric Stepper Row inside .metric-box */
 .metric-stepper-row {
     display: flex;

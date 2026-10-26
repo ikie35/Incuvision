@@ -45,6 +45,11 @@ class RelayCommandPayload(BaseModel):
 class DayPayload(BaseModel):
     day: int
 
+class SchedulePayload(BaseModel):
+    day: int
+    time: Optional[str] = "00:00"  # "HH:MM"
+    phase: Optional[str] = "SETTING"
+
 class PhasePayload(BaseModel):
     phase: str  # "SETTING" or "HATCHING"
 
@@ -84,9 +89,17 @@ def get_telemetry():
         raise HTTPException(status_code=503, detail="System initializing")
     
     telem = mqtt_bridge.get_telemetry()
+    elapsed = datetime.now() - coordinator.start_time
+    total_sec = max(0, int(elapsed.total_seconds()))
+    hours_into_day = (total_sec % 86400) // 3600
+    mins_into_day = (total_sec % 3600) // 60
+    time_str = f"{hours_into_day:02d}:{mins_into_day:02d}"
+
     payload = {
         "day": coordinator.current_day,
         "phase": coordinator.phase,
+        "time_into_day": time_str,
+        "start_time": coordinator.start_time.isoformat(),
         "is_auditing": coordinator.is_auditing_now,
         "telemetry": telem,
         "latest_audit": coordinator.latest_audit_result
@@ -168,6 +181,29 @@ def set_incubation_day(payload: DayPayload):
         raise HTTPException(status_code=503, detail="Coordinator not ready")
     coordinator.set_manual_day(payload.day)
     return {"status": "success", "day": coordinator.current_day, "phase": coordinator.phase}
+
+@app.post("/api/control/schedule")
+def set_incubation_schedule(payload: SchedulePayload):
+    if not coordinator or not mqtt_bridge:
+        raise HTTPException(status_code=503, detail="Coordinator not ready")
+    hours = 0
+    minutes = 0
+    if payload.time and ":" in payload.time:
+        try:
+            parts = payload.time.split(":")
+            hours = max(0, min(23, int(parts[0])))
+            minutes = max(0, min(59, int(parts[1])))
+        except Exception:
+            pass
+    phase = payload.phase.upper() if payload.phase else ("HATCHING" if payload.day >= 19 else "SETTING")
+    coordinator.set_manual_schedule(day=payload.day, hours=hours, minutes=minutes, phase=phase)
+    return {
+        "status": "success",
+        "day": coordinator.current_day,
+        "phase": coordinator.phase,
+        "time_into_day": f"{hours:02d}:{minutes:02d}",
+        "start_time": coordinator.start_time.isoformat()
+    }
 
 @app.post("/api/control/phase")
 def set_incubation_phase(payload: PhasePayload):

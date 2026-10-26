@@ -77,16 +77,23 @@ class IncubationCoordinator:
             self._update_day_and_phase()
             self._save_state()
 
-    def set_manual_day(self, day: int):
+    def set_manual_schedule(self, day: int, hours: int = 0, minutes: int = 0, phase: str = None):
         with self._lock:
             self.current_day = max(0, min(TOTAL_INCUBATION_DAYS, day))
-            self.start_time = datetime.now() - timedelta(days=self.current_day)
-            self.phase = "HATCHING" if self.current_day >= HATCHING_DAYS_START else "SETTING"
-            print(f"[COORDINATOR] Day set to: {self.current_day} (Phase: {self.phase})")
+            offset = timedelta(days=self.current_day, hours=hours, minutes=minutes)
+            self.start_time = datetime.now() - offset
+            if phase in ("SETTING", "HATCHING"):
+                self.phase = phase
+            else:
+                self.phase = "HATCHING" if self.current_day >= HATCHING_DAYS_START else "SETTING"
+            print(f"[COORDINATOR] Incubation schedule updated: Day {self.current_day} ({hours:02d}:{minutes:02d} into day, Phase: {self.phase})")
             self._save_state()
             self.mqtt.set_phase(self.phase)
             self.mqtt.send_command({"cmd": "SET_DAY", "day": self.current_day})
             self.mqtt.send_command({"cmd": "SET_MODE", "mode": "AUTO"})
+
+    def set_manual_day(self, day: int):
+        self.set_manual_schedule(day=day, hours=0, minutes=0)
 
     def _update_day_and_phase(self):
         elapsed = datetime.now() - self.start_time

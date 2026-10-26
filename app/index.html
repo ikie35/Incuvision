@@ -12,8 +12,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Poppins:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
     <link rel="icon" type="image/png" href="./icons/logo.png">
-    <link rel="stylesheet" href="/dashboard/style.css?v=38">
-    <link rel="stylesheet" href="./style.css?v=38">
+    <link rel="stylesheet" href="/dashboard/style.css?v=39">
+    <link rel="stylesheet" href="./style.css?v=39">
     <style>
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 :root {
@@ -598,8 +598,12 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
                  SCREEN 5: MENU / PROTOCOL SETTINGS
                  ========================================================== -->
             <section id="screenMenu" class="app-screen">
-                <!-- 1. Phase & Day Selector Card -->
+                <!-- 1. Phase & Day Selector Card with Resumption Time -->
                 <div class="card card-protocol-top">
+                    <div class="protocol-section-header" style="margin: 0 0 10px 0;">
+                        <span class="protocol-section-title">INCUBATION SCHEDULE & RESUMPTION</span>
+                    </div>
+
                     <div class="phase-tabs-row">
                         <button type="button" class="phase-tab-pill active" id="btnPhaseSetting" onclick="setProtocolPhase('SETTING')">
                             Setting (Days 0–18)
@@ -620,6 +624,23 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
                         </div>
                     </div>
 
+                    <!-- Resumption Time Setting Box -->
+                    <div class="protocol-time-box">
+                        <div class="protocol-time-header">
+                            <span class="protocol-time-label">TIME INTO DAY (HOURS : MINS)</span>
+                            <button type="button" class="btn-time-sync" onclick="syncProtocolTimeWithClock()" title="Set to current device clock">⏱️ Set Current Time</button>
+                        </div>
+                        <div class="protocol-time-controls">
+                            <input type="time" class="protocol-time-input" id="inputProtocolTime" value="00:00" onchange="updateProtocolTimeDesc()">
+                            <span class="protocol-time-desc" id="dispProtocolTimeSummary">0h 0m elapsed into Day 0</span>
+                        </div>
+                        <span class="protocol-time-hint">Adjust day and elapsed hours:minutes to resume accurately after a power disruption or schedule shift.</span>
+                    </div>
+
+                    <!-- Dedicated Schedule Apply Button -->
+                    <button type="button" class="btn-schedule-apply" id="btnSaveSchedule" onclick="saveIncubationSchedule()">
+                        Apply Incubation Schedule
+                    </button>
                 </div>
 
                 <!-- 2. Environmental Setpoints Section -->
@@ -682,9 +703,9 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
                     </div>
                 </div>
 
-                <!-- 3. Primary Action Button: Save & Apply Protocol -->
-                <button class="btn-protocol-apply" id="btnSaveProtocol" onclick="saveProtocolSettings()">
-                    Save & Apply Protocol
+                <!-- 3. Dedicated Setpoints Apply Button -->
+                <button type="button" class="btn-protocol-apply" id="btnSaveSetpoints" onclick="saveTargetSetpoints()">
+                    Apply Target Setpoints
                 </button>
 
                 <!-- 4. Actuator Quick Controls: Egg Turner Mechanism -->
@@ -794,10 +815,10 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
     <!-- Toast Notification Container -->
     <div id="appToast" class="app-toast"></div>
 
-    <script src="/dashboard/app.js?v=38"></script>
+    <script src="/dashboard/app.js?v=39"></script>
     <script>
         if (typeof switchNav === 'undefined') {
-            document.write('<script src="./app.js?v=38"><\/script>');
+            document.write('<script src="./app.js?v=39"><\/script>');
         }
     </script>
 </body>

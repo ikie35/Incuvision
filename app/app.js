@@ -227,8 +227,19 @@ function handleIncomingTelemetry(data) {
         protocolState.rh = (currentPhase === 'HATCHING' || currentDay >= 19) ? 70.0 : 58.0;
         protocolState.co2 = (currentPhase === 'HATCHING' || currentDay >= 19) ? 7500 : 5000;
         protocolState.o2 = (currentPhase === 'HATCHING' || currentDay >= 19) ? 20.5 : 20.9;
+        if (data.time_into_day) {
+            const timeEl = document.getElementById('inputProtocolTime');
+            if (timeEl) timeEl.value = data.time_into_day;
+        }
         protocolStateInitialized = true;
         renderProtocolCards();
+        updateProtocolTimeDesc();
+    } else if (data.time_into_day) {
+        const timeInputEl = document.getElementById('inputProtocolTime');
+        if (timeInputEl && document.activeElement !== timeInputEl && protocolState.day === currentDay) {
+            timeInputEl.value = data.time_into_day;
+            updateProtocolTimeDesc();
+        }
     }
 
     const telem = data.telemetry;
@@ -1720,28 +1731,57 @@ function setProtocolPhase(phase) {
     protocolState.o2 = isHatching ? 20.5 : 20.9;
 
     renderProtocolCards();
+    updateProtocolTimeDesc();
     showToast(`Loaded ${isHatching ? 'Hatching (36.9°C, 70% RH, 20.5% O₂)' : 'Setting (37.5°C, 58% RH, 20.9% O₂)'} targets.`);
 }
 
 function stepDay(delta) {
+    const prevDay = protocolState.day;
     protocolState.day = Math.max(0, Math.min(21, protocolState.day + delta));
+    const wasHatching = (prevDay >= 19);
     const isHatching = (protocolState.day >= 19);
     protocolState.phase = isHatching ? 'HATCHING' : 'SETTING';
     
-    // Automatically switch default targets when crossing Day 18
-    if (isHatching) {
+    // Automatically switch default targets only when crossing between Setting and Hatching
+    if (!wasHatching && isHatching) {
         protocolState.temp = 36.9;
         protocolState.rh = 70.0;
         protocolState.co2 = 7500;
         protocolState.o2 = 20.5;
-    } else {
+        showToast('Switched to Hatching presets (Days 19–21).');
+    } else if (wasHatching && !isHatching) {
         protocolState.temp = 37.5;
         protocolState.rh = 58.0;
         protocolState.co2 = 5000;
         protocolState.o2 = 20.9;
+        showToast('Switched to Setting presets (Days 0–18).');
     }
 
     renderProtocolCards();
+    updateProtocolTimeDesc();
+}
+
+function updateProtocolTimeDesc() {
+    const inputEl = document.getElementById('inputProtocolTime');
+    const descEl = document.getElementById('dispProtocolTimeSummary');
+    if (!inputEl || !descEl) return;
+    const val = inputEl.value || '00:00';
+    const parts = val.split(':');
+    const h = parseInt(parts[0], 10) || 0;
+    const m = parseInt(parts[1], 10) || 0;
+    descEl.innerText = `${h}h ${m}m elapsed into Day ${protocolState.day}`;
+}
+
+function syncProtocolTimeWithClock() {
+    const now = new Date();
+    const hh = String(now.getHours()).padStart(2, '0');
+    const mm = String(now.getMinutes()).padStart(2, '0');
+    const inputEl = document.getElementById('inputProtocolTime');
+    if (inputEl) {
+        inputEl.value = `${hh}:${mm}`;
+    }
+    updateProtocolTimeDesc();
+    showToast(`Time set to device clock: ${hh}:${mm}`);
 }
 
 function stepTemp(delta) {
@@ -1821,7 +1861,7 @@ function renderProtocolCards() {
     }
 }
 
-async function saveProtocolSettings() {
+async function saveIncubationSchedule() {
     const isHatching = (protocolState.day >= 19);
     protocolState.phase = isHatching ? 'HATCHING' : 'SETTING';
 
@@ -1835,15 +1875,45 @@ async function saveProtocolSettings() {
     renderProtocolCards();
     updateTurningDisplay();
 
+    const timeInput = document.getElementById('inputProtocolTime');
+    const timeVal = (timeInput && timeInput.value) ? timeInput.value : '00:00';
+
     try {
-        // 1. Send Day update to coordinator & ESP32
-        await fetch('/api/control/day', {
+        const resp = await fetch('/api/control/schedule', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ day: currentDay })
+            body: JSON.stringify({
+                day: currentDay,
+                time: timeVal,
+                phase: protocolState.phase
+            })
         });
 
-        // 2. Send Target Setpoints update
+        if (resp.ok) {
+            showToast(`Schedule Applied: Day ${currentDay} (${timeVal}) · ${protocolState.phase}`);
+        } else {
+            // Fallback to legacy endpoint if schedule endpoint is unavailable
+            await fetch('/api/control/day', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ day: currentDay })
+            });
+            await fetch('/api/control/phase', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phase: protocolState.phase })
+            });
+            showToast(`Schedule Applied: Day ${currentDay} (${protocolState.phase})`);
+        }
+    } catch (e) {
+        console.warn("Schedule save error:", e);
+        showToast(`Schedule updated locally: Day ${currentDay} at ${timeVal}`);
+    }
+}
+
+async function saveTargetSetpoints() {
+    try {
+        // 1. Send Target Setpoints update
         await fetch('/api/control/setpoints', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1855,24 +1925,23 @@ async function saveProtocolSettings() {
             })
         });
 
-        // 3. Send Phase update
-        await fetch('/api/control/phase', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ phase: protocolState.phase })
-        });
-
-        // 4. Ensure Mode is set to AUTOMATIC so heating loop runs
+        // 2. Ensure Mode is set to AUTOMATIC so PID/heating loop runs
         await fetch('/api/control/mode', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ mode: 'AUTO' })
         });
 
-        showToast(`Protocol Saved! Day ${currentDay} (${isHatching ? 'Hatching, 36.9°C, 70% RH' : 'Setting, 37.5°C, 58% RH'})`);
+        showToast(`Target Setpoints Applied: ${protocolState.temp.toFixed(1)}°C · ${protocolState.rh.toFixed(1)}% RH · ${protocolState.o2.toFixed(1)}% O₂`);
     } catch (e) {
-        showToast("Settings saved locally (controller syncing).");
+        console.warn("Setpoints save error:", e);
+        showToast("Setpoints saved locally (controller syncing).");
     }
+}
+
+async function saveProtocolSettings() {
+    await saveIncubationSchedule();
+    await saveTargetSetpoints();
 }
 
 // Aliases for compatibility
@@ -1880,7 +1949,7 @@ const onMenuDayInputChanged = (val) => stepDay((parseInt(val) || 1) - protocolSt
 const applyProtocolPreset = setProtocolPhase;
 const updateMenuProtocolDisplay = renderProtocolCards;
 const updateCleanProtocolUI = renderProtocolCards;
-const setIncubationDayFromMenu = saveProtocolSettings;
-const saveMenuSetpoints = saveProtocolSettings;
+const setIncubationDayFromMenu = saveIncubationSchedule;
+const saveMenuSetpoints = saveTargetSetpoints;
 
 
