@@ -46,9 +46,10 @@ class DayPayload(BaseModel):
     day: int
 
 class SchedulePayload(BaseModel):
-    day: int
+    start_time: Optional[str] = None  # ISO timestamp
+    day: Optional[int] = None
     time: Optional[str] = "00:00"  # "HH:MM"
-    phase: Optional[str] = "SETTING"
+    phase: Optional[str] = None
 
 class PhasePayload(BaseModel):
     phase: str  # "SETTING" or "HATCHING"
@@ -186,6 +187,28 @@ def set_incubation_day(payload: DayPayload):
 def set_incubation_schedule(payload: SchedulePayload):
     if not coordinator or not mqtt_bridge:
         raise HTTPException(status_code=503, detail="Coordinator not ready")
+
+    phase = payload.phase.upper() if payload.phase else None
+
+    # 1. Standard Poultry Science Method: ISO Set Timestamp
+    if payload.start_time:
+        try:
+            clean_str = payload.start_time.replace("Z", "+00:00")
+            st = datetime.fromisoformat(clean_str)
+            if st.tzinfo is not None:
+                st = st.astimezone().replace(tzinfo=None)
+            coordinator.set_start_date(st, phase=phase)
+            return {
+                "status": "success",
+                "day": coordinator.current_day,
+                "phase": coordinator.phase,
+                "start_time": coordinator.start_time.isoformat()
+            }
+        except Exception as e:
+            print(f"[API] start_time parse error ({payload.start_time}): {e}")
+
+    # 2. Fallback: Manual Day + Time into day offset
+    day_val = payload.day if payload.day is not None else coordinator.current_day
     hours = 0
     minutes = 0
     if payload.time and ":" in payload.time:
@@ -195,8 +218,9 @@ def set_incubation_schedule(payload: SchedulePayload):
             minutes = max(0, min(59, int(parts[1])))
         except Exception:
             pass
-    phase = payload.phase.upper() if payload.phase else ("HATCHING" if payload.day >= 19 else "SETTING")
-    coordinator.set_manual_schedule(day=payload.day, hours=hours, minutes=minutes, phase=phase)
+    if not phase:
+        phase = "HATCHING" if day_val >= 19 else "SETTING"
+    coordinator.set_manual_schedule(day=day_val, hours=hours, minutes=minutes, phase=phase)
     return {
         "status": "success",
         "day": coordinator.current_day,

@@ -1405,71 +1405,122 @@ body {
     text-align: center;
 }
 
-/* Protocol Elapsed Time Controls */
-.protocol-elapsed-row {
+/* Incubation Schedule Set Timestamp Container */
+.schedule-set-container {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    padding: 8px 12px;
+    flex-direction: column;
+    gap: 6px;
     background: #F9FAFB;
     border: 1px solid #E5E7EB;
     border-radius: 12px;
-    margin-top: 2px;
+    padding: 10px 14px;
 }
 
-.elapsed-label {
+.schedule-field-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.schedule-field-label {
     font-family: var(--font-heading);
     font-size: 0.68rem;
     font-weight: 800;
     color: #6B7280;
     letter-spacing: 0.05em;
     text-transform: uppercase;
-    flex-shrink: 0;
 }
 
-.elapsed-steppers {
+.btn-batch-reset {
+    background: #F3F4F6;
+    color: #4B5563;
+    border: 1px solid #D1D5DB;
+    border-radius: var(--radius-pill);
+    padding: 3px 10px;
+    font-size: 0.68rem;
+    font-family: var(--font-heading);
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.btn-batch-reset:hover {
+    background: #E5E7EB;
+    color: #111827;
+}
+
+.btn-batch-reset:active {
+    transform: scale(0.96);
+}
+
+.schedule-datetime-inputs {
     display: flex;
-    align-items: center;
     gap: 8px;
 }
 
-.elapsed-pill {
-    display: flex;
-    align-items: center;
+.schedule-input-date,
+.schedule-input-time {
     background: #FFFFFF;
-    border: 1px solid #D1D5DB;
-    border-radius: var(--radius-pill);
-    padding: 2px 6px;
-    gap: 4px;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    border: 1.5px solid #D1D5DB;
+    border-radius: 8px;
+    padding: 7px 10px;
+    font-family: var(--font-heading);
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #111827;
+    outline: none;
+    transition: border-color 0.15s ease;
 }
 
-.elapsed-num-input {
-    width: 28px;
-    border: none;
-    background: transparent;
+.schedule-input-date {
+    flex: 1.3;
+}
+
+.schedule-input-time {
+    flex: 0.9;
+}
+
+.schedule-input-date:focus,
+.schedule-input-time:focus {
+    border-color: #D97706;
+    box-shadow: 0 0 0 2px rgba(217, 119, 6, 0.15);
+}
+
+/* Schedule Live Status Banner */
+.schedule-status-banner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #FFFDF7;
+    border: 1px solid #FDE68A;
+    border-radius: 12px;
+    padding: 10px 14px;
+}
+
+.status-col {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.status-right {
+    text-align: right;
+}
+
+.status-sub {
+    font-family: var(--font-heading);
+    font-size: 0.64rem;
+    font-weight: 800;
+    color: #92400E;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.status-main {
     font-family: var(--font-heading);
     font-size: 0.95rem;
     font-weight: 800;
-    color: #111827;
-    text-align: center;
-    outline: none;
-    padding: 0;
-    -moz-appearance: textfield;
-}
-
-.elapsed-num-input::-webkit-outer-spin-button,
-.elapsed-num-input::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-}
-
-.elapsed-unit {
-    font-size: 0.72rem;
-    font-weight: 700;
-    color: #6B7280;
-    padding-right: 4px;
+    color: #1A1615;
 }
 
 .btn-schedule-apply {

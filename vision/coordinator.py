@@ -71,11 +71,17 @@ class IncubationCoordinator:
         self.mqtt.send_command({"cmd": "SET_DAY", "day": self.current_day})
         self.mqtt.send_command({"cmd": "SET_MODE", "mode": "AUTO"})
 
-    def set_start_date(self, start_dt: datetime):
+    def set_start_date(self, start_dt: datetime, phase: str = None):
         with self._lock:
             self.start_time = start_dt
             self._update_day_and_phase()
+            if phase in ("SETTING", "HATCHING"):
+                self.phase = phase
             self._save_state()
+            self.mqtt.set_phase(self.phase)
+            self.mqtt.send_command({"cmd": "SET_DAY", "day": self.current_day})
+            self.mqtt.send_command({"cmd": "SET_MODE", "mode": "AUTO"})
+            print(f"[COORDINATOR] Set incubation start timestamp: {self.start_time.isoformat()} (Day {self.current_day}, Phase: {self.phase})")
 
     def set_manual_schedule(self, day: int, hours: int = 0, minutes: int = 0, phase: str = None):
         with self._lock:

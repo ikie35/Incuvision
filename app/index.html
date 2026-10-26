@@ -12,8 +12,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Poppins:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
     <link rel="icon" type="image/png" href="./icons/logo.png">
-    <link rel="stylesheet" href="/dashboard/style.css?v=40">
-    <link rel="stylesheet" href="./style.css?v=40">
+    <link rel="stylesheet" href="/dashboard/style.css?v=41">
+    <link rel="stylesheet" href="./style.css?v=41">
     <style>
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 :root {
@@ -598,7 +598,7 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
                  SCREEN 5: MENU / PROTOCOL SETTINGS
                  ========================================================== -->
             <section id="screenMenu" class="app-screen">
-                <!-- 1. Phase & Day Selector Card with Resumption Time -->
+                <!-- 1. Incubation Schedule Card (Commercial & Poultry Science Standard) -->
                 <div class="card card-protocol-top">
                     <div class="protocol-section-header" style="margin: 0 0 10px 0;">
                         <span class="protocol-section-title">INCUBATION SCHEDULE</span>
@@ -612,34 +612,28 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
                             Hatching (Days 19–21)
                         </button>
                     </div>
-                    
-                    <div class="protocol-day-stepper">
-                        <div class="stepper-bubble-clock">
-                            <img src="./icons/clock.png" alt="Clock" class="stepper-clock-img">
+
+                    <!-- Batch Set Timestamp Form (Industry Standard) -->
+                    <div class="schedule-set-container">
+                        <div class="schedule-field-header">
+                            <span class="schedule-field-label">BATCH SET DATE & TIME</span>
+                            <button type="button" class="btn-batch-reset" onclick="resetBatchToNow()">Reset to Now</button>
                         </div>
-                        <div class="stepper-controls">
-                            <button type="button" class="btn-step-circle" onclick="stepDay(-1)" title="Previous Day">−</button>
-                            <span class="stepper-day-text" id="dispProtocolDay">Day 0</span>
-                            <button type="button" class="btn-step-circle" onclick="stepDay(1)" title="Next Day">+</button>
+                        <div class="schedule-datetime-inputs">
+                            <input type="date" id="inputBatchDate" class="schedule-input-date" onchange="onBatchDateInputChange()">
+                            <input type="time" id="inputBatchTime" class="schedule-input-time" onchange="onBatchDateInputChange()">
                         </div>
                     </div>
 
-                    <!-- Clean Elapsed Time Controls -->
-                    <div class="protocol-elapsed-row">
-                        <span class="elapsed-label">TIME ELAPSED</span>
-                        <div class="elapsed-steppers">
-                            <div class="elapsed-pill">
-                                <button type="button" class="btn-mini-step" onclick="stepElapsedHours(-1)">−</button>
-                                <input type="number" id="inputElapsedHours" class="elapsed-num-input" min="0" max="23" value="0" oninput="validateElapsedInputs()">
-                                <span class="elapsed-unit">hrs</span>
-                                <button type="button" class="btn-mini-step" onclick="stepElapsedHours(1)">+</button>
-                            </div>
-                            <div class="elapsed-pill">
-                                <button type="button" class="btn-mini-step" onclick="stepElapsedMins(-5)">−</button>
-                                <input type="number" id="inputElapsedMins" class="elapsed-num-input" min="0" max="59" value="0" oninput="validateElapsedInputs()">
-                                <span class="elapsed-unit">mins</span>
-                                <button type="button" class="btn-mini-step" onclick="stepElapsedMins(5)">+</button>
-                            </div>
+                    <!-- Live Computed Timeline Status -->
+                    <div class="schedule-status-banner">
+                        <div class="status-col">
+                            <span class="status-sub">CURRENT TIMELINE</span>
+                            <span class="status-main" id="dispScheduleProgress">Day 0 · 0h elapsed</span>
+                        </div>
+                        <div class="status-col status-right">
+                            <span class="status-sub">REMAINING</span>
+                            <span class="status-main" id="dispScheduleRemaining">21 Days Left</span>
                         </div>
                     </div>
 
@@ -821,10 +815,10 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
     <!-- Toast Notification Container -->
     <div id="appToast" class="app-toast"></div>
 
-    <script src="/dashboard/app.js?v=40"></script>
+    <script src="/dashboard/app.js?v=41"></script>
     <script>
         if (typeof switchNav === 'undefined') {
-            document.write('<script src="./app.js?v=40"><\/script>');
+            document.write('<script src="./app.js?v=41"><\/script>');
         }
     </script>
 </body>

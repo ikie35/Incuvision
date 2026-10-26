@@ -227,13 +227,25 @@ function handleIncomingTelemetry(data) {
         protocolState.rh = (currentPhase === 'HATCHING' || currentDay >= 19) ? 70.0 : 58.0;
         protocolState.co2 = (currentPhase === 'HATCHING' || currentDay >= 19) ? 7500 : 5000;
         protocolState.o2 = (currentPhase === 'HATCHING' || currentDay >= 19) ? 20.5 : 20.9;
-        if (data.time_into_day) {
-            setElapsedTimeString(data.time_into_day);
+        if (data.start_time) {
+            initScheduleInputs(new Date(data.start_time));
+        } else {
+            initScheduleInputs(new Date());
         }
         protocolStateInitialized = true;
         renderProtocolCards();
-    } else if (data.time_into_day && protocolState.day === currentDay) {
-        setElapsedTimeString(data.time_into_day);
+    } else if (data.start_time) {
+        const dateEl = document.getElementById('inputBatchDate');
+        const timeEl = document.getElementById('inputBatchTime');
+        const isEditing = (dateEl && document.activeElement === dateEl) || (timeEl && document.activeElement === timeEl);
+        if (!isEditing && currentSetTimestamp) {
+            const telemetryDate = new Date(data.start_time);
+            if (Math.abs(currentSetTimestamp.getTime() - telemetryDate.getTime()) > 60000) {
+                initScheduleInputs(telemetryDate);
+            } else {
+                recalcScheduleFromInputs();
+            }
+        }
     }
 
     const telem = data.telemetry;
@@ -1709,15 +1721,72 @@ let protocolState = {
     o2: 20.9
 };
 
+let currentSetTimestamp = null;
+
+function initScheduleInputs(startDate) {
+    const dt = (startDate instanceof Date && !isNaN(startDate)) ? startDate : (startDate ? new Date(startDate) : new Date());
+    currentSetTimestamp = dt;
+
+    const dateEl = document.getElementById('inputBatchDate');
+    const timeEl = document.getElementById('inputBatchTime');
+
+    if (dateEl) {
+        const yyyy = dt.getFullYear();
+        const mm = String(dt.getMonth() + 1).padStart(2, '0');
+        const dd = String(dt.getDate()).padStart(2, '0');
+        dateEl.value = `${yyyy}-${mm}-${dd}`;
+    }
+    if (timeEl) {
+        const hh = String(dt.getHours()).padStart(2, '0');
+        const min = String(dt.getMinutes()).padStart(2, '0');
+        timeEl.value = `${hh}:${min}`;
+    }
+
+    recalcScheduleFromInputs();
+}
+
+function onBatchDateInputChange() {
+    const dateEl = document.getElementById('inputBatchDate');
+    const timeEl = document.getElementById('inputBatchTime');
+    if (!dateEl || !timeEl || !dateEl.value) return;
+
+    const timeVal = timeEl.value || '00:00';
+    const [hh, min] = timeVal.split(':').map(Number);
+    const [yyyy, mm, dd] = dateEl.value.split('-').map(Number);
+
+    currentSetTimestamp = new Date(yyyy, mm - 1, dd, hh || 0, min || 0, 0);
+    recalcScheduleFromInputs();
+}
+
+function resetBatchToNow() {
+    initScheduleInputs(new Date());
+    showToast("Batch reset to current time (Day 0). Tap 'Apply Schedule' to save.");
+}
+
+function recalcScheduleFromInputs() {
+    if (!currentSetTimestamp || isNaN(currentSetTimestamp.getTime())) return;
+
+    const now = new Date();
+    const diffMs = Math.max(0, now.getTime() - currentSetTimestamp.getTime());
+    const totalSec = Math.floor(diffMs / 1000);
+    const day = Math.min(21, Math.floor(totalSec / 86400));
+    const hours = Math.floor((totalSec % 86400) / 3600);
+    const daysLeft = Math.max(0, 21 - day);
+
+    protocolState.day = day;
+    protocolState.phase = (day >= 19) ? 'HATCHING' : 'SETTING';
+
+    const progEl = document.getElementById('dispScheduleProgress');
+    const remEl = document.getElementById('dispScheduleRemaining');
+    if (progEl) progEl.innerText = `Day ${day} · ${hours}h elapsed`;
+    if (remEl) remEl.innerText = `${daysLeft} Days Left`;
+
+    renderProtocolCards();
+}
+
 function setProtocolPhase(phase) {
     const isHatching = (phase === 'HATCHING');
     protocolState.phase = phase;
-
-    if (isHatching && protocolState.day < 19) {
-        protocolState.day = 19;
-    } else if (!isHatching && protocolState.day >= 19) {
-        protocolState.day = 0;
-    }
 
     protocolState.temp = isHatching ? 36.9 : 37.5;
     protocolState.rh = isHatching ? 70.0 : 58.0;
@@ -1729,81 +1798,17 @@ function setProtocolPhase(phase) {
 }
 
 function stepDay(delta) {
-    const prevDay = protocolState.day;
-    protocolState.day = Math.max(0, Math.min(21, protocolState.day + delta));
-    const wasHatching = (prevDay >= 19);
-    const isHatching = (protocolState.day >= 19);
-    protocolState.phase = isHatching ? 'HATCHING' : 'SETTING';
-    
-    // Automatically switch default targets only when crossing between Setting and Hatching
-    if (!wasHatching && isHatching) {
-        protocolState.temp = 36.9;
-        protocolState.rh = 70.0;
-        protocolState.co2 = 7500;
-        protocolState.o2 = 20.5;
-        showToast('Switched to Hatching presets (Days 19–21).');
-    } else if (wasHatching && !isHatching) {
-        protocolState.temp = 37.5;
-        protocolState.rh = 58.0;
-        protocolState.co2 = 5000;
-        protocolState.o2 = 20.9;
-        showToast('Switched to Setting presets (Days 0–18).');
-    }
-
-    renderProtocolCards();
+    if (!currentSetTimestamp) currentSetTimestamp = new Date();
+    currentSetTimestamp = new Date(currentSetTimestamp.getTime() - delta * 86400000);
+    initScheduleInputs(currentSetTimestamp);
 }
 
-function validateElapsedInputs() {
-    const hEl = document.getElementById('inputElapsedHours');
-    const mEl = document.getElementById('inputElapsedMins');
-    if (hEl) {
-        let h = parseInt(hEl.value, 10);
-        if (isNaN(h)) h = 0;
-        hEl.value = Math.max(0, Math.min(23, h));
-    }
-    if (mEl) {
-        let m = parseInt(mEl.value, 10);
-        if (isNaN(m)) m = 0;
-        mEl.value = Math.max(0, Math.min(59, m));
-    }
-}
-
-function stepElapsedHours(delta) {
-    const el = document.getElementById('inputElapsedHours');
-    if (!el) return;
-    let val = parseInt(el.value, 10) || 0;
-    val = Math.max(0, Math.min(23, val + delta));
-    el.value = val;
-}
-
-function stepElapsedMins(delta) {
-    const el = document.getElementById('inputElapsedMins');
-    if (!el) return;
-    let val = parseInt(el.value, 10) || 0;
-    val = Math.max(0, Math.min(59, val + delta));
-    el.value = val;
-}
-
-function getElapsedTimeString() {
-    const hEl = document.getElementById('inputElapsedHours');
-    const mEl = document.getElementById('inputElapsedMins');
-    const h = Math.max(0, Math.min(23, parseInt(hEl ? hEl.value : 0, 10) || 0));
-    const m = Math.max(0, Math.min(59, parseInt(mEl ? mEl.value : 0, 10) || 0));
-    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-}
-
-function setElapsedTimeString(timeStr) {
-    if (!timeStr || !timeStr.includes(':')) return;
-    const parts = timeStr.split(':');
-    const h = Math.max(0, Math.min(23, parseInt(parts[0], 10) || 0));
-    const m = Math.max(0, Math.min(59, parseInt(parts[1], 10) || 0));
-    const hEl = document.getElementById('inputElapsedHours');
-    const mEl = document.getElementById('inputElapsedMins');
-    if (hEl && document.activeElement !== hEl) hEl.value = h;
-    if (mEl && document.activeElement !== mEl) mEl.value = m;
-}
-
-// Deprecated alias for backwards compatibility
+// Deprecated aliases for backwards compatibility
+function validateElapsedInputs() {}
+function stepElapsedHours() {}
+function stepElapsedMins() {}
+function getElapsedTimeString() { return "00:00"; }
+function setElapsedTimeString() {}
 const updateProtocolTimeDesc = () => {};
 const syncProtocolTimeWithClock = () => {};
 
@@ -1885,6 +1890,8 @@ function renderProtocolCards() {
 }
 
 async function saveIncubationSchedule() {
+    onBatchDateInputChange(); // Make sure currentSetTimestamp is current
+
     const isHatching = (protocolState.day >= 19);
     protocolState.phase = isHatching ? 'HATCHING' : 'SETTING';
 
@@ -1898,24 +1905,28 @@ async function saveIncubationSchedule() {
     renderProtocolCards();
     updateTurningDisplay();
 
-    const timeVal = getElapsedTimeString();
-    const parts = timeVal.split(':');
-    const h = parseInt(parts[0], 10) || 0;
-    const m = parseInt(parts[1], 10) || 0;
+    // Create local ISO string
+    const dt = currentSetTimestamp || new Date();
+    const yyyy = dt.getFullYear();
+    const mm = String(dt.getMonth() + 1).padStart(2, '0');
+    const dd = String(dt.getDate()).padStart(2, '0');
+    const hh = String(dt.getHours()).padStart(2, '0');
+    const min = String(dt.getMinutes()).padStart(2, '0');
+    const localIsoStr = `${yyyy}-${mm}-${dd}T${hh}:${min}:00`;
 
     try {
         const resp = await fetch('/api/control/schedule', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
+                start_time: localIsoStr,
                 day: currentDay,
-                time: timeVal,
                 phase: protocolState.phase
             })
         });
 
         if (resp.ok) {
-            showToast(`Schedule Applied: Day ${currentDay} (${h}h ${m}m elapsed)`);
+            showToast(`Schedule Applied: Day ${currentDay} (${protocolState.phase})`);
         } else {
             // Fallback to legacy endpoint if schedule endpoint is unavailable
             await fetch('/api/control/day', {
@@ -1932,7 +1943,7 @@ async function saveIncubationSchedule() {
         }
     } catch (e) {
         console.warn("Schedule save error:", e);
-        showToast(`Schedule saved locally: Day ${currentDay} (${h}h ${m}m)`);
+        showToast(`Schedule saved locally: Day ${currentDay}`);
     }
 }
 
