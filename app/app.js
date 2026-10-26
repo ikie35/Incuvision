@@ -187,9 +187,6 @@ function handleIncomingTelemetry(data) {
     // Day & Phase
     if (data.day !== undefined && data.day !== null) {
         currentDay = data.day;
-        const daysLeft = Math.max(0, 21 - currentDay);
-        const dayEl = document.getElementById('homeDaysLeft');
-        if (dayEl) dayEl.innerText = `${daysLeft} Days Left`;
     }
 
     const previousPhase = currentPhase;
@@ -211,14 +208,8 @@ function handleIncomingTelemetry(data) {
         });
     }
 
-    // Update Home & Protocol Phase Indicators
-    const homePhaseSub = document.getElementById('homePhaseSub');
-    if (homePhaseSub) {
-        const isHatching = (currentPhase === 'HATCHING' || currentDay >= 19);
-        homePhaseSub.innerText = isHatching ? `Lockdown Phase (Day ${currentDay} of 21)` : `Setting Phase (Day ${currentDay} of 21)`;
-        if (isHatching) homePhaseSub.classList.add('hatching');
-        else homePhaseSub.classList.remove('hatching');
-    }
+    // Update Home Countdown Display (Days/Hours Left, Progress Bar, Projected Finish)
+    updateHomeCountdownDisplay(data.start_time, currentDay, currentPhase);
 
     if (!protocolStateInitialized) {
         protocolState.day = currentDay;
@@ -1723,6 +1714,90 @@ let protocolState = {
 
 let currentSetTimestamp = null;
 
+function updateHomeCountdownDisplay(startTime, dayVal, phaseVal) {
+    const day = (dayVal !== undefined && dayVal !== null) ? parseInt(dayVal) : currentDay;
+    const phase = phaseVal || currentPhase;
+    const isHatching = (phase === 'HATCHING' || day >= 19);
+
+    const now = new Date();
+    let startDate = (startTime instanceof Date && !isNaN(startTime)) ? startTime : (startTime ? new Date(startTime) : null);
+    if (!startDate || isNaN(startDate.getTime())) {
+        if (currentSetTimestamp && !isNaN(currentSetTimestamp.getTime())) {
+            startDate = currentSetTimestamp;
+        } else {
+            startDate = new Date(now.getTime() - day * 86400000);
+        }
+    }
+
+    // 21 Days total incubation (504 hours)
+    const TOTAL_MS = 21 * 86400000;
+    const finishDate = new Date(startDate.getTime() + TOTAL_MS);
+    const elapsedMs = Math.max(0, now.getTime() - startDate.getTime());
+    const remainingMs = Math.max(0, TOTAL_MS - elapsedMs);
+
+    const remTotalSec = Math.floor(remainingMs / 1000);
+    const remDays = Math.floor(remTotalSec / 86400);
+    const remHours = Math.floor((remTotalSec % 86400) / 3600);
+
+    const elapsedTotalSec = Math.floor(elapsedMs / 1000);
+    const elapsedDays = Math.min(21, Math.floor(elapsedTotalSec / 86400));
+    const elapsedHours = Math.floor((elapsedTotalSec % 86400) / 3600);
+
+    // 1. Main Countdown Text (e.g. "18d 10h Left" or "21 Days Left")
+    const daysLeftEl = document.getElementById('homeDaysLeft');
+    if (daysLeftEl) {
+        if (remainingMs <= 0) {
+            daysLeftEl.innerText = "Incubation Complete";
+        } else if (remDays > 0) {
+            daysLeftEl.innerText = `${remDays}d ${remHours}h Left`;
+        } else {
+            const remMins = Math.floor((remTotalSec % 3600) / 60);
+            daysLeftEl.innerText = `${remHours}h ${remMins}m Left`;
+        }
+    }
+
+    // 2. Subtitle: "Day 2 of 21 · 14h elapsed"
+    const phaseSubEl = document.getElementById('homePhaseSub');
+    if (phaseSubEl) {
+        phaseSubEl.innerText = `Day ${elapsedDays} of 21 · ${elapsedHours}h elapsed`;
+    }
+
+    // 3. Phase Pill Badge: SETTING vs HATCHING
+    const badgeEl = document.getElementById('homePhaseBadge');
+    if (badgeEl) {
+        badgeEl.innerText = isHatching ? "HATCHING" : "SETTING";
+        if (isHatching) {
+            badgeEl.classList.remove('badge-setting');
+            badgeEl.classList.add('badge-hatching');
+        } else {
+            badgeEl.classList.remove('badge-hatching');
+            badgeEl.classList.add('badge-setting');
+        }
+    }
+
+    // 4. Progress Bar Fill
+    const fillEl = document.getElementById('homeProgressFill');
+    if (fillEl) {
+        const pct = Math.min(100, Math.max(0, (elapsedMs / TOTAL_MS) * 100));
+        fillEl.style.width = `${pct.toFixed(1)}%`;
+        if (isHatching) fillEl.classList.add('hatching');
+        else fillEl.classList.remove('hatching');
+    }
+
+    // 5. Projected Hatch Completion
+    const finishEl = document.getElementById('homeProjectedFinish');
+    if (finishEl) {
+        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+        const m = monthNames[finishDate.getMonth()];
+        const d = finishDate.getDate();
+        const dow = dayNames[finishDate.getDay()];
+        const hh = String(finishDate.getHours()).padStart(2, '0');
+        const mm = String(finishDate.getMinutes()).padStart(2, '0');
+        finishEl.innerText = `${dow}, ${m} ${d} · ${hh}:${mm}`;
+    }
+}
+
 function initScheduleInputs(startDate) {
     const dt = (startDate instanceof Date && !isNaN(startDate)) ? startDate : (startDate ? new Date(startDate) : new Date());
     currentSetTimestamp = dt;
@@ -1781,6 +1856,7 @@ function recalcScheduleFromInputs() {
     if (progEl) progEl.innerText = `Day ${day} · ${hours}h elapsed`;
     if (remEl) remEl.innerText = `${daysLeft} Days Left`;
 
+    updateHomeCountdownDisplay(currentSetTimestamp, day, protocolState.phase);
     renderProtocolCards();
 }
 
@@ -1880,13 +1956,8 @@ function renderProtocolCards() {
         }
     }
 
-    // 4. Sync Home Phase subtitle
-    const homePhaseSub = document.getElementById('homePhaseSub');
-    if (homePhaseSub) {
-        homePhaseSub.innerText = isHatching ? `Hatching Phase (Day ${protocolState.day} of 21)` : `Setting Phase (Day ${protocolState.day} of 21)`;
-        if (isHatching) homePhaseSub.classList.add('hatching');
-        else homePhaseSub.classList.remove('hatching');
-    }
+    // 4. Sync Home Countdown Card
+    updateHomeCountdownDisplay(currentSetTimestamp, protocolState.day, protocolState.phase);
 }
 
 async function saveIncubationSchedule() {
@@ -1898,10 +1969,7 @@ async function saveIncubationSchedule() {
     currentDay = protocolState.day;
     currentPhase = protocolState.phase;
 
-    const daysLeft = Math.max(0, 21 - currentDay);
-    const dayEl = document.getElementById('homeDaysLeft');
-    if (dayEl) dayEl.innerText = `${daysLeft} Days Left`;
-
+    updateHomeCountdownDisplay(currentSetTimestamp, currentDay, currentPhase);
     renderProtocolCards();
     updateTurningDisplay();
 

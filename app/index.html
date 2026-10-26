@@ -12,8 +12,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Poppins:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
     <link rel="icon" type="image/png" href="./icons/logo.png">
-    <link rel="stylesheet" href="/dashboard/style.css?v=41">
-    <link rel="stylesheet" href="./style.css?v=41">
+    <link rel="stylesheet" href="/dashboard/style.css?v=42">
+    <link rel="stylesheet" href="./style.css?v=42">
     <style>
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 :root {
@@ -59,10 +59,8 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
 .app-screen.active { display: flex; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 .card { background: var(--card-bg); border-radius: var(--radius-card); box-shadow: var(--shadow-card); padding: 16px; }
-.card-countdown { display: flex; align-items: center; gap: 16px; padding: 14px 20px; }
 .clock-icon-bubble { width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; }
 .icon-clock { width: 34px; height: 34px; object-fit: contain; display: block; }
-.countdown-text span { font-family: var(--font-heading); font-size: 1.45rem; font-weight: 800; color: #1A1615; }
 .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .metric-box { background: var(--card-bg); border-radius: var(--radius-card); box-shadow: var(--shadow-card); padding: 18px 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; min-height: 125px; gap: 10px; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease; }
 .metric-box:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); }
@@ -211,12 +209,35 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
             <section id="screenHome" class="app-screen active">
                 <!-- 1. Countdown Days Left Card -->
                 <div class="card card-countdown">
-                    <div class="clock-icon-bubble">
-                        <img src="./icons/clock.png" alt="Countdown Clock" class="icon-clock">
+                    <div class="countdown-top-row">
+                        <div class="countdown-left-group">
+                            <div class="clock-icon-bubble">
+                                <img src="./icons/clock.png" alt="Countdown Clock" class="icon-clock">
+                            </div>
+                            <div class="countdown-text">
+                                <span class="countdown-main-val" id="homeDaysLeft">21 Days Left</span>
+                                <span class="countdown-phase-sub" id="homePhaseSub">Day 0 of 21 · Setting Phase</span>
+                            </div>
+                        </div>
+                        <span class="countdown-phase-badge badge-setting" id="homePhaseBadge">SETTING</span>
                     </div>
-                    <div class="countdown-text">
-                        <span id="homeDaysLeft">21 Days Left</span>
-                        <span class="countdown-phase-sub" id="homePhaseSub">Setting Phase (Day 0 of 21)</span>
+
+                    <!-- 21-Day Incubation Milestone Progress Bar -->
+                    <div class="countdown-progress-wrap">
+                        <div class="countdown-progress-bar">
+                            <div class="countdown-progress-fill" id="homeProgressFill" style="width: 0%;"></div>
+                        </div>
+                        <div class="countdown-milestones">
+                            <span>Day 0</span>
+                            <span class="milestone-lockdown">Day 18 (Lockdown)</span>
+                            <span>Day 21 (Hatch)</span>
+                        </div>
+                    </div>
+
+                    <!-- Projected Finish Timestamp Footer -->
+                    <div class="countdown-footer-row">
+                        <span class="countdown-footer-lbl">EST. HATCH COMPLETION</span>
+                        <span class="countdown-footer-val" id="homeProjectedFinish">Calculating...</span>
                     </div>
                 </div>
 
@@ -815,10 +836,10 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
     <!-- Toast Notification Container -->
     <div id="appToast" class="app-toast"></div>
 
-    <script src="/dashboard/app.js?v=41"></script>
+    <script src="/dashboard/app.js?v=42"></script>
     <script>
         if (typeof switchNav === 'undefined') {
-            document.write('<script src="./app.js?v=41"><\/script>');
+            document.write('<script src="./app.js?v=42"><\/script>');
         }
     </script>
 </body>

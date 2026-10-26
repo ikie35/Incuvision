@@ -199,9 +199,25 @@ body {
 /* 1. Countdown Days Card */
 .card-countdown {
     display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 14px 18px;
+    background: #FFFFFF;
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+}
+
+.countdown-top-row {
+    display: flex;
     align-items: center;
-    gap: 16px;
-    padding: 14px 20px;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.countdown-left-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
 }
 
 .clock-icon-bubble {
@@ -210,6 +226,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
 }
 
 .icon-clock {
@@ -219,11 +236,113 @@ body {
     display: block;
 }
 
-.countdown-text span {
+.countdown-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.countdown-main-val {
     font-family: var(--font-heading);
-    font-size: 1.45rem;
+    font-size: 1.25rem;
     font-weight: 800;
     color: #1A1615;
+    line-height: 1.15;
+}
+
+.countdown-phase-sub {
+    font-size: 0.74rem;
+    font-weight: 600;
+    color: #786C5A;
+}
+
+.countdown-phase-badge {
+    font-family: var(--font-heading);
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    padding: 4px 10px;
+    border-radius: var(--radius-pill);
+    text-transform: uppercase;
+    flex-shrink: 0;
+}
+
+.countdown-phase-badge.badge-setting {
+    background: #FEF3C7;
+    color: #92400E;
+    border: 1px solid #FCD34D;
+}
+
+.countdown-phase-badge.badge-hatching {
+    background: #FEE2E2;
+    color: #991B1B;
+    border: 1px solid #FCA5A5;
+}
+
+/* 21-Day Incubation Milestone Progress Bar */
+.countdown-progress-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 2px;
+}
+
+.countdown-progress-bar {
+    width: 100%;
+    height: 6px;
+    background: #F3F4F6;
+    border-radius: 9999px;
+    overflow: hidden;
+}
+
+.countdown-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #F59E0B 0%, #D97706 100%);
+    border-radius: 9999px;
+    transition: width 0.4s ease;
+}
+
+.countdown-progress-fill.hatching {
+    background: linear-gradient(90deg, #EF4444 0%, #B91C1C 100%);
+}
+
+.countdown-milestones {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.62rem;
+    font-weight: 600;
+    color: #9CA3AF;
+}
+
+.countdown-milestones .milestone-lockdown {
+    color: #D97706;
+    font-weight: 700;
+}
+
+/* Footer row: Est. Completion */
+.countdown-footer-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-top: 1px solid #F3F4F6;
+    padding-top: 8px;
+    margin-top: 2px;
+}
+
+.countdown-footer-lbl {
+    font-family: var(--font-heading);
+    font-size: 0.65rem;
+    font-weight: 800;
+    color: #8C6D23;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.countdown-footer-val {
+    font-family: var(--font-heading);
+    font-size: 0.78rem;
+    font-weight: 800;
+    color: #1F2937;
 }
 
 /* 2. The 4 Big Metric Square Cards (2x2 Grid) */
