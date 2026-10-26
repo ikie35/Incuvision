@@ -80,3 +80,46 @@ To retrieve the active public URL:
 ```bash
 grep -o 'https://.*\.trycloudflare\.com' ~/tunnel.log | tail -n 1
 ```
+
+---
+
+### 6. Auto-Start on Boot & Health Checks
+
+To verify if IncuVision is configured to launch automatically on Raspberry Pi boot:
+
+#### A. Check if the Service is Enabled on Boot
+```bash
+systemctl is-enabled incuvision
+```
+- If configured for boot, it outputs: `enabled`
+- If not configured for boot, it outputs: `disabled`
+
+#### B. Check Current Running Status
+```bash
+sudo systemctl status incuvision
+```
+Look for:
+- `Loaded: ...; enabled; ...` (confirms boot auto-start)
+- `Active: active (running) since ...` (confirms it is actively running)
+
+#### C. Inspect Boot Logs
+To view logs generated since the most recent boot:
+```bash
+journalctl -u incuvision -b
+```
+Or follow real-time logs:
+```bash
+journalctl -u incuvision -f
+```
+
+#### D. How to Enable Auto-Start on Boot (If Disabled)
+If `systemctl is-enabled incuvision` returns `disabled`, enable it with:
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable incuvision
+sudo systemctl start incuvision
+```
+Similarly, verify that the Mosquitto MQTT broker is enabled on boot:
+```bash
+systemctl is-enabled mosquitto
+```
