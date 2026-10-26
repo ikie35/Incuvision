@@ -1922,7 +1922,7 @@ function onBatchDateInputChange() {
 
 function resetBatchToNow() {
     initScheduleInputs(new Date());
-    showToast("Batch date/time reset to now (Day 0). Tap 'Apply Schedule' to save.");
+    showToast("Date & time set to now (Day 0 draft). Not applied until you click 'Apply Schedule'.");
 }
 
 function recalcScheduleFromInputs() {
@@ -1942,6 +1942,12 @@ function recalcScheduleFromInputs() {
     const remEl = document.getElementById('dispScheduleRemaining');
     if (progEl) progEl.innerText = `Day ${day} · ${hours}h elapsed`;
     if (remEl) remEl.innerText = `${daysLeft} Days Left`;
+
+    const lblProg = document.getElementById('lblScheduleProgress');
+    if (lblProg) {
+        lblProg.innerText = "PREVIEW (PENDING APPLY)";
+        lblProg.style.color = "#D97706";
+    }
 
     // Update draft tabs in Menu only
     const dispDay = document.getElementById('dispProtocolDay');
@@ -2086,6 +2092,12 @@ async function saveIncubationSchedule() {
     renderHomeCountdownCard();
     renderProtocolCards();
     updateTurningDisplay();
+
+    const lblProg = document.getElementById('lblScheduleProgress');
+    if (lblProg) {
+        lblProg.innerText = "ACTIVE TIMELINE (APPLIED)";
+        lblProg.style.color = "#059669";
+    }
 
     // Create local ISO string
     const dt = currentSetTimestamp || new Date();
