@@ -199,17 +199,25 @@ function handleIncomingTelemetry(data) {
     const previousPhase = currentPhase;
 
     // Day & Phase: Only reflect active schedule day if schedule_active is true
-    if (data.schedule_active) {
+    if (data.schedule_active === true) {
         if (data.day !== undefined && data.day !== null) {
             currentDay = data.day;
         }
         if (data.phase) {
             currentPhase = data.phase;
         }
-    } else {
-        // Schedule not active on Pi
+    } else if (data.schedule_active === false) {
+        // Schedule confirmed inactive on Pi (Standby mode)
         currentDay = 0;
         currentPhase = 'SETTING';
+    } else if (appliedSchedule && appliedSchedule.active) {
+        // Partial or legacy update while schedule is active
+        if (data.day !== undefined && data.day !== null) {
+            currentDay = data.day;
+        }
+        if (data.phase) {
+            currentPhase = data.phase;
+        }
     }
 
     if (currentDay >= 19) {
@@ -228,7 +236,7 @@ function handleIncomingTelemetry(data) {
     }
 
     // Home Countdown Sync: ONLY update if schedule is confirmed active!
-    if (data.schedule_active && data.start_time) {
+    if (data.schedule_active === true && data.start_time) {
         if (!appliedSchedule || appliedSchedule.startTime !== data.start_time) {
             appliedSchedule = {
                 startTime: data.start_time,
@@ -1945,8 +1953,15 @@ function recalcScheduleFromInputs() {
 
     const lblProg = document.getElementById('lblScheduleProgress');
     if (lblProg) {
-        lblProg.innerText = "PREVIEW (PENDING APPLY)";
-        lblProg.style.color = "#D97706";
+        const isAppliedMatch = appliedSchedule && appliedSchedule.active && appliedSchedule.startTime &&
+            Math.abs(currentSetTimestamp.getTime() - new Date(appliedSchedule.startTime).getTime()) < 60000;
+        if (isAppliedMatch) {
+            lblProg.innerText = "ACTIVE TIMELINE (APPLIED)";
+            lblProg.style.color = "#059669";
+        } else {
+            lblProg.innerText = "PREVIEW (PENDING APPLY)";
+            lblProg.style.color = "#D97706";
+        }
     }
 
     // Update draft tabs in Menu only

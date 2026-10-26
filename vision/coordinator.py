@@ -57,6 +57,7 @@ class IncubationCoordinator:
                             self.start_time = datetime.fromisoformat(data["start_time"])
                         else:
                             self.start_time = datetime.now() - timedelta(days=self.current_day)
+                        self._update_day_and_phase()
                         print(f"[COORDINATOR] Restored active persistent incubation state: Day {self.current_day} ({self.phase})")
                         return
                     else:
@@ -130,9 +131,11 @@ class IncubationCoordinator:
         if new_phase != self.phase:
             self.phase = new_phase
             print(f"[COORDINATOR] Automatic Phase Transition -> {self.phase} (Day {self.current_day})")
+            self._save_state()
             self.mqtt.set_phase(self.phase)
             self.mqtt.send_command({"cmd": "SET_DAY", "day": self.current_day})
         elif day_changed:
+            self._save_state()
             self.mqtt.send_command({"cmd": "SET_DAY", "day": self.current_day})
 
     def trigger_candling_audit_now(self, day: int = None) -> dict:

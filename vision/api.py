@@ -85,13 +85,9 @@ def service_worker():
         headers={"Service-Worker-Allowed": "/"}
     )
 
-@app.get("/api/telemetry")
-def get_telemetry():
-    if not coordinator or not mqtt_bridge:
-        raise HTTPException(status_code=503, detail="System initializing")
-    
-    telem = mqtt_bridge.get_telemetry()
-    if coordinator.schedule_active:
+def build_telemetry_payload() -> dict:
+    telem = mqtt_bridge.get_telemetry() if mqtt_bridge else None
+    if coordinator and coordinator.schedule_active:
         elapsed = datetime.now() - coordinator.start_time
         total_sec = max(0, int(elapsed.total_seconds()))
         hours_into_day = (total_sec % 86400) // 3600
@@ -102,16 +98,23 @@ def get_telemetry():
         time_str = "00:00"
         start_iso = None
 
-    payload = {
-        "day": coordinator.current_day if coordinator.schedule_active else 0,
-        "phase": coordinator.phase,
-        "schedule_active": coordinator.schedule_active,
+    return {
+        "day": coordinator.current_day if (coordinator and coordinator.schedule_active) else 0,
+        "phase": coordinator.phase if coordinator else "SETTING",
+        "schedule_active": coordinator.schedule_active if coordinator else False,
         "time_into_day": time_str,
         "start_time": start_iso,
-        "is_auditing": coordinator.is_auditing_now,
+        "is_auditing": coordinator.is_auditing_now if coordinator else False,
         "telemetry": telem,
-        "latest_audit": coordinator.latest_audit_result
+        "latest_audit": coordinator.latest_audit_result if coordinator else None
     }
+
+@app.get("/api/telemetry")
+def get_telemetry():
+    if not coordinator or not mqtt_bridge:
+        raise HTTPException(status_code=503, detail="System initializing")
+    
+    payload = build_telemetry_payload()
     return JSONResponse(
         content=payload,
         headers={
@@ -317,14 +320,7 @@ async def websocket_endpoint(websocket: WebSocket):
     try:
         while True:
             if coordinator and mqtt_bridge:
-                telem = mqtt_bridge.get_telemetry()
-                payload = {
-                    "day": coordinator.current_day,
-                    "phase": coordinator.phase,
-                    "is_auditing": coordinator.is_auditing_now,
-                    "telemetry": telem,
-                    "latest_audit": coordinator.latest_audit_result
-                }
+                payload = build_telemetry_payload()
                 await websocket.send_text(json.dumps(payload))
             await asyncio.sleep(1.0)
     except WebSocketDisconnect:
