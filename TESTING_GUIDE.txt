@@ -166,6 +166,20 @@ EOF
 3. Check logs:
     journalctl -u incuvision -f
 
+--------------------------------------------------------------------------------
+STEP 9: REMOTE CLOUDFLARE TUNNELING (OFF-SITE MONITORING)
+--------------------------------------------------------------------------------
+To expose the local dashboard securely over public HTTPS via Cloudflare Tunnel:
+
+1. Direct execution:
+    cloudflared tunnel --url http://localhost:8000
+
+2. Persistent background execution (survives closing the terminal):
+    nohup cloudflared tunnel --url http://localhost:8000 > ~/tunnel.log 2>&1 &
+
+3. Retrieve active public URL:
+    grep -o 'https://.*\.trycloudflare\.com' ~/tunnel.log | tail -n 1
+
 ================================================================================
                         END OF INCUVISION TESTING GUIDE
 ================================================================================

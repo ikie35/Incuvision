@@ -66,3 +66,17 @@ To start the supervisor service and local web server:
 python main.py
 ```
 Open your browser at `http://<raspberry-pi-ip>:8000` or `http://localhost:8000` to view the **IncuVision Real-Time Dashboard**.
+
+### 5. Remote Access via Cloudflare Tunnel
+IncuVision uses Cloudflare Tunnel to expose the local dashboard securely over public HTTPS for mobile and off-site monitoring:
+```bash
+cloudflared tunnel --url http://localhost:8000
+```
+To run it continuously in the background on the Raspberry Pi:
+```bash
+nohup cloudflared tunnel --url http://localhost:8000 > ~/tunnel.log 2>&1 &
+```
+To retrieve the active public URL:
+```bash
+grep -o 'https://.*\.trycloudflare\.com' ~/tunnel.log | tail -n 1
+```

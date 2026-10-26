@@ -66,8 +66,8 @@ IncuVision/
 
 | Stage | Days | Target Temp (°C) | Target RH (%) | Target $\text{CO}_2$ | Target $\text{O}_2$ | Egg Turning |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Setting Phase** | Days 1–18 | 37.5 °C | 58% | 0.3% – 0.5% (3,000–5,000 ppm) | 21% | Rotates hourly ($45^\circ$) |
-| **Hatching Phase** | Days 19–21 | 36.9 °C | 66% – 75% | Max 0.75% (7,500 ppm) | 21% | Deactivated |
+| **Setting Phase** | Days 0–18 | 37.5 °C | 58% | 0.3% – 0.5% (3,000–5,000 ppm) | 20.9% | Rotates hourly ($45^\circ$) |
+| **Hatching Phase** | Days 19–21 | 36.9 °C | 66% – 75% | Max 0.75% (7,500 ppm) | 20.5% | Deactivated |
 
 ---
 
@@ -91,4 +91,18 @@ pip install -r requirements.txt
 python main.py
 ```
 Open your browser at `http://localhost:8000/dashboard/` to view the live dashboard and control the incubator.
+
+### 3. Remote Cloudflare Tunneling (Public HTTPS Access)
+IncuVision utilizes Cloudflare Tunnel for secure, remote mobile and web monitoring across any network:
+```bash
+cloudflared tunnel --url http://localhost:8000
+```
+To run it continuously in the background on the Raspberry Pi:
+```bash
+nohup cloudflared tunnel --url http://localhost:8000 > ~/tunnel.log 2>&1 &
+```
+To inspect the active public URL anytime:
+```bash
+grep -o 'https://.*\.trycloudflare\.com' ~/tunnel.log | tail -n 1
+```
 
