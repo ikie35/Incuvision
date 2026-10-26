@@ -72,11 +72,49 @@ IncuVision uses Cloudflare Tunnel to expose the local dashboard securely over pu
 ```bash
 cloudflared tunnel --url http://localhost:8000
 ```
-To run it continuously in the background on the Raspberry Pi:
+To run it continuously in the background (persisting even after closing SSH):
+
+#### Option A: Production Systemd Service (Recommended - Survives SSH Exit & Auto-Starts on Boot)
 ```bash
-nohup cloudflared tunnel --url http://localhost:8000 > ~/tunnel.log 2>&1 &
+sudo tee /etc/systemd/system/cloudflared-tunnel.service << EOF
+[Unit]
+Description=Cloudflare Tunnel for IncuVision Dashboard
+After=network-online.target incuvision.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=$USER
+ExecStart=$(which cloudflared) tunnel --url http://localhost:8000
+Restart=always
+RestartSec=5
+StandardOutput=append:$HOME/tunnel.log
+StandardError=append:$HOME/tunnel.log
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl daemon-reload
+sudo systemctl enable cloudflared-tunnel
+sudo systemctl start cloudflared-tunnel
 ```
-To retrieve the active public URL:
+
+#### Option B: Background Nohup with Disown (Quick Command)
+In Raspberry Pi OS, add `disown` so systemd doesn't terminate the process when SSH closes:
+```bash
+nohup cloudflared tunnel --url http://localhost:8000 > ~/tunnel.log 2>&1 & disown
+```
+
+#### Option C: Using Tmux (Detachable Terminal)
+```bash
+sudo apt install -y tmux
+tmux new -s tunnel
+cloudflared tunnel --url http://localhost:8000
+```
+*Press `Ctrl + B`, then press `D` to detach safely.* (To reattach later: `tmux attach -t tunnel`).
+
+#### To Retrieve the Active Public URL:
 ```bash
 grep -o 'https://.*\.trycloudflare\.com' ~/tunnel.log | tail -n 1
 ```
