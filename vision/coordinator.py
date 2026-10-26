@@ -74,8 +74,12 @@ class IncubationCoordinator:
         self.worker_thread.start()
         print(f"[COORDINATOR] Incubation Master Supervisor started (Schedule Active: {self.schedule_active}, Day {self.current_day}, {self.phase}).")
         # Ensure ESP32 starts with the active day, phase, and in AUTO mode
-        self.mqtt.set_phase(self.phase)
-        self.mqtt.send_command({"cmd": "SET_DAY", "day": self.current_day})
+        if self.schedule_active:
+            self.mqtt.set_phase(self.phase)
+            self.mqtt.send_command({"cmd": "SET_DAY", "day": self.current_day})
+        else:
+            self.mqtt.set_phase("SETTING")
+            self.mqtt.send_command({"cmd": "SET_DAY", "day": 0})
         self.mqtt.send_command({"cmd": "SET_MODE", "mode": "AUTO"})
 
     def set_start_date(self, start_dt: datetime, phase: str = None):
@@ -212,19 +216,19 @@ class IncubationCoordinator:
             if not self.is_auditing_now and (now - last_lcd_update >= 3.0):
                 last_lcd_update = now
                 lcd_display.display_home_screen(
-                    day=self.current_day,
+                    day=self.current_day if self.schedule_active else 0,
                     temp=temp,
                     rh=rh,
                     co2=co2,
                     o2=o2,
-                    phase=self.phase
+                    phase=self.phase if self.schedule_active else "STANDBY"
                 )
 
             # 2. Log Telemetry to DB & CSV every 60 seconds (1 minute interval)
             if now - last_log_time >= TELEMETRY_LOG_INTERVAL_S:
                 last_log_time = now
                 logger.log_telemetry(
-                    day=self.current_day,
+                    day=self.current_day if self.schedule_active else 0,
                     temp=temp,
                     rh=rh,
                     co2=co2,
@@ -232,7 +236,7 @@ class IncubationCoordinator:
                     heater=act.get("heater", False),
                     exhaust=act.get("exhaust", False),
                     motor=act.get("motor", False),
-                    phase=self.phase
+                    phase=self.phase if self.schedule_active else "STANDBY"
                 )
 
             # 3. Emergency Overheat Watchdog: if manual mode is active and temp >= 38.0°C, force revert to AUTO

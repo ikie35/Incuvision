@@ -482,6 +482,11 @@ function updateTurningDisplay() {
     const turnEl = document.getElementById('turningCountdown');
     if (!turnEl) return;
 
+    if (!appliedSchedule || !appliedSchedule.active) {
+        turnEl.innerText = "STANDBY";
+        return;
+    }
+
     if (currentPhase === 'HATCHING' || currentDay >= 19) {
         turnEl.innerText = "OFF (HATCH)";
         return;
@@ -1968,7 +1973,7 @@ function setProtocolPhase(phase) {
     protocolState.o2 = isHatching ? 20.5 : 20.9;
 
     renderProtocolCards();
-    showToast(`Loaded ${isHatching ? 'Hatching (36.9°C, 70% RH, 20.5% O₂)' : 'Setting (37.5°C, 58% RH, 20.9% O₂)'} targets.`);
+    showToast(`Loaded ${isHatching ? 'Hatching' : 'Setting'} presets. Tap 'Apply Target Setpoints' or 'Apply Schedule' to apply.`);
 }
 
 function stepDay(delta) {
@@ -2041,9 +2046,10 @@ function renderProtocolCards() {
     const turnVal = document.getElementById('dispTurnerStatus');
     const turnSub = document.getElementById('dispTurnerSub');
     const turnCard = document.getElementById('cardTurnerTrigger');
+    const isSystemHatching = (currentPhase === 'HATCHING' || currentDay >= 19);
 
     if (turnVal && turnSub) {
-        if (isHatching) {
+        if (isSystemHatching && appliedSchedule && appliedSchedule.active) {
             turnVal.innerText = 'LOCKED';
             turnSub.innerText = 'Turning disabled during hatching lockdown';
             if (turnCard) turnCard.classList.add('is-locked');

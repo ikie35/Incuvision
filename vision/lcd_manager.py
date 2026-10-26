@@ -35,16 +35,28 @@ class LCDDisplayManager:
     def display_home_screen(self, day: int, temp: float, rh: float, co2: int, o2: float, phase: str):
         """
         Renders standard 20x4 incubation status:
-        Line 1: INCUVISION: Day 07/21
-        Line 2: T: 37.5 C  RH: 58.0%
-        Line 3: CO2: 3200ppm  O2:20.9%
-        Line 4: Status: SETTING (OK)
+        Active:
+          Line 1: INCUVISION: D07/21
+          Line 2: T: 37.5C  RH: 58.0%
+          Line 3: CO2: 3200p O2: 20.9%
+          Line 4: Phase:SETTING (OK)
+        Standby:
+          Line 1: INCUVISION: STANDBY
+          Line 2: T: 37.5C  RH: 58.0%
+          Line 3: CO2: 3200p O2: 20.9%
+          Line 4: Schedule: AWAITING
         """
-        line1 = f"INCUVISION: D{day:02d}/21".ljust(20)
-        line2 = f"T:{temp:4.1f}C  RH:{rh:4.1f}%".ljust(20)
-        line3 = f"CO2:{co2:4d}p O2:{o2:4.1f}%".ljust(20)
-        p_str = "HATCH" if phase == "HATCHING" else "SETTING"
-        line4 = f"Phase:{p_str} (OK)".ljust(20)
+        if phase == "STANDBY":
+            line1 = "INCUVISION: STANDBY ".ljust(20)
+            line2 = f"T:{temp:4.1f}C  RH:{rh:4.1f}%".ljust(20)
+            line3 = f"CO2:{co2:4d}p O2:{o2:4.1f}%".ljust(20)
+            line4 = "Schedule: AWAITING  ".ljust(20)
+        else:
+            line1 = f"INCUVISION: D{day:02d}/21".ljust(20)
+            line2 = f"T:{temp:4.1f}C  RH:{rh:4.1f}%".ljust(20)
+            line3 = f"CO2:{co2:4d}p O2:{o2:4.1f}%".ljust(20)
+            p_str = "HATCH" if phase == "HATCHING" else "SETTING"
+            line4 = f"Phase:{p_str} (OK)".ljust(20)
 
         self._render_4lines(line1, line2, line3, line4)
 
