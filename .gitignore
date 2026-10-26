@@ -17,6 +17,7 @@ deploy_pi.zip
 # Captures / runtime logs
 vision/captures/
 vision/incuvision.db
+vision/coordinator_state.json
 *.log
 
 # Editor / IDE artifacts

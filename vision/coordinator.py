@@ -18,6 +18,7 @@ class IncubationCoordinator:
         self.pipeline = CandlingVisionPipeline()
         self.state_file = Path(__file__).resolve().parent / "coordinator_state.json"
         
+        self.schedule_active = False
         self.start_time = datetime.now()
         self.current_day = 0
         self.phase = "SETTING"  # "SETTING" or "HATCHING"
@@ -35,6 +36,7 @@ class IncubationCoordinator:
         try:
             with open(self.state_file, "w") as f:
                 json.dump({
+                    "schedule_active": self.schedule_active,
                     "day": self.current_day,
                     "phase": self.phase,
                     "start_time": self.start_time.isoformat()
@@ -47,16 +49,21 @@ class IncubationCoordinator:
             try:
                 with open(self.state_file, "r") as f:
                     data = json.load(f)
-                    self.current_day = max(0, min(TOTAL_INCUBATION_DAYS, data.get("day", 0)))
-                    self.phase = data.get("phase", "HATCHING" if self.current_day >= HATCHING_DAYS_START else "SETTING")
-                    if "start_time" in data:
-                        self.start_time = datetime.fromisoformat(data["start_time"])
+                    self.schedule_active = data.get("schedule_active", False)
+                    if self.schedule_active:
+                        self.current_day = max(0, min(TOTAL_INCUBATION_DAYS, data.get("day", 0)))
+                        self.phase = data.get("phase", "HATCHING" if self.current_day >= HATCHING_DAYS_START else "SETTING")
+                        if "start_time" in data:
+                            self.start_time = datetime.fromisoformat(data["start_time"])
+                        else:
+                            self.start_time = datetime.now() - timedelta(days=self.current_day)
+                        print(f"[COORDINATOR] Restored active persistent incubation state: Day {self.current_day} ({self.phase})")
+                        return
                     else:
-                        self.start_time = datetime.now() - timedelta(days=self.current_day)
-                    print(f"[COORDINATOR] Restored persistent incubation state: Day {self.current_day} ({self.phase})")
-                    return
+                        print("[COORDINATOR] Saved state indicates schedule is not active. Awaiting batch start.")
             except Exception as e:
                 print(f"[COORDINATOR] State load failed ({e}), starting fresh.")
+        self.schedule_active = False
         self.start_time = datetime.now()
         self.current_day = 0
         self.phase = "SETTING"
@@ -65,7 +72,7 @@ class IncubationCoordinator:
         self.is_running = True
         self.worker_thread = threading.Thread(target=self._run_loop, daemon=True)
         self.worker_thread.start()
-        print(f"[COORDINATOR] Incubation Master Supervisor started (Day {self.current_day}, {self.phase}).")
+        print(f"[COORDINATOR] Incubation Master Supervisor started (Schedule Active: {self.schedule_active}, Day {self.current_day}, {self.phase}).")
         # Ensure ESP32 starts with the active day, phase, and in AUTO mode
         self.mqtt.set_phase(self.phase)
         self.mqtt.send_command({"cmd": "SET_DAY", "day": self.current_day})
@@ -73,6 +80,7 @@ class IncubationCoordinator:
 
     def set_start_date(self, start_dt: datetime, phase: str = None):
         with self._lock:
+            self.schedule_active = True
             self.start_time = start_dt
             self._update_day_and_phase()
             if phase in ("SETTING", "HATCHING"):
@@ -81,10 +89,11 @@ class IncubationCoordinator:
             self.mqtt.set_phase(self.phase)
             self.mqtt.send_command({"cmd": "SET_DAY", "day": self.current_day})
             self.mqtt.send_command({"cmd": "SET_MODE", "mode": "AUTO"})
-            print(f"[COORDINATOR] Set incubation start timestamp: {self.start_time.isoformat()} (Day {self.current_day}, Phase: {self.phase})")
+            print(f"[COORDINATOR] Incubation schedule applied: {self.start_time.isoformat()} (Day {self.current_day}, Phase: {self.phase})")
 
     def set_manual_schedule(self, day: int, hours: int = 0, minutes: int = 0, phase: str = None):
         with self._lock:
+            self.schedule_active = True
             self.current_day = max(0, min(TOTAL_INCUBATION_DAYS, day))
             offset = timedelta(days=self.current_day, hours=hours, minutes=minutes)
             self.start_time = datetime.now() - offset
@@ -92,7 +101,7 @@ class IncubationCoordinator:
                 self.phase = phase
             else:
                 self.phase = "HATCHING" if self.current_day >= HATCHING_DAYS_START else "SETTING"
-            print(f"[COORDINATOR] Incubation schedule updated: Day {self.current_day} ({hours:02d}:{minutes:02d} into day, Phase: {self.phase})")
+            print(f"[COORDINATOR] Incubation schedule applied: Day {self.current_day} ({hours:02d}:{minutes:02d} into day, Phase: {self.phase})")
             self._save_state()
             self.mqtt.set_phase(self.phase)
             self.mqtt.send_command({"cmd": "SET_DAY", "day": self.current_day})
@@ -102,6 +111,10 @@ class IncubationCoordinator:
         self.set_manual_schedule(day=day, hours=0, minutes=0)
 
     def _update_day_and_phase(self):
+        if not self.schedule_active:
+            # Do not auto-advance day or phase if schedule has not been explicitly applied!
+            return
+
         elapsed = datetime.now() - self.start_time
         calc_day = int(elapsed.total_seconds() // 86400)
         calc_day = max(0, min(TOTAL_INCUBATION_DAYS, calc_day))
@@ -231,18 +244,18 @@ class IncubationCoordinator:
                     self.mqtt.send_command({"cmd": "SET_RELAY", "actuator": "heater", "state": False})
                     self.mqtt.send_command({"cmd": "SET_RELAY", "actuator": "exhaust", "state": True})
 
-            # 4. Top-of-the-Hour Automatic Egg Turning (XX:00:00 every hour in Setting Phase)
+            # 4. Top-of-the-Hour Automatic Egg Turning (XX:00:00 every hour in Setting Phase when batch is active)
             now_dt = datetime.now()
             current_hour = now_dt.hour
-            if self.phase != "HATCHING" and not self.is_auditing_now:
+            if self.schedule_active and self.phase != "HATCHING" and not self.is_auditing_now:
                 if now_dt.minute == 0 and self.last_turned_hour != current_hour:
                     print(f"[COORDINATOR] Top of the hour ({now_dt.strftime('%H:%M')}): Triggering automatic egg turning.")
                     self.last_turned_hour = current_hour
                     if self.mqtt:
                         self.mqtt.trigger_egg_turning(15)
 
-            # 5. Check for Automated Scheduled Candling Audits (Day 7, 10, 18)
-            if self.current_day in CANDLING_SCHEDULE_DAYS and self.current_day not in self.completed_audits:
+            # 5. Check for Automated Scheduled Candling Audits (Day 7, 10, 18 when batch is active)
+            if self.schedule_active and self.current_day in CANDLING_SCHEDULE_DAYS and self.current_day not in self.completed_audits:
                 print(f"[COORDINATOR] Scheduled Day {self.current_day} Candling Audit triggered!")
                 self.trigger_candling_audit_now(self.current_day)
 

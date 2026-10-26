@@ -50,6 +50,7 @@ class SchedulePayload(BaseModel):
     day: Optional[int] = None
     time: Optional[str] = "00:00"  # "HH:MM"
     phase: Optional[str] = None
+    active: Optional[bool] = True
 
 class PhasePayload(BaseModel):
     phase: str  # "SETTING" or "HATCHING"
@@ -90,17 +91,23 @@ def get_telemetry():
         raise HTTPException(status_code=503, detail="System initializing")
     
     telem = mqtt_bridge.get_telemetry()
-    elapsed = datetime.now() - coordinator.start_time
-    total_sec = max(0, int(elapsed.total_seconds()))
-    hours_into_day = (total_sec % 86400) // 3600
-    mins_into_day = (total_sec % 3600) // 60
-    time_str = f"{hours_into_day:02d}:{mins_into_day:02d}"
+    if coordinator.schedule_active:
+        elapsed = datetime.now() - coordinator.start_time
+        total_sec = max(0, int(elapsed.total_seconds()))
+        hours_into_day = (total_sec % 86400) // 3600
+        mins_into_day = (total_sec % 3600) // 60
+        time_str = f"{hours_into_day:02d}:{mins_into_day:02d}"
+        start_iso = coordinator.start_time.isoformat()
+    else:
+        time_str = "00:00"
+        start_iso = None
 
     payload = {
-        "day": coordinator.current_day,
+        "day": coordinator.current_day if coordinator.schedule_active else 0,
         "phase": coordinator.phase,
+        "schedule_active": coordinator.schedule_active,
         "time_into_day": time_str,
-        "start_time": coordinator.start_time.isoformat(),
+        "start_time": start_iso,
         "is_auditing": coordinator.is_auditing_now,
         "telemetry": telem,
         "latest_audit": coordinator.latest_audit_result
@@ -190,6 +197,22 @@ def set_incubation_schedule(payload: SchedulePayload):
 
     phase = payload.phase.upper() if payload.phase else None
 
+    # Handle explicit reset / deactivation
+    if payload.active is False:
+        with coordinator._lock:
+            coordinator.schedule_active = False
+            coordinator.current_day = 0
+            coordinator.phase = "SETTING"
+            coordinator._save_state()
+            coordinator.mqtt.set_phase("SETTING")
+            coordinator.mqtt.send_command({"cmd": "SET_DAY", "day": 0})
+        return {
+            "status": "success",
+            "schedule_active": False,
+            "day": 0,
+            "phase": "SETTING"
+        }
+
     # 1. Standard Poultry Science Method: ISO Set Timestamp
     if payload.start_time:
         try:
@@ -200,6 +223,7 @@ def set_incubation_schedule(payload: SchedulePayload):
             coordinator.set_start_date(st, phase=phase)
             return {
                 "status": "success",
+                "schedule_active": True,
                 "day": coordinator.current_day,
                 "phase": coordinator.phase,
                 "start_time": coordinator.start_time.isoformat()
@@ -223,6 +247,7 @@ def set_incubation_schedule(payload: SchedulePayload):
     coordinator.set_manual_schedule(day=day_val, hours=hours, minutes=minutes, phase=phase)
     return {
         "status": "success",
+        "schedule_active": True,
         "day": coordinator.current_day,
         "phase": coordinator.phase,
         "time_into_day": f"{hours:02d}:{minutes:02d}",

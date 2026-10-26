@@ -34,6 +34,18 @@ document.addEventListener('DOMContentLoaded', () => {
     init56EggGrid();
     startTurningCountdown();
     drawTempWaveChart();
+    loadAppliedSchedule();
+    if (appliedSchedule && appliedSchedule.active) {
+        renderHomeCountdownCard();
+    } else {
+        renderHomeCountdownCardDefault();
+    }
+    // Periodic ticker to keep countdown live without re-rendering unnecessarily
+    setInterval(() => {
+        if (appliedSchedule && appliedSchedule.active) {
+            renderHomeCountdownCard();
+        }
+    }, 1000);
     renderProtocolCards();
     initPushNotifications();
     loadNotificationHistory();
@@ -184,15 +196,22 @@ async function fetchInitialData() {
 function handleIncomingTelemetry(data) {
     if (!data) return;
 
-    // Day & Phase
-    if (data.day !== undefined && data.day !== null) {
-        currentDay = data.day;
+    const previousPhase = currentPhase;
+
+    // Day & Phase: Only reflect active schedule day if schedule_active is true
+    if (data.schedule_active) {
+        if (data.day !== undefined && data.day !== null) {
+            currentDay = data.day;
+        }
+        if (data.phase) {
+            currentPhase = data.phase;
+        }
+    } else {
+        // Schedule not active on Pi
+        currentDay = 0;
+        currentPhase = 'SETTING';
     }
 
-    const previousPhase = currentPhase;
-    if (data.phase) {
-        currentPhase = data.phase;
-    }
     if (currentDay >= 19) {
         currentPhase = 'HATCHING';
     }
@@ -208,8 +227,33 @@ function handleIncomingTelemetry(data) {
         });
     }
 
-    // Update Home Countdown Display (Days/Hours Left, Progress Bar, Projected Finish)
-    updateHomeCountdownDisplay(data.start_time, currentDay, currentPhase);
+    // Home Countdown Sync: ONLY update if schedule is confirmed active!
+    if (data.schedule_active && data.start_time) {
+        if (!appliedSchedule || appliedSchedule.startTime !== data.start_time) {
+            appliedSchedule = {
+                startTime: data.start_time,
+                day: currentDay,
+                phase: currentPhase,
+                active: true
+            };
+            try {
+                localStorage.setItem('incuvision_applied_schedule', JSON.stringify(appliedSchedule));
+            } catch (e) {}
+        }
+        renderHomeCountdownCard();
+    } else if (data.schedule_active === false) {
+        appliedSchedule = null;
+        try {
+            localStorage.removeItem('incuvision_applied_schedule');
+        } catch (e) {}
+        renderHomeCountdownCardDefault();
+    } else {
+        if (appliedSchedule && appliedSchedule.active) {
+            renderHomeCountdownCard();
+        } else {
+            renderHomeCountdownCardDefault();
+        }
+    }
 
     if (!protocolStateInitialized) {
         protocolState.day = currentDay;
@@ -218,14 +262,17 @@ function handleIncomingTelemetry(data) {
         protocolState.rh = (currentPhase === 'HATCHING' || currentDay >= 19) ? 70.0 : 58.0;
         protocolState.co2 = (currentPhase === 'HATCHING' || currentDay >= 19) ? 7500 : 5000;
         protocolState.o2 = (currentPhase === 'HATCHING' || currentDay >= 19) ? 20.5 : 20.9;
-        if (data.start_time) {
+        
+        if (appliedSchedule && appliedSchedule.startTime) {
+            initScheduleInputs(new Date(appliedSchedule.startTime));
+        } else if (data.schedule_active && data.start_time) {
             initScheduleInputs(new Date(data.start_time));
         } else {
             initScheduleInputs(new Date());
         }
         protocolStateInitialized = true;
         renderProtocolCards();
-    } else if (data.start_time) {
+    } else if (data.schedule_active && data.start_time) {
         const dateEl = document.getElementById('inputBatchDate');
         const timeEl = document.getElementById('inputBatchTime');
         const isEditing = (dateEl && document.activeElement === dateEl) || (timeEl && document.activeElement === timeEl);
@@ -233,8 +280,6 @@ function handleIncomingTelemetry(data) {
             const telemetryDate = new Date(data.start_time);
             if (Math.abs(currentSetTimestamp.getTime() - telemetryDate.getTime()) > 60000) {
                 initScheduleInputs(telemetryDate);
-            } else {
-                recalcScheduleFromInputs();
             }
         }
     }
@@ -1713,22 +1758,56 @@ let protocolState = {
 };
 
 let currentSetTimestamp = null;
+let appliedSchedule = null; // { startTime: string, day: number, phase: string, active: boolean }
 
-function updateHomeCountdownDisplay(startTime, dayVal, phaseVal) {
-    const day = (dayVal !== undefined && dayVal !== null) ? parseInt(dayVal) : currentDay;
-    const phase = phaseVal || currentPhase;
-    const isHatching = (phase === 'HATCHING' || day >= 19);
-
-    const now = new Date();
-    let startDate = (startTime instanceof Date && !isNaN(startTime)) ? startTime : (startTime ? new Date(startTime) : null);
-    if (!startDate || isNaN(startDate.getTime())) {
-        if (currentSetTimestamp && !isNaN(currentSetTimestamp.getTime())) {
-            startDate = currentSetTimestamp;
-        } else {
-            startDate = new Date(now.getTime() - day * 86400000);
+function loadAppliedSchedule() {
+    try {
+        const stored = localStorage.getItem('incuvision_applied_schedule');
+        if (stored) {
+            const parsed = JSON.parse(stored);
+            if (parsed && parsed.active && parsed.startTime) {
+                appliedSchedule = parsed;
+                return;
+            }
         }
+    } catch (e) {}
+    appliedSchedule = null;
+}
+
+function renderHomeCountdownCardDefault() {
+    const daysLeftEl = document.getElementById('homeDaysLeft');
+    const phaseSubEl = document.getElementById('homePhaseSub');
+    const badgeEl = document.getElementById('homePhaseBadge');
+    const fillEl = document.getElementById('homeProgressFill');
+    const finishEl = document.getElementById('homeProjectedFinish');
+
+    if (daysLeftEl) daysLeftEl.innerText = "21 Days Left";
+    if (phaseSubEl) phaseSubEl.innerText = "Day 0 of 21 · Setting Phase";
+    if (badgeEl) {
+        badgeEl.innerText = "SETTING";
+        badgeEl.classList.remove('badge-hatching');
+        badgeEl.classList.add('badge-setting');
+    }
+    if (fillEl) {
+        fillEl.style.width = "0%";
+        fillEl.classList.remove('hatching');
+    }
+    if (finishEl) finishEl.innerText = "Pending Schedule Apply";
+}
+
+function renderHomeCountdownCard() {
+    if (!appliedSchedule || !appliedSchedule.active || !appliedSchedule.startTime) {
+        renderHomeCountdownCardDefault();
+        return;
     }
 
+    const startDate = new Date(appliedSchedule.startTime);
+    if (isNaN(startDate.getTime())) {
+        renderHomeCountdownCardDefault();
+        return;
+    }
+
+    const now = new Date();
     // 21 Days total incubation (504 hours)
     const TOTAL_MS = 21 * 86400000;
     const finishDate = new Date(startDate.getTime() + TOTAL_MS);
@@ -1742,8 +1821,9 @@ function updateHomeCountdownDisplay(startTime, dayVal, phaseVal) {
     const elapsedTotalSec = Math.floor(elapsedMs / 1000);
     const elapsedDays = Math.min(21, Math.floor(elapsedTotalSec / 86400));
     const elapsedHours = Math.floor((elapsedTotalSec % 86400) / 3600);
+    const isHatching = (elapsedDays >= 19 || appliedSchedule.phase === 'HATCHING');
 
-    // 1. Main Countdown Text (e.g. "18d 10h Left" or "21 Days Left")
+    // 1. Main Countdown Text (e.g. "19d 7h Left" or "21 Days Left")
     const daysLeftEl = document.getElementById('homeDaysLeft');
     if (daysLeftEl) {
         if (remainingMs <= 0) {
@@ -1756,7 +1836,7 @@ function updateHomeCountdownDisplay(startTime, dayVal, phaseVal) {
         }
     }
 
-    // 2. Subtitle: "Day 2 of 21 · 14h elapsed"
+    // 2. Subtitle: "Day 1 of 21 · 16h elapsed"
     const phaseSubEl = document.getElementById('homePhaseSub');
     if (phaseSubEl) {
         phaseSubEl.innerText = `Day ${elapsedDays} of 21 · ${elapsedHours}h elapsed`;
@@ -1798,6 +1878,8 @@ function updateHomeCountdownDisplay(startTime, dayVal, phaseVal) {
     }
 }
 
+const updateHomeCountdownDisplay = renderHomeCountdownCard;
+
 function initScheduleInputs(startDate) {
     const dt = (startDate instanceof Date && !isNaN(startDate)) ? startDate : (startDate ? new Date(startDate) : new Date());
     currentSetTimestamp = dt;
@@ -1835,7 +1917,7 @@ function onBatchDateInputChange() {
 
 function resetBatchToNow() {
     initScheduleInputs(new Date());
-    showToast("Batch reset to current time (Day 0). Tap 'Apply Schedule' to save.");
+    showToast("Batch date/time reset to now (Day 0). Tap 'Apply Schedule' to save.");
 }
 
 function recalcScheduleFromInputs() {
@@ -1856,8 +1938,24 @@ function recalcScheduleFromInputs() {
     if (progEl) progEl.innerText = `Day ${day} · ${hours}h elapsed`;
     if (remEl) remEl.innerText = `${daysLeft} Days Left`;
 
-    updateHomeCountdownDisplay(currentSetTimestamp, day, protocolState.phase);
-    renderProtocolCards();
+    // Update draft tabs in Menu only
+    const dispDay = document.getElementById('dispProtocolDay');
+    if (dispDay) dispDay.innerText = `Day ${protocolState.day}`;
+
+    const isHatching = (protocolState.phase === 'HATCHING' || protocolState.day >= 19);
+    const btnSetting = document.getElementById('btnPhaseSetting');
+    const btnHatching = document.getElementById('btnPhaseHatching');
+    if (btnSetting) {
+        if (isHatching) btnSetting.classList.remove('active');
+        else btnSetting.classList.add('active');
+    }
+    if (btnHatching) {
+        if (isHatching) btnHatching.classList.add('active');
+        else btnHatching.classList.remove('active');
+    }
+
+    // HOME COUNTDOWN IS NEVER UPDATED HERE.
+    // It will ONLY update when the user clicks 'Apply Schedule'!
 }
 
 function setProtocolPhase(phase) {
@@ -1956,8 +2054,7 @@ function renderProtocolCards() {
         }
     }
 
-    // 4. Sync Home Countdown Card
-    updateHomeCountdownDisplay(currentSetTimestamp, protocolState.day, protocolState.phase);
+    // NOTE: Home countdown card is NOT updated here. Only "Apply Schedule" updates the Home countdown card!
 }
 
 async function saveIncubationSchedule() {
@@ -1969,7 +2066,18 @@ async function saveIncubationSchedule() {
     currentDay = protocolState.day;
     currentPhase = protocolState.phase;
 
-    updateHomeCountdownDisplay(currentSetTimestamp, currentDay, currentPhase);
+    // 1. Commit schedule locally and update Home countdown card
+    appliedSchedule = {
+        startTime: currentSetTimestamp.toISOString(),
+        day: currentDay,
+        phase: currentPhase,
+        active: true
+    };
+    try {
+        localStorage.setItem('incuvision_applied_schedule', JSON.stringify(appliedSchedule));
+    } catch (e) {}
+
+    renderHomeCountdownCard();
     renderProtocolCards();
     updateTurningDisplay();
 
@@ -1989,7 +2097,8 @@ async function saveIncubationSchedule() {
             body: JSON.stringify({
                 start_time: localIsoStr,
                 day: currentDay,
-                phase: protocolState.phase
+                phase: protocolState.phase,
+                active: true
             })
         });
 
