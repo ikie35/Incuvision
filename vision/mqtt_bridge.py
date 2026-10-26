@@ -423,9 +423,10 @@ class MQTTBridge:
             self.send_command({"cmd": "SET_PHASE", "phase": "SETTING"})
             self.send_command({"cmd": "SET_SETPOINTS", "temp": 37.5, "rh": 58.0, "co2": 5000})
 
-    def set_custom_setpoints(self, temp: float, rh: float, co2: int):
+    def set_custom_setpoints(self, temp: float, rh: float, co2: int, o2: float = 20.9):
         self.latest_telemetry["target_temp"] = float(temp)
         self.latest_telemetry["target_rh"] = float(rh)
         self.latest_telemetry["target_co2"] = int(co2)
-        self.send_command({"cmd": "SET_SETPOINTS", "temp": temp, "rh": rh, "co2": co2})
+        self.latest_telemetry["target_o2"] = float(o2)
+        self.send_command({"cmd": "SET_SETPOINTS", "temp": temp, "rh": rh, "co2": co2, "o2": o2})
 

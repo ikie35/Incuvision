@@ -1436,43 +1436,6 @@ body {
     transform: scale(0.9);
 }
 
-/* Protocol Day Badge below stepper */
-.protocol-day-badge-wrap {
-    display: flex;
-    justify-content: center;
-    margin-top: 10px;
-}
-
-.protocol-day-badge {
-    font-size: 0.72rem;
-    font-weight: 700;
-    padding: 4px 14px;
-    border-radius: var(--radius-pill);
-    letter-spacing: 0.02em;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    transition: all 0.2s ease;
-}
-
-.protocol-day-badge.setting-day {
-    background: #FEF3C7;
-    color: #92400E;
-    border: 1px solid #FCD34D;
-}
-
-.protocol-day-badge.incubation-day {
-    background: #ECFDF5;
-    color: #065F46;
-    border: 1px solid #A7F3D0;
-}
-
-.protocol-day-badge.lockdown-day {
-    background: #FEE2E2;
-    color: #991B1B;
-    border: 1px solid #FECACA;
-}
-
 /* Protocol Section Headers */
 .protocol-section-header {
     margin: 16px 4px 6px 4px;
@@ -1487,19 +1450,12 @@ body {
     text-transform: uppercase;
 }
 
-/* Protocol Setpoints Grid (Temp & RH 2-col, CO2 full-width) */
+/* Protocol Setpoints Grid (2x2: Temp, RH, CO2, O2) */
 .protocol-setpoints-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 12px;
     margin-bottom: 12px;
-}
-
-.box-co2-wide {
-    grid-column: span 2;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
 }
 
 /* Egg Turner Quick Action Card */

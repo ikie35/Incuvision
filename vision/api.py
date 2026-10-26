@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import StreamingResponse, Response, RedirectResponse, FileResponse, JSONResponse
 from pydantic import BaseModel
+from typing import Optional
 
 from config import PROJECT_ROOT, CAPTURES_DIR, CSV_LOG_PATH
 from logger import logger
@@ -35,6 +36,7 @@ class SetpointsPayload(BaseModel):
     temp: float
     rh: float
     co2: int
+    o2: Optional[float] = 20.9
 
 class RelayCommandPayload(BaseModel):
     actuator: str  # "heater", "exhaust", "circulate", "motor", "candling"
@@ -156,7 +158,8 @@ def trigger_candling():
 def update_setpoints(payload: SetpointsPayload):
     if not mqtt_bridge:
         raise HTTPException(status_code=503, detail="MQTT not ready")
-    mqtt_bridge.set_custom_setpoints(payload.temp, payload.rh, payload.co2)
+    o2_val = payload.o2 if payload.o2 is not None else 20.9
+    mqtt_bridge.set_custom_setpoints(payload.temp, payload.rh, payload.co2, o2_val)
     return {"status": "success", "message": "Setpoints sent to ESP32"}
 
 @app.post("/api/control/day")

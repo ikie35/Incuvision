@@ -617,10 +617,6 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
                         </div>
                     </div>
 
-                    <!-- Dynamic Day Phase Status Badge -->
-                    <div class="protocol-day-badge-wrap">
-                        <span class="protocol-day-badge setting-day" id="dispProtocolDayBadge">🥚 Egg Setting Day · 21 Days to Hatch</span>
-                    </div>
                 </div>
 
                 <!-- 2. Environmental Setpoints Section -->
@@ -628,7 +624,7 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
                     <span class="protocol-section-title">TARGET ENVIRONMENTAL SETPOINTS</span>
                 </div>
 
-                <!-- Setpoints Grid: Temp & RH side-by-side, CO2 spanning full width -->
+                <!-- Setpoints Grid: 2x2 Grid (Temp, RH, CO2, O2) -->
                 <div class="protocol-setpoints-grid">
                     <!-- Temperature Card -->
                     <div class="metric-box box-temp">
@@ -656,8 +652,8 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
                         <span class="metric-lbl">TARGET HUMIDITY</span>
                     </div>
 
-                    <!-- Carbon Dioxide Card (Spans across full width cleanly) -->
-                    <div class="metric-box box-co2 box-co2-wide">
+                    <!-- Carbon Dioxide Card -->
+                    <div class="metric-box box-co2">
                         <div class="metric-icon-wrap">
                             <img src="./icons/co2.png" alt="CO2" class="metric-icon-img">
                         </div>
@@ -666,7 +662,20 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
                             <span class="metric-val" id="dispTargetCO2">5,000</span>
                             <button type="button" class="btn-mini-step" onclick="stepCO2(500)">+</button>
                         </div>
-                        <span class="metric-lbl">PPM (MAX SAFETY CEILING)</span>
+                        <span class="metric-lbl">PPM (MAX CEILING)</span>
+                    </div>
+
+                    <!-- Oxygen Card -->
+                    <div class="metric-box box-o2">
+                        <div class="metric-icon-wrap">
+                            <img src="./icons/o2.png" alt="O2" class="metric-icon-img">
+                        </div>
+                        <div class="metric-stepper-row">
+                            <button type="button" class="btn-mini-step" onclick="stepO2(-0.1)">−</button>
+                            <span class="metric-val" id="dispTargetO2">20.9%</span>
+                            <button type="button" class="btn-mini-step" onclick="stepO2(0.1)">+</button>
+                        </div>
+                        <span class="metric-lbl">TARGET OXYGEN</span>
                     </div>
                 </div>
 

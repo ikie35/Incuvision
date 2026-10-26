@@ -226,6 +226,7 @@ function handleIncomingTelemetry(data) {
         protocolState.temp = (currentPhase === 'HATCHING' || currentDay >= 19) ? 36.9 : 37.5;
         protocolState.rh = (currentPhase === 'HATCHING' || currentDay >= 19) ? 70.0 : 58.0;
         protocolState.co2 = (currentPhase === 'HATCHING' || currentDay >= 19) ? 7500 : 5000;
+        protocolState.o2 = (currentPhase === 'HATCHING' || currentDay >= 19) ? 20.5 : 20.9;
         protocolStateInitialized = true;
         renderProtocolCards();
     }
@@ -1699,7 +1700,8 @@ let protocolState = {
     phase: 'SETTING',
     temp: 37.5,
     rh: 58.0,
-    co2: 5000
+    co2: 5000,
+    o2: 20.9
 };
 
 function setProtocolPhase(phase) {
@@ -1715,9 +1717,10 @@ function setProtocolPhase(phase) {
     protocolState.temp = isHatching ? 36.9 : 37.5;
     protocolState.rh = isHatching ? 70.0 : 58.0;
     protocolState.co2 = isHatching ? 7500 : 5000;
+    protocolState.o2 = isHatching ? 20.5 : 20.9;
 
     renderProtocolCards();
-    showToast(`Loaded ${isHatching ? 'Hatching (36.9°C, 70% RH)' : 'Setting (37.5°C, 58% RH)'} targets.`);
+    showToast(`Loaded ${isHatching ? 'Hatching (36.9°C, 70% RH, 20.5% O₂)' : 'Setting (37.5°C, 58% RH, 20.9% O₂)'} targets.`);
 }
 
 function stepDay(delta) {
@@ -1730,10 +1733,12 @@ function stepDay(delta) {
         protocolState.temp = 36.9;
         protocolState.rh = 70.0;
         protocolState.co2 = 7500;
+        protocolState.o2 = 20.5;
     } else {
         protocolState.temp = 37.5;
         protocolState.rh = 58.0;
         protocolState.co2 = 5000;
+        protocolState.o2 = 20.9;
     }
 
     renderProtocolCards();
@@ -1755,26 +1760,18 @@ function stepCO2(delta) {
     renderProtocolCards();
 }
 
+function stepO2(delta) {
+    protocolState.o2 = Math.round((protocolState.o2 + delta) * 10) / 10;
+    protocolState.o2 = Math.max(18.0, Math.min(22.0, protocolState.o2));
+    renderProtocolCards();
+}
+
 function renderProtocolCards() {
     const isHatching = (protocolState.phase === 'HATCHING' || protocolState.day >= 19);
 
-    // 1. Day & Phase Tabs & Status Badge
+    // 1. Day & Phase Tabs
     const dispDay = document.getElementById('dispProtocolDay');
     if (dispDay) dispDay.innerText = `Day ${protocolState.day}`;
-
-    const dispDayBadge = document.getElementById('dispProtocolDayBadge');
-    if (dispDayBadge) {
-        if (protocolState.day === 0) {
-            dispDayBadge.innerText = '🥚 Egg Setting Day · 21 Days to Hatch';
-            dispDayBadge.className = 'protocol-day-badge setting-day';
-        } else if (protocolState.day < 19) {
-            dispDayBadge.innerText = `🌱 Incubation Phase (Day ${protocolState.day} of 21) · Turning Active`;
-            dispDayBadge.className = 'protocol-day-badge incubation-day';
-        } else {
-            dispDayBadge.innerText = `🐣 Lockdown Phase (Day ${protocolState.day} of 21) · Turning Ceased`;
-            dispDayBadge.className = 'protocol-day-badge lockdown-day';
-        }
-    }
 
     const btnSetting = document.getElementById('btnPhaseSetting');
     const btnHatching = document.getElementById('btnPhaseHatching');
@@ -1787,14 +1784,16 @@ function renderProtocolCards() {
         else btnHatching.classList.remove('active');
     }
 
-    // 2. Target Metric Card Values
+    // 2. Target Metric Card Values (Temp, RH, CO2, O2)
     const dispTemp = document.getElementById('dispTargetTemp');
     const dispRH = document.getElementById('dispTargetRH');
     const dispCO2 = document.getElementById('dispTargetCO2');
+    const dispO2 = document.getElementById('dispTargetO2');
 
     if (dispTemp) dispTemp.innerText = `${protocolState.temp.toFixed(1)}°C`;
     if (dispRH) dispRH.innerText = `${protocolState.rh.toFixed(1)}%`;
     if (dispCO2) dispCO2.innerText = protocolState.co2.toLocaleString();
+    if (dispO2) dispO2.innerText = `${protocolState.o2.toFixed(1)}%`;
 
     // 3. Dedicated Turner Control Card
     const turnVal = document.getElementById('dispTurnerStatus');
@@ -1851,7 +1850,8 @@ async function saveProtocolSettings() {
             body: JSON.stringify({
                 temp: protocolState.temp,
                 rh: protocolState.rh,
-                co2: protocolState.co2
+                co2: protocolState.co2,
+                o2: protocolState.o2
             })
         });
 
