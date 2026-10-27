@@ -97,6 +97,9 @@ void ActuatorManager::processHeating(float currentTemp) {
 }
 
 void ActuatorManager::processVentilation(uint16_t currentCO2, float currentO2, float currentTemp, float currentRH) {
+    // CO2 sensor is malfunctioning / unreliable; disregard currentCO2 in actuator decisions
+    (void)currentCO2;
+
     // 1. Critical Overheat Hard Failsafe: always force exhaust ON if overheating
     if (currentTemp >= CRITICAL_TEMP_MAX) {
         setRelay(PIN_RELAY_EXHAUST, true);
@@ -109,16 +112,16 @@ void ActuatorManager::processVentilation(uint16_t currentCO2, float currentO2, f
 
     // Thermal priority interlock:
     // If chamber is cold (under-temperature below target - 0.25°C), heat preservation MUST take priority.
-    // The exhaust fan must NOT run for humidity or minor O2/CO2 fluctuations, which would blow all heat away!
+    // The exhaust fan must NOT run for humidity or minor O2 fluctuations, which would blow all heat away!
     bool isUnderTemp = (currentTemp < (targetTemp - 0.25f));
 
     // Ventilation triggers:
     // a) Critical over-temperature venting (>= targetTemp + 0.3°C)
-    // b) Critical toxic CO2 emergency (>= 8500 ppm)
-    // c) Normal ventilation (CO2 > target, O2 < min, RH > max) ONLY permitted if chamber is NOT under-temperature
-    bool criticalVent = (currentTemp >= (targetTemp + 0.3f)) || (currentCO2 >= 8500);
+    //    (CO2 emergency trigger disregarded due to unreliable sensor)
+    // b) Normal ventilation (O2 < min, RH > max) ONLY permitted if chamber is NOT under-temperature
+    //    (CO2 threshold trigger disregarded due to unreliable sensor)
+    bool criticalVent = (currentTemp >= (targetTemp + 0.3f));
     bool normalVent = (!isUnderTemp) && (
-        (currentCO2 > targetCO2) || 
         (currentO2 > 0.0f && currentO2 < o2Min) ||
         (currentRH > maxRH)
     );

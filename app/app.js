@@ -964,15 +964,15 @@ function evaluateSmartAlerts(temp, rh, o2, actuators) {
             addDashboardNotification({
                 type: 'warning',
                 category: 'co2',
-                msg: `CO2 LEVEL IS ${currentCO2} PPM, EXCEEDS ${isHatching ? 'HATCHING' : 'SETTING'} LIMIT (${co2Limit} PPM). EXHAUST FAN IS TURNED ON.`,
+                msg: `CO2 LEVEL IS ${currentCO2} PPM, EXCEEDS ${isHatching ? 'HATCHING' : 'SETTING'} LIMIT (${co2Limit} PPM). (EXHAUST ACTUATION DISREGARDED).`,
                 pushTitle: `⚠️ High CO2 · ${currentCO2} ppm`,
-                pushBody: `Limit: ${co2Limit} ppm · Exhaust fan active`
+                pushBody: `Limit: ${co2Limit} ppm · Actuator bypass active`
             });
         } else if (currentCO2State === 'NORMAL' && paramStateHistory.co2State !== 'NORMAL') {
             addDashboardNotification({
                 type: 'success',
                 category: 'co2',
-                msg: `CO2 LEVEL IS NOW ${currentCO2} PPM, IT'S NORMAL. EXHAUST FAN TURNED OFF.`,
+                msg: `CO2 LEVEL IS NOW ${currentCO2} PPM, IT'S NORMAL.`,
                 push: false
             });
         }
