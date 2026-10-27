@@ -130,6 +130,15 @@ class CameraManager:
         _, jpeg_bytes = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
         return jpeg_bytes.tobytes()
 
+    def save_raw_snapshot(self, output_path) -> dict:
+        """Captures an unannotated raw frame and saves it to the specified path as a clean JPEG."""
+        frame = self.capture_raw_frame()
+        if frame is not None:
+            cv2.imwrite(str(output_path), frame)
+            h, w = frame.shape[:2]
+            return {"success": True, "width": w, "height": h}
+        return {"success": False, "error": "Camera frame not available"}
+
     def generate_mjpeg_stream(self, get_telemetry_fn=None):
         """Yields MJPEG stream packets for real-time video streaming in the browser."""
         while True:

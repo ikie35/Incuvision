@@ -12,8 +12,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Poppins:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
     <link rel="icon" type="image/png" href="./icons/logo.png">
-    <link rel="stylesheet" href="/dashboard/style.css?v=50">
-    <link rel="stylesheet" href="./style.css?v=50">
+    <link rel="stylesheet" href="/dashboard/style.css?v=51">
+    <link rel="stylesheet" href="./style.css?v=51">
     <style>
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 :root {
@@ -382,6 +382,100 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
 .btn-confirm-delete:active, .btn-confirm-cancel:active {
     transform: scale(0.97);
 }
+
+/* Normal Snapshot Action Card & Modal */
+.card-action-snapshot {
+    border-color: rgba(100, 116, 139, 0.25) !important;
+    box-shadow: 0 4px 14px rgba(100, 116, 139, 0.06) !important;
+}
+.card-action-snapshot:hover {
+    border-color: rgba(100, 116, 139, 0.45) !important;
+    box-shadow: 0 6px 18px rgba(100, 116, 139, 0.12) !important;
+}
+.icon-snapshot {
+    background: rgba(100, 116, 139, 0.08) !important;
+    color: #475569 !important;
+}
+.modal-box-snapshot {
+    max-width: 420px;
+    padding: 18px;
+}
+.snapshot-chip {
+    font-family: var(--font-heading);
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    background: #F1F5F9;
+    color: #475569;
+    border: 1px solid #CBD5E1;
+    padding: 3px 8px;
+    border-radius: var(--radius-pill);
+}
+.snapshot-time {
+    font-family: var(--font-mono);
+    font-size: 0.70rem;
+    font-weight: 600;
+    color: #64748B;
+}
+.snapshot-img-container {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background: #000000;
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #E2E8F0;
+}
+.snapshot-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+}
+.snapshot-actions-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 8px;
+    margin-top: 4px;
+}
+.btn-snapshot-download {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 11px 14px;
+    border-radius: 10px;
+    background: #1E293B;
+    color: #FFFFFF !important;
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 0.82rem;
+    text-decoration: none !important;
+    transition: all 0.15s ease;
+}
+.btn-snapshot-download:hover {
+    background: #0F172A;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.2);
+}
+.btn-snapshot-close {
+    padding: 11px 14px;
+    border-radius: 10px;
+    background: #F1F5F9;
+    border: 1px solid #CBD5E1;
+    color: #475569;
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.btn-snapshot-close:hover {
+    background: #E2E8F0;
+    color: #1E293B;
+}
     </style>
 </head>
 <body>
@@ -716,6 +810,13 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
                             </svg>
                             <span id="btnCamLightText">Light</span>
                         </button>
+                        <button class="cam-btn" id="btnCameraSnapshot" onclick="takeNormalSnapshot()" title="Capture Photo (No AI)">
+                            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                                <circle cx="12" cy="13" r="4"></circle>
+                            </svg>
+                            <span id="btnSnapshotQuickText">Snap</span>
+                        </button>
                         <button class="cam-btn" id="btnCameraPower" onclick="toggleCameraPower()">
                             <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                                 <rect x="2" y="6" width="14" height="12" rx="2"></rect>
@@ -842,6 +943,21 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
                     <div class="action-btn-text-group">
                         <span class="calendar-btn-label" id="btnCandlingLabel">Run AI Candling Audit</span>
                         <span class="calendar-btn-sub">YOLOv8 Scan & Viability Classification</span>
+                    </div>
+                </div>
+
+                <!-- Normal Capture (No AI) Card -->
+                <div class="card card-action-calendar card-action-snapshot" id="btnNormalCaptureCard" onclick="takeNormalSnapshot()" title="Capture clean raw frame without AI">
+                    <div class="calendar-icon icon-snapshot">
+                        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="18" height="18" rx="4" ry="4"></rect>
+                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                            <polyline points="21 15 16 10 5 21"></polyline>
+                        </svg>
+                    </div>
+                    <div class="action-btn-text-group">
+                        <span class="calendar-btn-label" id="btnSnapshotCardLabel">Capture Photo (No AI)</span>
+                        <span class="calendar-btn-sub">Clean Raw Still Frame · Direct Download</span>
                     </div>
                 </div>
 
@@ -1098,13 +1214,42 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
         </div>
     </div>
 
+    <!-- Clean Snapshot Preview Modal (No AI) -->
+    <div class="modal-backdrop" id="snapshotModal" onclick="closeSnapshotModal(event)">
+        <div class="modal-box modal-box-snapshot" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span class="snapshot-chip">RAW SNAPSHOT</span>
+                    <span class="snapshot-time" id="snapshotTime">Just now</span>
+                </div>
+                <button class="modal-close" onclick="closeSnapshotModal()">&times;</button>
+            </div>
+            <div class="modal-body" style="display: flex; flex-direction: column; gap: 12px;">
+                <div class="snapshot-img-container">
+                    <img id="snapshotImgPreview" src="" alt="Normal Camera Snapshot" class="snapshot-img" />
+                </div>
+                <div class="snapshot-actions-row">
+                    <a id="btnDownloadSnapshot" href="#" download="incuvision_clean_snapshot.jpg" class="btn-snapshot-download">
+                        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        <span>Save to Device</span>
+                    </a>
+                    <button type="button" class="btn-snapshot-close" onclick="closeSnapshotModal()">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Notification Container -->
     <div id="appToast" class="app-toast"></div>
 
-    <script src="/dashboard/app.js?v=50"></script>
+    <script src="/dashboard/app.js?v=51"></script>
     <script>
         if (typeof switchNav === 'undefined') {
-            document.write('<script src="./app.js?v=50"><\/script>');
+            document.write('<script src="./app.js?v=51"><\/script>');
         }
     </script>
 </body>

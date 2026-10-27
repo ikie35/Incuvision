@@ -2269,3 +2269,112 @@ body {
     transform: scale(0.97);
 }
 
+/* ==========================================================================
+   Normal Snapshot Action Card & Modal
+   ========================================================================== */
+.card-action-snapshot {
+    border-color: rgba(100, 116, 139, 0.25) !important;
+    box-shadow: 0 4px 14px rgba(100, 116, 139, 0.06) !important;
+}
+
+.card-action-snapshot:hover {
+    border-color: rgba(100, 116, 139, 0.45) !important;
+    box-shadow: 0 6px 18px rgba(100, 116, 139, 0.12) !important;
+}
+
+.icon-snapshot {
+    background: rgba(100, 116, 139, 0.08) !important;
+    color: #475569 !important;
+}
+
+.modal-box-snapshot {
+    max-width: 420px;
+    padding: 18px;
+}
+
+.snapshot-chip {
+    font-family: var(--font-heading);
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    background: #F1F5F9;
+    color: #475569;
+    border: 1px solid #CBD5E1;
+    padding: 3px 8px;
+    border-radius: var(--radius-pill);
+}
+
+.snapshot-time {
+    font-family: var(--font-mono);
+    font-size: 0.70rem;
+    font-weight: 600;
+    color: #64748B;
+}
+
+.snapshot-img-container {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background: #000000;
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #E2E8F0;
+}
+
+.snapshot-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+}
+
+.snapshot-actions-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+.btn-snapshot-download {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 11px 14px;
+    border-radius: 10px;
+    background: #1E293B;
+    color: #FFFFFF !important;
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 0.82rem;
+    text-decoration: none !important;
+    transition: all 0.15s ease;
+}
+
+.btn-snapshot-download:hover {
+    background: #0F172A;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.2);
+}
+
+.btn-snapshot-close {
+    padding: 11px 14px;
+    border-radius: 10px;
+    background: #F1F5F9;
+    border: 1px solid #CBD5E1;
+    color: #475569;
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.btn-snapshot-close:hover {
+    background: #E2E8F0;
+    color: #1E293B;
+}
+
+

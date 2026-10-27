@@ -150,6 +150,26 @@ def get_camera_snapshot():
     jpeg_bytes = camera_mgr.get_snapshot_jpeg(overlay_telemetry=telem)
     return Response(content=jpeg_bytes, media_type="image/jpeg")
 
+@app.post("/api/camera/capture")
+def capture_camera_snapshot():
+    """Captures a clean full-resolution raw snapshot directly from the camera without running AI."""
+    timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"snapshot_{timestamp_str}.jpg"
+    filepath = CAPTURES_DIR / filename
+
+    res = camera_mgr.save_raw_snapshot(filepath)
+    if not res.get("success"):
+        raise HTTPException(status_code=500, detail=res.get("error", "Capture failed"))
+
+    return {
+        "status": "success",
+        "filename": filename,
+        "url": f"/captures/{filename}",
+        "timestamp": datetime.now().isoformat(),
+        "width": res.get("width"),
+        "height": res.get("height")
+    }
+
 @app.get("/api/camera/stream")
 def get_camera_stream():
     def get_telem():

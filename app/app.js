@@ -2341,4 +2341,62 @@ const updateCleanProtocolUI = renderProtocolCards;
 const setIncubationDayFromMenu = saveIncubationSchedule;
 const saveMenuSetpoints = saveTargetSetpoints;
 
+// =============================================================================
+// NORMAL CAMERA SNAPSHOT (NO AI INFERENCE)
+// =============================================================================
+async function takeNormalSnapshot() {
+    const quickText = document.getElementById('btnSnapshotQuickText');
+    const cardLabel = document.getElementById('btnSnapshotCardLabel');
+    const originalCardText = cardLabel ? cardLabel.innerText : "Capture Photo (No AI)";
+    
+    if (quickText) quickText.innerText = "Snapping...";
+    if (cardLabel) cardLabel.innerText = "Capturing...";
+    showToast("Capturing clean camera photo (No AI)...");
+
+    try {
+        const res = await fetch('/api/camera/capture', { method: 'POST' });
+        const data = await res.json();
+        if (data.status === 'success' && data.url) {
+            showToast("Clean photo captured & saved.");
+
+            // Populate snapshot preview modal
+            const modal = document.getElementById('snapshotModal');
+            const imgPreview = document.getElementById('snapshotImgPreview');
+            const timeLabel = document.getElementById('snapshotTime');
+            const btnDownload = document.getElementById('btnDownloadSnapshot');
+
+            if (imgPreview) {
+                imgPreview.src = `${data.url}?t=${Date.now()}`;
+            }
+            if (timeLabel) {
+                const now = new Date();
+                timeLabel.innerText = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            }
+            if (btnDownload) {
+                btnDownload.href = data.url;
+                btnDownload.setAttribute('download', data.filename || `incuvision_snapshot_${Date.now()}.jpg`);
+            }
+            if (modal) {
+                modal.classList.add('open');
+            }
+        } else {
+            showToast("Capture failed: " + (data.detail || data.message || "Camera busy"), true);
+        }
+    } catch (e) {
+        showToast("Snapshot connection error: " + e, true);
+    } finally {
+        if (quickText) quickText.innerText = "Snap";
+        if (cardLabel) cardLabel.innerText = originalCardText;
+    }
+}
+
+function closeSnapshotModal(event) {
+    if (event && event.target && !event.target.classList.contains('modal-backdrop') && !event.target.classList.contains('modal-close') && !event.target.classList.contains('btn-snapshot-close')) {
+        return;
+    }
+    const modal = document.getElementById('snapshotModal');
+    if (modal) modal.classList.remove('open');
+}
+
+
 
