@@ -179,6 +179,13 @@ def trigger_candling():
     res = coordinator.trigger_candling_audit_now()
     return {"status": "success", "result": res}
 
+@app.post("/api/candling/discard")
+def discard_candling():
+    if not coordinator:
+        raise HTTPException(status_code=503, detail="Coordinator not ready")
+    res = coordinator.discard_latest_audit()
+    return res
+
 @app.post("/api/control/setpoints")
 def update_setpoints(payload: SetpointsPayload):
     if not mqtt_bridge:

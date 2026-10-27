@@ -195,6 +195,17 @@ class IncubationCoordinator:
             with self._lock:
                 self.is_auditing_now = False
 
+    def discard_latest_audit(self) -> dict:
+        """Discards the most recent candling audit, purging files and rolling back latest audit state."""
+        with self._lock:
+            deleted = logger.delete_latest_audit()
+            self.latest_audit_result = logger.get_latest_audit()
+            return {
+                "status": "success",
+                "deleted": deleted,
+                "latest_audit": self.latest_audit_result
+            }
+
     def _run_loop(self):
         last_lcd_update = 0
         last_log_time = time.time()

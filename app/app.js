@@ -389,6 +389,9 @@ function handleIncomingTelemetry(data) {
     // Latest Candling Audit Data
     if (data.latest_audit) {
         renderAuditScores(data.latest_audit, false);
+    } else {
+        const deck = document.getElementById('auditReviewDeck');
+        if (deck) deck.style.display = 'none';
     }
 }
 
@@ -1178,6 +1181,11 @@ function switchCameraView(mode) {
             showCameraPaused();
         }
     } else if (mode === 'audit') {
+        if (!latestAuditImageUrl) {
+            showToast("No candling scan captured yet. Run an audit first.", true);
+            switchCameraView('live');
+            return;
+        }
         if (tabAudit) tabAudit.classList.add('active');
         if (tabLive) tabLive.classList.remove('active');
         if (returnLiveBtn) returnLiveBtn.style.display = 'flex';
@@ -1185,9 +1193,7 @@ function switchCameraView(mode) {
         if (offlineScreen) offlineScreen.style.display = 'none';
 
         if (streamImg) {
-            if (latestAuditImageUrl) {
-                streamImg.src = `${latestAuditImageUrl}?t=${Date.now()}`;
-            }
+            streamImg.src = `${latestAuditImageUrl}?t=${Date.now()}`;
             streamImg.style.display = 'block';
         }
         if (badge) {
@@ -1326,7 +1332,11 @@ async function triggerCandlingAudit() {
 }
 
 function renderAuditScores(audit, switchToAudit = true) {
-    if (!audit || audit.error) return;
+    const deck = document.getElementById('auditReviewDeck');
+    if (!audit || audit.error) {
+        if (deck) deck.style.display = 'none';
+        return;
+    }
 
     const fertileScore = document.getElementById('scoreFertile');
     const infertileScore = document.getElementById('scoreInfertile');
@@ -1366,6 +1376,37 @@ function renderAuditScores(audit, switchToAudit = true) {
         });
     }
 
+    // Populate & reveal Audit Review Deck
+    if (deck) {
+        deck.style.display = 'flex';
+        const dayChip = document.getElementById('auditDeckDayChip');
+        if (dayChip) {
+            dayChip.innerText = `DAY ${audit.day || currentDay || 7} SCAN`;
+        }
+        const timeSpan = document.getElementById('auditDeckTimestamp');
+        if (timeSpan) {
+            if (audit.timestamp) {
+                try {
+                    const d = new Date(audit.timestamp);
+                    timeSpan.innerText = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                } catch(e) {
+                    timeSpan.innerText = 'Just now';
+                }
+            } else {
+                timeSpan.innerText = 'Just now';
+            }
+        }
+        const btnSave = document.getElementById('btnDownloadCapture');
+        if (btnSave) {
+            const dlUrl = audit.annotated_image_url || audit.image_url || latestAuditImageUrl;
+            if (dlUrl) {
+                btnSave.href = dlUrl;
+                btnSave.setAttribute('download', `incuvision_day${audit.day || currentDay || 7}_candling.jpg`);
+                btnSave.style.display = 'inline-flex';
+            }
+        }
+    }
+
     if (switchToAudit && audit && !audit.error) {
         addDashboardNotification({
             type: 'info',
@@ -1375,6 +1416,107 @@ function renderAuditScores(audit, switchToAudit = true) {
             pushBody: `Fertility: ${rate.toFixed(1)}% (${fertileCount}/${total} fertile)`,
             cooldownSecs: 60
         });
+    }
+}
+
+async function retakeCandlingAudit() {
+    const btnRetake = document.getElementById('btnRetakeAudit');
+    const btnTitle = document.getElementById('btnRetakeTitle');
+    if (btnRetake && btnRetake.classList.contains('is-retaking')) return;
+
+    if (btnRetake) btnRetake.classList.add('is-retaking');
+    if (btnTitle) btnTitle.innerText = "Re-scanning...";
+    showToast("Capturing fresh candling frame & running YOLOv8...");
+
+    try {
+        const res = await fetch('/api/candling/trigger', { method: 'POST' });
+        const data = await res.json();
+        if (data.status === 'success' && data.result) {
+            if (data.result.error) {
+                showToast("Candling note: " + data.result.error, true);
+            } else {
+                renderAuditScores(data.result, true);
+                showToast("Scan updated successfully with fresh frame.");
+            }
+        } else {
+            showToast("Retake failed: " + (data.detail || "Server error"), true);
+        }
+    } catch (e) {
+        showToast("Connection error during re-take: " + e, true);
+    } finally {
+        if (btnRetake) btnRetake.classList.remove('is-retaking');
+        if (btnTitle) btnTitle.innerText = "Re-take & Replace";
+    }
+}
+
+function discardCandlingAudit() {
+    const modal = document.getElementById('discardConfirmModal');
+    if (modal) {
+        modal.classList.add('open');
+    } else if (confirm("Discard this candling scan? The photo and scores will be removed.")) {
+        executeDiscardAudit();
+    }
+}
+
+function closeDiscardConfirmModal(event) {
+    if (event && event.target && !event.target.classList.contains('modal-backdrop') && !event.target.classList.contains('btn-confirm-cancel')) {
+        return;
+    }
+    const modal = document.getElementById('discardConfirmModal');
+    if (modal) modal.classList.remove('open');
+}
+
+async function executeDiscardAudit() {
+    const modal = document.getElementById('discardConfirmModal');
+    const btnExecute = document.getElementById('btnConfirmDiscardExecute');
+    if (btnExecute) {
+        btnExecute.disabled = true;
+        btnExecute.innerText = "Purging...";
+    }
+
+    try {
+        const res = await fetch('/api/candling/discard', { method: 'POST' });
+        const data = await res.json();
+        if (data.status === 'success') {
+            showToast("Scan discarded. Reverted to live stream.");
+            if (modal) modal.classList.remove('open');
+
+            // Reset scores display to --
+            const fertileScore = document.getElementById('scoreFertile');
+            const infertileScore = document.getElementById('scoreInfertile');
+            const fertileSub = document.getElementById('scoreFertileSub');
+            const infertileSub = document.getElementById('scoreInfertileSub');
+            if (fertileScore) fertileScore.innerText = '--';
+            if (infertileScore) infertileScore.innerText = '--';
+            if (fertileSub) fertileSub.innerText = 'Embryo Viable';
+            if (infertileSub) infertileSub.innerText = 'Clear / Quitter';
+
+            // Reset egg matrix data
+            eggMatrixData = [];
+            for (let i = 1; i <= 56; i++) {
+                const slot = document.getElementById('eggSlot-' + i);
+                if (slot) slot.className = 'egg-slot-pill';
+            }
+
+            // Invalidate latestAuditImageUrl
+            latestAuditImageUrl = null;
+
+            // Hide review deck
+            const deck = document.getElementById('auditReviewDeck');
+            if (deck) deck.style.display = 'none';
+
+            // Switch camera view back to live
+            switchCameraView('live');
+        } else {
+            showToast("Discard failed: " + (data.message || data.detail || "Server error"), true);
+        }
+    } catch (e) {
+        showToast("Connection error while discarding: " + e, true);
+    } finally {
+        if (btnExecute) {
+            btnExecute.disabled = false;
+            btnExecute.innerText = "Discard & Purge";
+        }
     }
 }
 

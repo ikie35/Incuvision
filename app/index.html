@@ -588,6 +588,58 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
                     </div>
                 </div>
 
+                <!-- Active Audit Review & Management Deck (Visible when scan is active) -->
+                <div class="card card-audit-deck" id="auditReviewDeck" style="display: none;">
+                    <div class="audit-deck-header">
+                        <div class="audit-deck-meta">
+                            <span class="audit-deck-chip" id="auditDeckDayChip">DAY 7 SCAN</span>
+                            <span class="audit-deck-time" id="auditDeckTimestamp">Just now</span>
+                        </div>
+                        <a id="btnDownloadCapture" href="#" download="incuvision_candling_scan.jpg" class="btn-audit-mini" title="Download High-Res Annotated Scan" target="_blank">
+                            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                            <span>Save Photo</span>
+                        </a>
+                    </div>
+
+                    <div class="audit-deck-prompt">
+                        <span class="audit-deck-prompt-title">Reviewing Candling Capture</span>
+                        <span class="audit-deck-prompt-desc">Satisfied with exposure & focus? Keep or re-take below.</span>
+                    </div>
+
+                    <!-- Dual Decision Buttons -->
+                    <div class="audit-deck-actions-grid">
+                        <button type="button" class="btn-deck-action btn-deck-retake" onclick="retakeCandlingAudit()" id="btnRetakeAudit">
+                            <div class="btn-deck-icon-wrap icon-amber">
+                                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M23 4v6h-6"></path>
+                                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                                </svg>
+                            </div>
+                            <div class="btn-deck-text-wrap">
+                                <span class="btn-deck-title" id="btnRetakeTitle">Re-take & Replace</span>
+                                <span class="btn-deck-sub">Fresh frame & re-audit</span>
+                            </div>
+                        </button>
+
+                        <button type="button" class="btn-deck-action btn-deck-discard" onclick="discardCandlingAudit()" id="btnDiscardAudit" title="Discard this scan and return to live stream">
+                            <div class="btn-deck-icon-wrap icon-slate">
+                                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                </svg>
+                            </div>
+                            <div class="btn-deck-text-wrap">
+                                <span class="btn-deck-title">Discard Run</span>
+                                <span class="btn-deck-sub">Purge from database</span>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
                 <!-- Run AI Candling Audit Button Card -->
                 <div class="card card-action-calendar" id="btnRunCandlingAudit" onclick="triggerCandlingAudit()">
                     <div class="calendar-icon">
@@ -833,13 +885,35 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
         </div>
     </div>
 
+    <!-- Candling Discard Confirmation Modal -->
+    <div class="modal-backdrop" id="discardConfirmModal" onclick="closeDiscardConfirmModal(event)">
+        <div class="modal-box modal-box-confirm" onclick="event.stopPropagation()">
+            <div class="confirm-icon-bubble">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#DC2626" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    <line x1="10" y1="11" x2="10" y2="17"></line>
+                    <line x1="14" y1="11" x2="14" y2="17"></line>
+                </svg>
+            </div>
+            <div class="confirm-content">
+                <h3 class="confirm-title">Discard Candling Scan?</h3>
+                <p class="confirm-desc">This permanently removes the captured candling photo and calculated fertility metrics from the incubator database. Live camera feed will be restored.</p>
+            </div>
+            <div class="confirm-actions">
+                <button type="button" class="btn-confirm-cancel" onclick="closeDiscardConfirmModal()">Keep Scan</button>
+                <button type="button" class="btn-confirm-delete" onclick="executeDiscardAudit()" id="btnConfirmDiscardExecute">Discard & Purge</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Notification Container -->
     <div id="appToast" class="app-toast"></div>
 
-    <script src="/dashboard/app.js?v=47"></script>
+    <script src="/dashboard/app.js?v=48"></script>
     <script>
         if (typeof switchNav === 'undefined') {
-            document.write('<script src="./app.js?v=47"><\/script>');
+            document.write('<script src="./app.js?v=48"><\/script>');
         }
     </script>
 </body>

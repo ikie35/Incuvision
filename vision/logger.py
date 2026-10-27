@@ -145,8 +145,41 @@ class DataLogger:
                 return r
             return None
         except Exception as e:
-            print(f"[LOGGER] Query latest audit error: {e}")
+            print(f"[LOGGER] Audit query error: {e}")
             return None
+
+    def delete_latest_audit(self) -> bool:
+        """Deletes the most recent candling audit from the database and removes associated image files."""
+        try:
+            conn = sqlite3.connect(DB_PATH)
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            cursor.execute("SELECT id, image_path, annotated_image_path FROM candling_audits ORDER BY id DESC LIMIT 1")
+            row = cursor.fetchone()
+            if not row:
+                conn.close()
+                return False
+            
+            audit_id = row["id"]
+            img_path = row["image_path"]
+            ann_path = row["annotated_image_path"]
+
+            cursor.execute("DELETE FROM candling_audits WHERE id = ?", (audit_id,))
+            conn.commit()
+            conn.close()
+
+            # Clean up files on disk if present
+            for p in [img_path, ann_path]:
+                if p and os.path.exists(p):
+                    try:
+                        os.remove(p)
+                    except Exception:
+                        pass
+            print(f"[LOGGER] Successfully deleted latest candling audit #{audit_id}.")
+            return True
+        except Exception as e:
+            print(f"[LOGGER] Error deleting latest audit: {e}")
+            return False
 
     def export_telemetry_csv_string(self, order: str = "desc") -> str:
         """Exports all telemetry records to a CSV string. Defaults to DESC (latest reading at the top)."""
