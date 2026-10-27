@@ -1379,6 +1379,7 @@ function renderAuditScores(audit, switchToAudit = true) {
     // Populate & reveal Audit Review Deck
     if (deck) {
         deck.style.display = 'flex';
+        deck.style.flexDirection = 'column';
         const dayChip = document.getElementById('auditDeckDayChip');
         if (dayChip) {
             dayChip.innerText = `DAY ${audit.day || currentDay || 7} SCAN`;
