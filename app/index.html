@@ -12,8 +12,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Poppins:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
     <link rel="icon" type="image/png" href="./icons/logo.png">
-    <link rel="stylesheet" href="/dashboard/style.css?v=49">
-    <link rel="stylesheet" href="./style.css?v=49">
+    <link rel="stylesheet" href="/dashboard/style.css?v=50">
+    <link rel="stylesheet" href="./style.css?v=50">
     <style>
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 :root {
@@ -180,28 +180,25 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
 .modal-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #6B7280; }
 
 /* ==========================================================================
-   Professional Candling Audit Review Deck Styles (Inlined for 0-Cache Lag)
+   Minimalist Hardware-Style Candling Audit Bar (Ultra-Clean, 0-Fluff)
    ========================================================================== */
 .card-audit-deck {
     display: flex;
     flex-direction: column !important;
-    gap: 12px;
-    padding: 16px 18px;
+    gap: 10px;
+    padding: 12px 14px;
     background: #FFFFFF;
-    border: 1px solid rgba(168, 40, 32, 0.14);
-    box-shadow: 0 4px 16px rgba(120, 60, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.03);
+    border: 1px solid rgba(168, 40, 32, 0.12);
+    box-shadow: 0 2px 8px rgba(120, 60, 0, 0.04);
     border-radius: var(--radius-card, 18px);
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-    position: relative;
-    overflow: hidden;
+    transition: all 0.2s ease;
 }
-.audit-deck-header {
+.audit-deck-top {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding-bottom: 10px;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-    width: 100%;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 .audit-deck-meta {
     display: flex;
@@ -210,14 +207,14 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
 }
 .audit-deck-chip {
     font-family: var(--font-heading);
-    font-size: 0.68rem;
+    font-size: 0.65rem;
     font-weight: 800;
     letter-spacing: 0.06em;
     text-transform: uppercase;
     background: #FEF3C7;
     color: #92400E;
     border: 1px solid rgba(245, 158, 11, 0.35);
-    padding: 3px 9px;
+    padding: 2px 8px;
     border-radius: var(--radius-pill);
     display: inline-flex;
     align-items: center;
@@ -227,175 +224,95 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
     font-size: 0.70rem;
     font-weight: 600;
     color: #6B7280;
-    letter-spacing: -0.01em;
 }
-.btn-audit-mini {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 12px;
-    background: #F8FAFC;
-    border: 1px solid #CBD5E1;
-    border-radius: 8px;
-    color: #334155 !important;
-    font-size: 0.74rem;
-    font-weight: 700;
-    text-decoration: none !important;
-    cursor: pointer;
-    transition: all 0.15s ease;
-}
-.btn-audit-mini:hover {
-    background: #F1F5F9;
-    border-color: #94A3B8;
-    color: #0F172A !important;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-}
-.btn-audit-mini:active {
-    transform: scale(0.97);
-}
-.btn-audit-mini svg {
-    flex-shrink: 0;
-}
-.audit-deck-prompt {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    background: #FBF8F3;
-    border-left: 3px solid #D97706;
-    border-radius: 6px;
-    padding: 8px 12px;
-    width: 100%;
-}
-.audit-deck-prompt-title {
+.audit-deck-status-tag {
     font-family: var(--font-heading);
-    font-size: 0.76rem;
-    font-weight: 700;
-    color: #292524;
-    letter-spacing: 0.01em;
-}
-.audit-deck-prompt-desc {
-    font-size: 0.70rem;
-    color: #78716C;
-    line-height: 1.35;
+    font-size: 0.62rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    color: #9CA3AF;
+    text-transform: uppercase;
 }
 .audit-deck-actions-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    width: 100%;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
 }
 .btn-deck-action {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 12px;
-    border-radius: 12px;
-    border: 1.5px solid #E5E7EB;
-    background: #FFFFFF;
-    cursor: pointer;
-    text-align: left;
-    transition: all 0.16s ease;
-    font-family: var(--font-body);
-}
-.btn-deck-icon-wrap {
-    width: 34px;
-    height: 34px;
-    border-radius: 8px;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    flex-shrink: 0;
+    gap: 6px;
+    padding: 9px 8px;
+    border-radius: 10px;
+    border: 1px solid #E5E7EB;
+    background: #FFFFFF;
+    cursor: pointer;
+    text-decoration: none;
     transition: all 0.15s ease;
-}
-.btn-deck-text-wrap {
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-    min-width: 0;
-}
-.btn-deck-title {
     font-family: var(--font-heading);
-    font-size: 0.78rem;
+    font-size: 0.75rem;
     font-weight: 700;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
-.btn-deck-sub {
-    font-size: 0.65rem;
-    font-weight: 500;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+.btn-deck-action svg {
+    flex-shrink: 0;
 }
 .btn-deck-retake {
-    background: linear-gradient(180deg, #FFFFFF 0%, #FFFBEB 100%);
-    border-color: rgba(245, 158, 11, 0.45);
-}
-.btn-deck-retake .icon-amber {
-    background: #FEF3C7;
-    color: #B45309;
-}
-.btn-deck-retake .btn-deck-title {
+    background: #FFFBEB;
+    border-color: rgba(245, 158, 11, 0.35);
     color: #92400E;
-}
-.btn-deck-retake .btn-deck-sub {
-    color: #B45309;
-    opacity: 0.85;
 }
 .btn-deck-retake:hover {
     background: #FEF3C7;
     border-color: #F59E0B;
-    transform: translateY(-1.5px);
-    box-shadow: 0 4px 10px rgba(245, 158, 11, 0.16);
+    color: #78350F;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(245, 158, 11, 0.15);
 }
 .btn-deck-retake:active {
-    transform: scale(0.97);
+    transform: scale(0.96);
 }
 .btn-deck-retake.is-retaking {
     pointer-events: none;
-    opacity: 0.8;
+    opacity: 0.75;
 }
 .btn-deck-retake.is-retaking svg {
-    animation: spinAudit 0.9s linear infinite;
+    animation: spinAudit 0.8s linear infinite;
 }
 @keyframes spinAudit {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
 }
-.btn-deck-discard {
-    background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%);
-    border-color: #E2E8F0;
+.btn-deck-save {
+    background: #F8FAFC;
+    border-color: #CBD5E1;
+    color: #334155 !important;
 }
-.btn-deck-discard .icon-slate {
+.btn-deck-save:hover {
     background: #F1F5F9;
-    color: #64748B;
+    border-color: #94A3B8;
+    color: #0F172A !important;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
 }
-.btn-deck-discard .btn-deck-title {
-    color: #334155;
+.btn-deck-save:active {
+    transform: scale(0.96);
 }
-.btn-deck-discard .btn-deck-sub {
-    color: #64748B;
-}
-.btn-deck-discard:hover {
-    background: #FEF2F2;
-    border-color: rgba(239, 68, 68, 0.45);
-    transform: translateY(-1.5px);
-    box-shadow: 0 4px 10px rgba(220, 38, 38, 0.08);
-}
-.btn-deck-discard:hover .icon-slate {
-    background: #FEE2E2;
-    color: #DC2626;
-}
-.btn-deck-discard:hover .btn-deck-title {
+.btn-deck-discard {
+    background: #FFF5F5;
+    border-color: #FECACA;
     color: #B91C1C;
 }
-.btn-deck-discard:hover .btn-deck-sub {
-    color: #DC2626;
+.btn-deck-discard:hover {
+    background: #FEE2E2;
+    border-color: #F87171;
+    color: #991B1B;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(220, 38, 38, 0.12);
 }
 .btn-deck-discard:active {
-    transform: scale(0.97);
+    transform: scale(0.96);
 }
 .modal-box-confirm {
     text-align: center;
@@ -875,54 +792,41 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
                     </div>
                 </div>
 
-                <!-- Active Audit Review & Management Deck (Visible when scan is active) -->
+                <!-- Active Audit Review & Management Deck (Compact & Clinical) -->
                 <div class="card card-audit-deck" id="auditReviewDeck" style="display: none; flex-direction: column;">
-                    <div class="audit-deck-header">
+                    <div class="audit-deck-top">
                         <div class="audit-deck-meta">
                             <span class="audit-deck-chip" id="auditDeckDayChip">DAY 7 SCAN</span>
                             <span class="audit-deck-time" id="auditDeckTimestamp">Just now</span>
                         </div>
-                        <a id="btnDownloadCapture" href="#" download="incuvision_candling_scan.jpg" class="btn-audit-mini" title="Download High-Res Annotated Scan" target="_blank">
-                            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <span class="audit-deck-status-tag">LATEST AUDIT</span>
+                    </div>
+
+                    <!-- 3-Action Quick Toolbar -->
+                    <div class="audit-deck-actions-grid">
+                        <button type="button" class="btn-deck-action btn-deck-retake" onclick="retakeCandlingAudit()" id="btnRetakeAudit" title="Re-take candling capture">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M23 4v6h-6"></path>
+                                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                            </svg>
+                            <span id="btnRetakeTitle">Re-take</span>
+                        </button>
+
+                        <a id="btnDownloadCapture" href="#" download="incuvision_candling_scan.jpg" class="btn-deck-action btn-deck-save" title="Download High-Res Annotated Scan" target="_blank">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                                 <polyline points="7 10 12 15 17 10"></polyline>
                                 <line x1="12" y1="15" x2="12" y2="3"></line>
                             </svg>
                             <span>Save Photo</span>
                         </a>
-                    </div>
-
-                    <div class="audit-deck-prompt">
-                        <span class="audit-deck-prompt-title">Reviewing Candling Capture</span>
-                        <span class="audit-deck-prompt-desc">Satisfied with exposure & focus? Keep or re-take below.</span>
-                    </div>
-
-                    <!-- Dual Decision Buttons -->
-                    <div class="audit-deck-actions-grid">
-                        <button type="button" class="btn-deck-action btn-deck-retake" onclick="retakeCandlingAudit()" id="btnRetakeAudit">
-                            <div class="btn-deck-icon-wrap icon-amber">
-                                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M23 4v6h-6"></path>
-                                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-                                </svg>
-                            </div>
-                            <div class="btn-deck-text-wrap">
-                                <span class="btn-deck-title" id="btnRetakeTitle">Re-take & Replace</span>
-                                <span class="btn-deck-sub">Fresh frame & re-audit</span>
-                            </div>
-                        </button>
 
                         <button type="button" class="btn-deck-action btn-deck-discard" onclick="discardCandlingAudit()" id="btnDiscardAudit" title="Discard this scan and return to live stream">
-                            <div class="btn-deck-icon-wrap icon-slate">
-                                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                                    <polyline points="3 6 5 6 21 6"></polyline>
-                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                </svg>
-                            </div>
-                            <div class="btn-deck-text-wrap">
-                                <span class="btn-deck-title">Discard Run</span>
-                                <span class="btn-deck-sub">Purge from database</span>
-                            </div>
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            </svg>
+                            <span>Discard</span>
                         </button>
                     </div>
                 </div>
@@ -1197,10 +1101,10 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
     <!-- Toast Notification Container -->
     <div id="appToast" class="app-toast"></div>
 
-    <script src="/dashboard/app.js?v=49"></script>
+    <script src="/dashboard/app.js?v=50"></script>
     <script>
         if (typeof switchNav === 'undefined') {
-            document.write('<script src="./app.js?v=49"><\/script>');
+            document.write('<script src="./app.js?v=50"><\/script>');
         }
     </script>
 </body>

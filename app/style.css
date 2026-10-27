@@ -2035,28 +2035,26 @@ body {
 }
 
 /* ==========================================================================
-   Professional Candling Audit Review & Management Deck
+   Minimalist Hardware-Style Candling Audit Bar (Ultra-Clean, 0-Fluff)
    ========================================================================== */
 .card-audit-deck {
     display: flex;
-    flex-direction: column;
-    gap: 12px;
-    padding: 16px 18px;
+    flex-direction: column !important;
+    gap: 10px;
+    padding: 12px 14px;
     background: #FFFFFF;
-    border: 1px solid rgba(168, 40, 32, 0.14);
-    box-shadow: 0 4px 16px rgba(120, 60, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.03);
+    border: 1px solid rgba(168, 40, 32, 0.12);
+    box-shadow: 0 2px 8px rgba(120, 60, 0, 0.04);
     border-radius: var(--radius-card, 18px);
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-    position: relative;
-    overflow: hidden;
+    transition: all 0.2s ease;
 }
 
-.audit-deck-header {
+.audit-deck-top {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding-bottom: 10px;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .audit-deck-meta {
@@ -2067,14 +2065,14 @@ body {
 
 .audit-deck-chip {
     font-family: var(--font-heading);
-    font-size: 0.68rem;
+    font-size: 0.65rem;
     font-weight: 800;
     letter-spacing: 0.06em;
     text-transform: uppercase;
     background: #FEF3C7;
     color: #92400E;
     border: 1px solid rgba(245, 158, 11, 0.35);
-    padding: 3px 9px;
+    padding: 2px 8px;
     border-radius: var(--radius-pill);
     display: inline-flex;
     align-items: center;
@@ -2085,161 +2083,70 @@ body {
     font-size: 0.70rem;
     font-weight: 600;
     color: #6B7280;
-    letter-spacing: -0.01em;
 }
 
-/* Save Photo Utility Pill */
-.btn-audit-mini {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 5px 11px;
-    background: #F9FAFB;
-    border: 1px solid #D1D5DB;
-    border-radius: 8px;
-    color: #374151;
-    font-size: 0.72rem;
-    font-weight: 600;
-    text-decoration: none;
-    cursor: pointer;
-    transition: all 0.15s ease;
-}
-
-.btn-audit-mini:hover {
-    background: #F3F4F6;
-    border-color: #9CA3AF;
-    color: #111827;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-}
-
-.btn-audit-mini:active {
-    transform: scale(0.97);
-}
-
-.btn-audit-mini svg {
-    flex-shrink: 0;
-}
-
-/* Verification Guidance Callout */
-.audit-deck-prompt {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    background: #FBF8F3;
-    border-left: 3px solid #D97706;
-    border-radius: 6px;
-    padding: 8px 12px;
-}
-
-.audit-deck-prompt-title {
+.audit-deck-status-tag {
     font-family: var(--font-heading);
-    font-size: 0.76rem;
-    font-weight: 700;
-    color: #292524;
-    letter-spacing: 0.01em;
+    font-size: 0.62rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    color: #9CA3AF;
+    text-transform: uppercase;
 }
 
-.audit-deck-prompt-desc {
-    font-size: 0.70rem;
-    color: #78716C;
-    line-height: 1.35;
-}
-
-/* Dual Decision Action Grid */
 .audit-deck-actions-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
 }
 
 .btn-deck-action {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 12px;
-    border-radius: 12px;
-    border: 1.5px solid #E5E7EB;
-    background: #FFFFFF;
-    cursor: pointer;
-    text-align: left;
-    transition: all 0.16s ease;
-    font-family: var(--font-body);
-}
-
-.btn-deck-icon-wrap {
-    width: 34px;
-    height: 34px;
-    border-radius: 8px;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    flex-shrink: 0;
+    gap: 6px;
+    padding: 9px 8px;
+    border-radius: 10px;
+    border: 1px solid #E5E7EB;
+    background: #FFFFFF;
+    cursor: pointer;
+    text-decoration: none;
     transition: all 0.15s ease;
-}
-
-.btn-deck-text-wrap {
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-    min-width: 0;
-}
-
-.btn-deck-title {
     font-family: var(--font-heading);
-    font-size: 0.78rem;
+    font-size: 0.75rem;
     font-weight: 700;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
 
-.btn-deck-sub {
-    font-size: 0.65rem;
-    font-weight: 500;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+.btn-deck-action svg {
+    flex-shrink: 0;
 }
 
-/* Retake & Replace Styling (Amber Precision Lab Accent) */
 .btn-deck-retake {
-    background: linear-gradient(180deg, #FFFFFF 0%, #FFFBEB 100%);
-    border-color: rgba(245, 158, 11, 0.45);
-}
-
-.btn-deck-retake .icon-amber {
-    background: #FEF3C7;
-    color: #B45309;
-}
-
-.btn-deck-retake .btn-deck-title {
+    background: #FFFBEB;
+    border-color: rgba(245, 158, 11, 0.35);
     color: #92400E;
-}
-
-.btn-deck-retake .btn-deck-sub {
-    color: #B45309;
-    opacity: 0.85;
 }
 
 .btn-deck-retake:hover {
     background: #FEF3C7;
     border-color: #F59E0B;
-    transform: translateY(-1.5px);
-    box-shadow: 0 4px 10px rgba(245, 158, 11, 0.16);
+    color: #78350F;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(245, 158, 11, 0.15);
 }
 
 .btn-deck-retake:active {
-    transform: scale(0.97);
+    transform: scale(0.96);
 }
 
 .btn-deck-retake.is-retaking {
     pointer-events: none;
-    opacity: 0.8;
+    opacity: 0.75;
 }
 
 .btn-deck-retake.is-retaking svg {
-    animation: spinAudit 0.9s linear infinite;
+    animation: spinAudit 0.8s linear infinite;
 }
 
 @keyframes spinAudit {
@@ -2247,47 +2154,40 @@ body {
     to { transform: rotate(360deg); }
 }
 
-/* Discard Run Styling (Controlled Neutral/Crimson Warning) */
-.btn-deck-discard {
-    background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%);
-    border-color: #E2E8F0;
+.btn-deck-save {
+    background: #F8FAFC;
+    border-color: #CBD5E1;
+    color: #334155 !important;
 }
 
-.btn-deck-discard .icon-slate {
+.btn-deck-save:hover {
     background: #F1F5F9;
-    color: #64748B;
+    border-color: #94A3B8;
+    color: #0F172A !important;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
 }
 
-.btn-deck-discard .btn-deck-title {
-    color: #334155;
+.btn-deck-save:active {
+    transform: scale(0.96);
 }
 
-.btn-deck-discard .btn-deck-sub {
-    color: #64748B;
-}
-
-.btn-deck-discard:hover {
-    background: #FEF2F2;
-    border-color: rgba(239, 68, 68, 0.45);
-    transform: translateY(-1.5px);
-    box-shadow: 0 4px 10px rgba(220, 38, 38, 0.08);
-}
-
-.btn-deck-discard:hover .icon-slate {
-    background: #FEE2E2;
-    color: #DC2626;
-}
-
-.btn-deck-discard:hover .btn-deck-title {
+.btn-deck-discard {
+    background: #FFF5F5;
+    border-color: #FECACA;
     color: #B91C1C;
 }
 
-.btn-deck-discard:hover .btn-deck-sub {
-    color: #DC2626;
+.btn-deck-discard:hover {
+    background: #FEE2E2;
+    border-color: #F87171;
+    color: #991B1B;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(220, 38, 38, 0.12);
 }
 
 .btn-deck-discard:active {
-    transform: scale(0.97);
+    transform: scale(0.96);
 }
 
 /* Discard Confirmation Modal */

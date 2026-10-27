@@ -1426,7 +1426,7 @@ async function retakeCandlingAudit() {
     if (btnRetake && btnRetake.classList.contains('is-retaking')) return;
 
     if (btnRetake) btnRetake.classList.add('is-retaking');
-    if (btnTitle) btnTitle.innerText = "Re-scanning...";
+    if (btnTitle) btnTitle.innerText = "Scanning...";
     showToast("Capturing fresh candling frame & running YOLOv8...");
 
     try {
@@ -1446,7 +1446,7 @@ async function retakeCandlingAudit() {
         showToast("Connection error during re-take: " + e, true);
     } finally {
         if (btnRetake) btnRetake.classList.remove('is-retaking');
-        if (btnTitle) btnTitle.innerText = "Re-take & Replace";
+        if (btnTitle) btnTitle.innerText = "Re-take";
     }
 }
 
