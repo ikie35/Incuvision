@@ -301,12 +301,12 @@ function handleIncomingTelemetry(data) {
             const temp = parseFloat(telem.temp !== undefined ? telem.temp : 37.5);
             const valTempEl = document.getElementById('valTemp');
             const pillTemp = document.getElementById('analyticsTempPill');
-            if (valTempEl) valTempEl.innerText = `${temp.toFixed(1)}°C`;
-            if (pillTemp) pillTemp.innerText = `${temp.toFixed(1)}°`;
+            if (valTempEl) valTempEl.innerText = `${temp.toFixed(2)}°C`;
+            if (pillTemp) pillTemp.innerText = `${temp.toFixed(2)}°`;
 
             const rh = parseFloat(telem.rh !== undefined ? telem.rh : 58.0);
             const valRHEl = document.getElementById('valRH');
-            if (valRHEl) valRHEl.innerText = `${rh.toFixed(1)}%`;
+            if (valRHEl) valRHEl.innerText = `${rh.toFixed(2)}%`;
 
             const co2 = parseInt(telem.co2 !== undefined ? telem.co2 : 3200);
             const valCO2El = document.getElementById('valCO2');
@@ -314,7 +314,7 @@ function handleIncomingTelemetry(data) {
 
             const o2 = parseFloat(telem.o2 !== undefined ? telem.o2 : 20.9);
             const valO2El = document.getElementById('valO2');
-            if (valO2El) valO2El.innerText = `${o2.toFixed(1)}%`;
+            if (valO2El) valO2El.innerText = `${o2.toFixed(2)}%`;
         } catch (err) {
             console.error("[TELEMETRY] Error updating cards:", err);
         }
@@ -562,7 +562,7 @@ const metricConfigs = {
     temp: {
         title: 'TEMPERATURE',
         tabId: 'gTabTemp',
-        pillText: () => `${parseFloat(currentTelemetry.temp || 37.5).toFixed(1)}°C`,
+        pillText: () => `${parseFloat(currentTelemetry.temp || 37.5).toFixed(2)}°C`,
         strokeColor: '#E09930',
         gradTop: 'rgba(250, 217, 128, 0.45)',
         minVal: 30.0,
@@ -578,7 +578,7 @@ const metricConfigs = {
     rh: {
         title: 'HUMIDITY',
         tabId: 'gTabRH',
-        pillText: () => `${parseFloat(currentTelemetry.rh || 58.0).toFixed(1)}%`,
+        pillText: () => `${parseFloat(currentTelemetry.rh || 58.0).toFixed(2)}%`,
         strokeColor: '#0284C7',
         gradTop: 'rgba(186, 230, 253, 0.55)',
         minVal: 40.0,
@@ -608,7 +608,7 @@ const metricConfigs = {
     o2: {
         title: 'OXYGEN',
         tabId: 'gTabO2',
-        pillText: () => `${parseFloat(currentTelemetry.o2 || 20.9).toFixed(1)}%`,
+        pillText: () => `${parseFloat(currentTelemetry.o2 || 20.9).toFixed(2)}%`,
         strokeColor: '#7C3AED',
         gradTop: 'rgba(233, 213, 255, 0.55)',
         minVal: 19.0,
@@ -879,31 +879,31 @@ function evaluateSmartAlerts(temp, rh, o2, actuators) {
             addDashboardNotification({
                 type: 'warning',
                 category: 'temp',
-                msg: `TEMPERATURE IS ${temp.toFixed(1)}°C, BELOW ${isHatching ? 'HATCHING' : 'SETTING'} TARGET (${targetTemp}°C). PTC HEATER IS TURNED ON.`,
-                pushTitle: `🌡️ Low Temp · ${temp.toFixed(1)}°C`,
+                msg: `TEMPERATURE IS ${temp.toFixed(2)}°C, BELOW ${isHatching ? 'HATCHING' : 'SETTING'} TARGET (${targetTemp}°C). PTC HEATER IS TURNED ON.`,
+                pushTitle: `🌡️ Low Temp · ${temp.toFixed(2)}°C`,
                 pushBody: `Target: ${targetTemp}°C · PTC Heater ON`
             });
         } else if (currentTempState === 'HIGH') {
             addDashboardNotification({
                 type: 'warning',
                 category: 'temp',
-                msg: `TEMPERATURE IS ${temp.toFixed(1)}°C, ABOVE ${isHatching ? 'HATCHING' : 'SETTING'} TARGET (${targetTemp}°C). EXHAUST FAN IS ENGAGED.`,
-                pushTitle: `🌡️ High Temp · ${temp.toFixed(1)}°C`,
+                msg: `TEMPERATURE IS ${temp.toFixed(2)}°C, ABOVE ${isHatching ? 'HATCHING' : 'SETTING'} TARGET (${targetTemp}°C). EXHAUST FAN IS ENGAGED.`,
+                pushTitle: `🌡️ High Temp · ${temp.toFixed(2)}°C`,
                 pushBody: `Target: ${targetTemp}°C · Cooling Active`
             });
         } else if (currentTempState === 'CRITICAL') {
             addDashboardNotification({
                 type: 'critical',
                 category: 'temp',
-                msg: `CRITICAL TEMPERATURE (${temp.toFixed(1)}°C) REACHED! AUTOMATIC SAFETY ENGAGED.`,
-                pushTitle: `🚨 Critical Overheat · ${temp.toFixed(1)}°C`,
+                msg: `CRITICAL TEMPERATURE (${temp.toFixed(2)}°C) REACHED! AUTOMATIC SAFETY ENGAGED.`,
+                pushTitle: `🚨 Critical Overheat · ${temp.toFixed(2)}°C`,
                 pushBody: `Exceeded 38.0°C! Safety system reverted to AUTO.`
             });
         } else if (currentTempState === 'NORMAL' && paramStateHistory.tempState !== 'NORMAL') {
             addDashboardNotification({
                 type: 'success',
                 category: 'temp',
-                msg: `TEMPERATURE IS NOW ${temp.toFixed(1)}°C, IT'S NORMAL. PTC HEATER IS TURNED OFF.`,
+                msg: `TEMPERATURE IS NOW ${temp.toFixed(2)}°C, IT'S NORMAL. PTC HEATER IS TURNED OFF.`,
                 push: false
             });
         }
@@ -928,23 +928,23 @@ function evaluateSmartAlerts(temp, rh, o2, actuators) {
             addDashboardNotification({
                 type: 'warning',
                 category: 'rh',
-                msg: `HUMIDITY IS ${rh.toFixed(1)}%, BELOW ${isHatching ? 'HATCHING' : 'SETTING'} TARGET (${targetRH}%). PLEASE REFILL WATER RESERVOIR.`,
-                pushTitle: `💧 Low Humidity · ${rh.toFixed(1)}%`,
+                msg: `HUMIDITY IS ${rh.toFixed(2)}%, BELOW ${isHatching ? 'HATCHING' : 'SETTING'} TARGET (${targetRH}%). PLEASE REFILL WATER RESERVOIR.`,
+                pushTitle: `💧 Low Humidity · ${rh.toFixed(2)}%`,
                 pushBody: `Target: ${targetRH}% · Please refill water reservoir`
             });
         } else if (currentRHState === 'HIGH') {
             addDashboardNotification({
                 type: 'warning',
                 category: 'rh',
-                msg: `HUMIDITY IS ${rh.toFixed(1)}%, ABOVE ${isHatching ? 'HATCHING' : 'SETTING'} TARGET (${targetRH}%). EXHAUST VENTING.`,
-                pushTitle: `💧 High Humidity · ${rh.toFixed(1)}%`,
+                msg: `HUMIDITY IS ${rh.toFixed(2)}%, ABOVE ${isHatching ? 'HATCHING' : 'SETTING'} TARGET (${targetRH}%). EXHAUST VENTING.`,
+                pushTitle: `💧 High Humidity · ${rh.toFixed(2)}%`,
                 pushBody: `Target: ${targetRH}% · Exhaust venting`
             });
         } else if (currentRHState === 'NORMAL' && paramStateHistory.rhState !== 'NORMAL') {
             addDashboardNotification({
                 type: 'success',
                 category: 'rh',
-                msg: `HUMIDITY IS NOW ${rh.toFixed(1)}%, IT'S NORMAL.`,
+                msg: `HUMIDITY IS NOW ${rh.toFixed(2)}%, IT'S NORMAL.`,
                 push: false
             });
         }
@@ -991,15 +991,15 @@ function evaluateSmartAlerts(temp, rh, o2, actuators) {
             addDashboardNotification({
                 type: 'warning',
                 category: 'o2',
-                msg: `OXYGEN LEVEL IS ${o2.toFixed(1)}%, BELOW NORMAL (20.0%). EXHAUST FAN ENGAGED.`,
-                pushTitle: `⚠️ Low O2 · ${o2.toFixed(1)}%`,
+                msg: `OXYGEN LEVEL IS ${o2.toFixed(2)}%, BELOW NORMAL (20.0%). EXHAUST FAN ENGAGED.`,
+                pushTitle: `⚠️ Low O2 · ${o2.toFixed(2)}%`,
                 pushBody: `Below 20.0% · Exhaust active`
             });
         } else if (currentO2State === 'NORMAL' && paramStateHistory.o2State !== 'NORMAL') {
             addDashboardNotification({
                 type: 'success',
                 category: 'o2',
-                msg: `OXYGEN LEVEL IS NOW ${o2.toFixed(1)}%, IT'S NORMAL.`,
+                msg: `OXYGEN LEVEL IS NOW ${o2.toFixed(2)}%, IT'S NORMAL.`,
                 push: false
             });
         }
@@ -2201,10 +2201,10 @@ function renderProtocolCards() {
     const dispCO2 = document.getElementById('dispTargetCO2');
     const dispO2 = document.getElementById('dispTargetO2');
 
-    if (dispTemp) dispTemp.innerText = `${protocolState.temp.toFixed(1)}°C`;
-    if (dispRH) dispRH.innerText = `${protocolState.rh.toFixed(1)}%`;
+    if (dispTemp) dispTemp.innerText = `${protocolState.temp.toFixed(2)}°C`;
+    if (dispRH) dispRH.innerText = `${protocolState.rh.toFixed(2)}%`;
     if (dispCO2) dispCO2.innerText = protocolState.co2.toLocaleString();
-    if (dispO2) dispO2.innerText = `${protocolState.o2.toFixed(1)}%`;
+    if (dispO2) dispO2.innerText = `${protocolState.o2.toFixed(2)}%`;
 
     // 3. Dedicated Turner Control Card
     const turnVal = document.getElementById('dispTurnerStatus');
@@ -2321,7 +2321,7 @@ async function saveTargetSetpoints() {
             body: JSON.stringify({ mode: 'AUTO' })
         });
 
-        showToast(`Target Setpoints Applied: ${protocolState.temp.toFixed(1)}°C · ${protocolState.rh.toFixed(1)}% RH · ${protocolState.o2.toFixed(1)}% O₂`);
+        showToast(`Target Setpoints Applied: ${protocolState.temp.toFixed(2)}°C · ${protocolState.rh.toFixed(2)}% RH · ${protocolState.o2.toFixed(2)}% O₂`);
     } catch (e) {
         console.warn("Setpoints save error:", e);
         showToast("Setpoints saved locally (controller syncing).");
