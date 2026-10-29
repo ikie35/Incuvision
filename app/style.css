@@ -1081,64 +1081,78 @@ body {
 }
 
 .camera-status-badge {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    background: rgba(0, 0, 0, 0.7);
-    color: #10B981;
+    background: #FFFFFF;
+    color: #0F172A;
     font-family: var(--font-heading);
     font-size: 0.68rem;
     font-weight: 800;
-    padding: 4px 8px;
-    border-radius: 8px;
-    backdrop-filter: blur(4px);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    display: flex;
+    padding: 6px 11px;
+    border-radius: 10px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: inline-flex;
     align-items: center;
-    gap: 5px;
-    letter-spacing: 0.04em;
+    gap: 6px;
+    letter-spacing: 0.05em;
 }
 
 .camera-status-badge.audit-mode {
-    color: #F59E0B;
+    background: #FFFBEB;
+    border-color: rgba(245, 158, 11, 0.35);
+    color: #92400E;
 }
 
 .camera-status-badge.paused-mode {
-    color: #9CA3AF;
+    background: #F3F4F6;
+    border-color: #E5E7EB;
+    color: #6B7280;
 }
 
 .camera-quick-bar {
-    position: absolute;
-    top: 10px;
-    right: 10px;
     display: flex;
+    align-items: center;
     gap: 6px;
 }
 
 .cam-btn {
-    background: rgba(0, 0, 0, 0.7);
-    color: #FFFFFF;
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    border-radius: var(--radius-pill);
-    font-size: 0.7rem;
+    background: #FFFFFF;
+    color: #374151;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 10px;
+    font-family: var(--font-heading);
+    font-size: 0.72rem;
     font-weight: 700;
-    padding: 4px 9px;
+    padding: 6px 11px;
     cursor: pointer;
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 4px;
-    backdrop-filter: blur(4px);
+    justify-content: center;
+    gap: 5px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     transition: all 0.15s ease;
 }
 
+.cam-btn:hover {
+    background: #F9FAFB;
+    border-color: rgba(0, 0, 0, 0.14);
+    color: #111827;
+}
+
 .cam-btn:active {
-    background: rgba(255, 255, 255, 0.3);
+    transform: scale(0.96);
 }
 
 .cam-btn.is-active-gold {
-    background: #F59E0B;
-    border-color: #FCD34D;
-    color: #1E1B18;
+    background: #FEF3C7;
+    border-color: #F59E0B;
+    color: #92400E;
+    font-weight: 800;
+}
+
+.cam-btn.is-paused {
+    background: #ECFDF5;
+    border-color: #10B981;
+    color: #065F46;
     font-weight: 800;
 }
 
@@ -1294,60 +1308,77 @@ body {
     color: #B91C1C;
 }
 
-/* Calendar Button Card */
-.card-action-calendar {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 14px;
-    padding: 16px 20px;
-    cursor: pointer;
-    background: #FFFFFF;
-    border: 1.5px solid rgba(168, 40, 32, 0.25);
-    box-shadow: 0 4px 14px rgba(168, 40, 32, 0.08);
-    transition: all 0.15s ease;
-}
-
-.card-action-calendar:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 18px rgba(168, 40, 32, 0.14);
-    border-color: rgba(168, 40, 32, 0.45);
-}
-
-.card-action-calendar:active {
-    transform: scale(0.97);
+/* Minimalist Dual Action Bar (AI Candling Scan + Raw Photo) */
+.fertility-actions-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 10px;
 }
 
 .calendar-icon {
-    width: 42px;
-    height: 42px;
-    border-radius: 12px;
-    background: rgba(168, 40, 32, 0.08);
-    color: var(--brand-red);
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
 }
 
+.calendar-icon svg {
+    width: 16px;
+    height: 16px;
+}
+
 .action-btn-text-group {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 2px;
+    display: inline-flex;
+    align-items: center;
 }
 
-.calendar-btn-label {
+.btn-fertility-primary,
+.btn-fertility-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 13px 14px;
+    border-radius: 14px;
     font-family: var(--font-heading);
-    font-size: 0.98rem;
+    font-size: 0.84rem;
     font-weight: 800;
-    color: var(--brand-maroon);
+    letter-spacing: 0.01em;
+    cursor: pointer;
+    transition: all 0.16s ease;
+    white-space: nowrap;
 }
 
-.calendar-btn-sub {
-    font-size: 0.72rem;
-    font-weight: 500;
-    color: var(--text-muted);
+.btn-fertility-primary {
+    background: var(--brand-maroon);
+    color: #FFFFFF;
+    border: 1px solid rgba(122, 29, 22, 0.9);
+    box-shadow: 0 3px 10px rgba(122, 29, 22, 0.18);
+}
+
+.btn-fertility-primary:hover {
+    background: #631610;
+    transform: translateY(-1px);
+    box-shadow: 0 5px 14px rgba(122, 29, 22, 0.24);
+}
+
+.btn-fertility-secondary {
+    background: #FFFFFF;
+    color: #1E293B;
+    border: 1px solid rgba(0, 0, 0, 0.09);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.btn-fertility-secondary:hover {
+    background: #F8FAFC;
+    border-color: rgba(0, 0, 0, 0.16);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+}
+
+.btn-fertility-primary:active,
+.btn-fertility-secondary:active {
+    transform: scale(0.97);
 }
 
 /* 56-Egg Matrix Collapsible */
@@ -1359,17 +1390,28 @@ body {
 
 .btn-matrix-toggle {
     background: var(--card-bg);
-    border: none;
-    border-radius: 12px;
-    padding: 10px 14px;
+    border: 1px solid rgba(0, 0, 0, 0.07);
+    border-radius: 14px;
+    padding: 12px 16px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 0.78rem;
+    font-family: var(--font-heading);
+    font-size: 0.80rem;
     font-weight: 700;
-    color: #1A1615;
+    color: #1E293B;
     cursor: pointer;
-    box-shadow: var(--shadow-card);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+    transition: all 0.15s ease;
+}
+
+.btn-matrix-toggle:hover {
+    background: #FAFAFA;
+    border-color: rgba(0, 0, 0, 0.14);
+}
+
+.btn-matrix-toggle:active {
+    transform: scale(0.98);
 }
 
 .matrix-drawer {

@@ -1216,13 +1216,15 @@ function toggleCameraPower(forceOn = null) {
     if (isCameraOn) {
         if (btnPowerText) btnPowerText.textContent = 'Cam OFF';
         if (btnPower) {
-            btnPower.style.background = 'rgba(0, 0, 0, 0.7)';
+            btnPower.classList.remove('is-paused');
+            btnPower.style.background = '';
         }
         switchCameraView(currentCameraMode);
     } else {
         if (btnPowerText) btnPowerText.textContent = 'Cam ON';
         if (btnPower) {
-            btnPower.style.background = '#10B981';
+            btnPower.classList.add('is-paused');
+            btnPower.style.background = '';
         }
         showCameraPaused();
     }
@@ -1309,8 +1311,8 @@ async function toggleCandlingLight() {
 
 async function triggerCandlingAudit() {
     const btnLabel = document.getElementById('btnCandlingLabel');
-    const originalText = btnLabel ? btnLabel.innerText : "Run AI Candling Audit";
-    if (btnLabel) btnLabel.innerText = "Running YOLOv8 Audit...";
+    const originalText = btnLabel ? btnLabel.innerText : "AI Candling Scan";
+    if (btnLabel) btnLabel.innerText = "Scanning...";
 
     try {
         const res = await fetch('/api/candling/trigger', { method: 'POST' });
@@ -2352,7 +2354,7 @@ const saveMenuSetpoints = saveTargetSetpoints;
 async function takeNormalSnapshot() {
     const quickText = document.getElementById('btnSnapshotQuickText');
     const cardLabel = document.getElementById('btnSnapshotCardLabel');
-    const originalCardText = cardLabel ? cardLabel.innerText : "Capture Photo (No AI)";
+    const originalCardText = cardLabel ? cardLabel.innerText : "Capture Photo";
     
     if (quickText) quickText.innerText = "Snapping...";
     if (cardLabel) cardLabel.innerText = "Capturing...";

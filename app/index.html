@@ -12,8 +12,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Poppins:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
     <link rel="icon" type="image/png" href="./icons/logo.png">
-    <link rel="stylesheet" href="/dashboard/style.css?v=52">
-    <link rel="stylesheet" href="./style.css?v=52">
+    <link rel="stylesheet" href="/dashboard/style.css?v=53">
+    <link rel="stylesheet" href="./style.css?v=53">
     <style>
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 :root {
@@ -128,13 +128,15 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
 .camera-stage { width: 100%; min-height: 520px; max-height: 75vh; background: #000000; border-radius: 14px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255, 255, 255, 0.12); }
 .camera-stream-img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .camera-overlay-center { position: absolute; pointer-events: none; opacity: 0.85; }
-.camera-status-badge { position: absolute; top: 10px; left: 10px; background: rgba(0, 0, 0, 0.7); color: #10B981; font-family: var(--font-heading); font-size: 0.68rem; font-weight: 800; padding: 4px 8px; border-radius: 8px; backdrop-filter: blur(4px); border: 1px solid rgba(255, 255, 255, 0.15); display: flex; align-items: center; gap: 5px; letter-spacing: 0.04em; }
-.camera-status-badge.audit-mode { color: #F59E0B; }
-.camera-status-badge.paused-mode { color: #9CA3AF; }
-.camera-quick-bar { position: absolute; top: 10px; right: 10px; display: flex; gap: 6px; }
-.cam-btn { background: rgba(0, 0, 0, 0.7); color: #FFFFFF; border: 1px solid rgba(255, 255, 255, 0.25); border-radius: var(--radius-pill); font-size: 0.7rem; font-weight: 700; padding: 4px 9px; cursor: pointer; display: flex; align-items: center; gap: 4px; backdrop-filter: blur(4px); transition: all 0.15s ease; }
-.cam-btn:active { background: rgba(255, 255, 255, 0.3); }
-.cam-btn.is-active-gold { background: #F59E0B; border-color: #FCD34D; color: #1E1B18; font-weight: 800; }
+.camera-status-badge { background: #FFFFFF; color: #0F172A; font-family: var(--font-heading); font-size: 0.68rem; font-weight: 800; padding: 6px 11px; border-radius: 10px; border: 1px solid rgba(0, 0, 0, 0.08); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04); display: inline-flex; align-items: center; gap: 6px; letter-spacing: 0.05em; }
+.camera-status-badge.audit-mode { background: #FFFBEB; border-color: rgba(245, 158, 11, 0.35); color: #92400E; }
+.camera-status-badge.paused-mode { background: #F3F4F6; border-color: #E5E7EB; color: #6B7280; }
+.camera-quick-bar { display: flex; align-items: center; gap: 6px; }
+.cam-btn { background: #FFFFFF; color: #374151; border: 1px solid rgba(0, 0, 0, 0.08); border-radius: 10px; font-family: var(--font-heading); font-size: 0.72rem; font-weight: 700; padding: 6px 11px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 5px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04); transition: all 0.15s ease; }
+.cam-btn:hover { background: #F9FAFB; border-color: rgba(0, 0, 0, 0.14); color: #111827; }
+.cam-btn:active { transform: scale(0.96); }
+.cam-btn.is-paused { background: #ECFDF5; border-color: #10B981; color: #065F46; font-weight: 800; }
+.cam-btn.is-active-gold { background: #FEF3C7; border-color: #F59E0B; color: #92400E; font-weight: 800; }
 .btn-return-live { position: absolute; bottom: 12px; background: #10B981; color: #FFFFFF; border: none; border-radius: var(--radius-pill); padding: 7px 16px; font-family: var(--font-heading); font-size: 0.78rem; font-weight: 800; cursor: pointer; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.45); display: none; align-items: center; gap: 6px; transition: transform 0.12s ease; z-index: 5; }
 .btn-return-live:active { transform: scale(0.95); }
 .camera-paused-placeholder { display: none; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: #9CA3AF; font-size: 0.8rem; font-weight: 700; text-align: center; padding: 20px; }
@@ -145,11 +147,19 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
 .score-number { font-family: var(--font-heading); font-size: 1.45rem; font-weight: 900; }
 .fertile-text { color: var(--color-fertile); }
 .infertile-text { color: var(--color-infertile); }
-.card-action-calendar { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 14px 20px; cursor: pointer; transition: transform 0.15s ease; }
+.fertility-actions-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 10px; }
+.btn-fertility-primary, .btn-fertility-secondary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 13px 14px; border-radius: 14px; font-family: var(--font-heading); font-size: 0.84rem; font-weight: 800; letter-spacing: 0.01em; cursor: pointer; transition: all 0.16s ease; white-space: nowrap; }
+.btn-fertility-primary { background: var(--brand-maroon); color: #FFFFFF; border: 1px solid rgba(122, 29, 22, 0.9); box-shadow: 0 3px 10px rgba(122, 29, 22, 0.18); }
+.btn-fertility-primary:hover { background: #631610; transform: translateY(-1px); box-shadow: 0 5px 14px rgba(122, 29, 22, 0.24); }
+.btn-fertility-secondary { background: #FFFFFF; color: #1E293B; border: 1px solid rgba(0, 0, 0, 0.09); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04); }
+.btn-fertility-secondary:hover { background: #F8FAFC; border-color: rgba(0, 0, 0, 0.16); transform: translateY(-1px); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06); }
+.btn-fertility-primary:active, .btn-fertility-secondary:active { transform: scale(0.97); }
 .card-action-calendar:active { transform: scale(0.97); }
-.calendar-btn-label { font-family: var(--font-heading); font-size: 0.95rem; font-weight: 800; color: var(--brand-maroon); }
+.calendar-icon { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.calendar-icon svg { width: 16px; height: 16px; }
+.action-btn-text-group { display: inline-flex; align-items: center; }
 .matrix-collapsible-container { display: flex; flex-direction: column; gap: 10px; }
-.btn-matrix-toggle { background: var(--card-bg); border: none; border-radius: 12px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem; font-weight: 700; color: #1A1615; cursor: pointer; box-shadow: var(--shadow-card); }
+.btn-matrix-toggle { background: var(--card-bg); border: 1px solid rgba(0, 0, 0, 0.07); border-radius: 14px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; font-family: var(--font-heading); font-size: 0.80rem; font-weight: 700; color: #1E293B; cursor: pointer; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04); transition: all 0.15s ease; }
 .matrix-drawer { display: none; background: var(--card-bg); border-radius: var(--radius-card); padding: 14px; box-shadow: var(--shadow-card); }
 .matrix-drawer.open { display: block; }
 .egg-matrix-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
@@ -810,7 +820,7 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
                             </svg>
                             <span id="btnCamLightText">Light</span>
                         </button>
-                        <button class="cam-btn" id="btnCameraSnapshot" onclick="takeNormalSnapshot()" title="Capture Photo (No AI)">
+                        <button class="cam-btn" id="btnCameraSnapshot" onclick="takeNormalSnapshot()" title="Capture Photo (No AI)" style="display: none;">
                             <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
                                 <circle cx="12" cy="13" r="4"></circle>
@@ -933,7 +943,7 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
                 </div>
 
                 <!-- Run AI Candling Audit Button Card -->
-                <div class="card card-action-calendar" id="btnRunCandlingAudit" onclick="triggerCandlingAudit()">
+                <div class="fertility-actions-grid"><button type="button" class="btn-fertility-primary" id="btnRunCandlingAudit" onclick="triggerCandlingAudit()"><div style="display:contents;">
                     <div class="calendar-icon">
                         <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
@@ -941,13 +951,13 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
                         </svg>
                     </div>
                     <div class="action-btn-text-group">
-                        <span class="calendar-btn-label" id="btnCandlingLabel">Run AI Candling Audit</span>
-                        <span class="calendar-btn-sub">YOLOv8 Scan & Viability Classification</span>
+                        <span id="btnCandlingLabel">AI Candling Scan</span>
+                        <span class="calendar-btn-sub" style="display:none;">YOLOv8 Scan</span>
                     </div>
                 </div>
 
                 <!-- Normal Capture (No AI) Card -->
-                <div class="card card-action-calendar card-action-snapshot" id="btnNormalCaptureCard" onclick="takeNormalSnapshot()" title="Capture clean raw frame without AI">
+                </button><button type="button" class="btn-fertility-secondary" id="btnNormalCaptureCard" onclick="takeNormalSnapshot()" title="Capture clean raw frame without AI"><div style="display:contents;">
                     <div class="calendar-icon icon-snapshot">
                         <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                             <rect x="3" y="3" width="18" height="18" rx="4" ry="4"></rect>
@@ -956,12 +966,12 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
                         </svg>
                     </div>
                     <div class="action-btn-text-group">
-                        <span class="calendar-btn-label" id="btnSnapshotCardLabel">Capture Photo (No AI)</span>
-                        <span class="calendar-btn-sub">Clean Raw Still Frame · Direct Download</span>
+                        <span id="btnSnapshotCardLabel">Capture Photo</span>
+                        <span class="calendar-btn-sub" style="display:none;">Clean Raw Still Frame</span>
                     </div>
                 </div>
 
-                <!-- 56-Egg Matrix Toggle for Inspection -->
+                <!-- 56-Egg Matrix Toggle for Inspection --></button></div>
                 <div class="matrix-collapsible-container">
                     <button class="btn-matrix-toggle" onclick="toggleMatrixDrawer()">
                         <span>Inspect 56-Egg Tray Matrix (8×7)</span>
