@@ -514,7 +514,7 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
                             </div>
                             <div class="countdown-text">
                                 <span class="countdown-main-val" id="homeDaysLeft">21 Days Left</span>
-                                <span class="countdown-phase-sub" id="homePhaseSub">Day 0 of 21 · Setting Phase</span>
+                                <span class="countdown-phase-sub" id="homePhaseSub">Day 1 of 21 · Setting Phase</span>
                             </div>
                         </div>
                         <span class="countdown-phase-badge badge-setting" id="homePhaseBadge">SETTING</span>
@@ -526,7 +526,7 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
                             <div class="countdown-progress-fill" id="homeProgressFill" style="width: 0%;"></div>
                         </div>
                         <div class="countdown-milestones">
-                            <span>Day 0</span>
+                            <span>Day 1</span>
                             <span class="milestone-lockdown">Day 18 (Lockdown)</span>
                             <span>Day 21 (Hatch)</span>
                         </div>
@@ -986,7 +986,7 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
 
                     <div class="phase-tabs-row">
                         <button type="button" class="phase-tab-pill active" id="btnPhaseSetting" onclick="setProtocolPhase('SETTING')">
-                            Setting (Days 0–18)
+                            Setting (Days 1–18)
                         </button>
                         <button type="button" class="phase-tab-pill" id="btnPhaseHatching" onclick="setProtocolPhase('HATCHING')">
                             Hatching (Days 19–21)
@@ -1009,7 +1009,7 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
                     <div class="schedule-status-banner">
                         <div class="status-col">
                             <span class="status-sub" id="lblScheduleProgress">PREVIEW (PENDING APPLY)</span>
-                            <span class="status-main" id="dispScheduleProgress">Day 0 · 0h elapsed</span>
+                            <span class="status-main" id="dispScheduleProgress">Day 1 of 21 · 0d 0h</span>
                         </div>
                         <div class="status-col status-right">
                             <span class="status-sub">EST. REMAINING</span>
@@ -1246,10 +1246,10 @@ body { background-color: #FBE6B9; font-family: var(--font-body); color: var(--te
     <!-- Toast Notification Container -->
     <div id="appToast" class="app-toast"></div>
 
-    <script src="/dashboard/app.js?v=52"></script>
+    <script src="/dashboard/app.js?v=53"></script>
     <script>
         if (typeof switchNav === 'undefined') {
-            document.write('<script src="./app.js?v=52"><\/script>');
+            document.write('<script src="./app.js?v=53"><\/script>');
         }
     </script>
 </body>

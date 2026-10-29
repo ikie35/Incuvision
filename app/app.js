@@ -2,7 +2,7 @@
 // Connected to Raspberry Pi 5 Master Vision & Coordinator Engine
 
 let ws = null;
-let currentDay = 0;
+let currentDay = 1;
 let currentPhase = 'SETTING';
 let currentTelemetry = {
     temp: 37.5,
@@ -208,7 +208,7 @@ function handleIncomingTelemetry(data) {
         }
     } else if (data.schedule_active === false) {
         // Schedule confirmed inactive on Pi (Standby mode)
-        currentDay = 0;
+        currentDay = 1;
         currentPhase = 'SETTING';
     } else if (appliedSchedule && appliedSchedule.active) {
         // Partial or legacy update while schedule is active
@@ -1905,7 +1905,7 @@ function testPushNotification() {
 // =============================================================================
 let protocolStateInitialized = false;
 let protocolState = {
-    day: 0,
+    day: 1,
     phase: 'SETTING',
     temp: 37.5,
     rh: 58.0,
@@ -1938,7 +1938,7 @@ function renderHomeCountdownCardDefault() {
     const finishEl = document.getElementById('homeProjectedFinish');
 
     if (daysLeftEl) daysLeftEl.innerText = "21 Days Left";
-    if (phaseSubEl) phaseSubEl.innerText = "Day 0 of 21 · Setting Phase";
+    if (phaseSubEl) phaseSubEl.innerText = "Day 1 of 21 · Setting Phase";
     if (badgeEl) {
         badgeEl.innerText = "SETTING";
         badgeEl.classList.remove('badge-hatching');
@@ -1975,7 +1975,8 @@ function renderHomeCountdownCard() {
     const remHours = Math.floor((remTotalSec % 86400) / 3600);
 
     const elapsedTotalSec = Math.floor(elapsedMs / 1000);
-    const elapsedDays = Math.min(21, Math.floor(elapsedTotalSec / 86400));
+    const completedDays = Math.min(21, Math.floor(elapsedTotalSec / 86400));
+    const elapsedDays = Math.min(21, completedDays + 1);
     const elapsedHours = Math.floor((elapsedTotalSec % 86400) / 3600);
     const isHatching = (elapsedDays >= 19 || appliedSchedule.phase === 'HATCHING');
 
@@ -1995,7 +1996,7 @@ function renderHomeCountdownCard() {
     // 2. Subtitle: "Day 1 of 21 · 16h elapsed"
     const phaseSubEl = document.getElementById('homePhaseSub');
     if (phaseSubEl) {
-        phaseSubEl.innerText = `Day ${elapsedDays} of 21 · ${elapsedHours}h elapsed`;
+        phaseSubEl.innerText = `Day ${elapsedDays} of 21 · ${completedDays}d ${elapsedHours}h elapsed`;
     }
 
     // 3. Phase Pill Badge: SETTING vs HATCHING
@@ -2073,7 +2074,7 @@ function onBatchDateInputChange() {
 
 function resetBatchToNow() {
     initScheduleInputs(new Date());
-    showToast("Date & time set to now (Day 0 draft). Not applied until you click 'Apply Schedule'.");
+    showToast("Date & time set to now (Day 1 draft). Not applied until you click 'Apply Schedule'.");
 }
 
 function recalcScheduleFromInputs() {
@@ -2082,17 +2083,21 @@ function recalcScheduleFromInputs() {
     const now = new Date();
     const diffMs = Math.max(0, now.getTime() - currentSetTimestamp.getTime());
     const totalSec = Math.floor(diffMs / 1000);
-    const day = Math.min(21, Math.floor(totalSec / 86400));
+    const completedDays = Math.min(21, Math.floor(totalSec / 86400));
+    const day = Math.min(21, completedDays + 1);
+    const remTotalSec = Math.max(0, (21 * 86400) - totalSec);
+    const remDays = Math.floor(remTotalSec / 86400);
+    const remHours = Math.floor((remTotalSec % 86400) / 3600);
     const hours = Math.floor((totalSec % 86400) / 3600);
-    const daysLeft = Math.max(0, 21 - day);
+    const daysLeft = Math.max(0, 21 - Math.floor(totalSec / 86400));
 
     protocolState.day = day;
     protocolState.phase = (day >= 19) ? 'HATCHING' : 'SETTING';
 
     const progEl = document.getElementById('dispScheduleProgress');
     const remEl = document.getElementById('dispScheduleRemaining');
-    if (progEl) progEl.innerText = `Day ${day} · ${hours}h elapsed`;
-    if (remEl) remEl.innerText = `${daysLeft} Days Left`;
+    if (progEl) progEl.innerText = `Day ${day} of 21 · ${completedDays}d ${hours}h`;
+    if (remEl) remEl.innerText = remTotalSec <= 0 ? 'Complete' : `${remDays}d ${remHours}h Left`;
 
     const lblProg = document.getElementById('lblScheduleProgress');
     if (lblProg) {

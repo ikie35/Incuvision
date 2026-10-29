@@ -100,7 +100,7 @@ def build_telemetry_payload() -> dict:
         start_iso = None
 
     return {
-        "day": coordinator.current_day if (coordinator and coordinator.schedule_active) else 0,
+        "day": coordinator.current_day if (coordinator and coordinator.schedule_active) else 1,
         "phase": coordinator.phase if coordinator else "SETTING",
         "schedule_active": coordinator.schedule_active if coordinator else False,
         "time_into_day": time_str,
@@ -232,15 +232,15 @@ def set_incubation_schedule(payload: SchedulePayload):
     if payload.active is False:
         with coordinator._lock:
             coordinator.schedule_active = False
-            coordinator.current_day = 0
+            coordinator.current_day = 1
             coordinator.phase = "SETTING"
             coordinator._save_state()
             coordinator.mqtt.set_phase("SETTING")
-            coordinator.mqtt.send_command({"cmd": "SET_DAY", "day": 0})
+            coordinator.mqtt.send_command({"cmd": "SET_DAY", "day": 1})
         return {
             "status": "success",
             "schedule_active": False,
-            "day": 0,
+            "day": 1,
             "phase": "SETTING"
         }
 
@@ -295,7 +295,7 @@ def set_incubation_phase(payload: PhasePayload):
     if p == "HATCHING" and coordinator.current_day < 19:
         coordinator.set_manual_day(19)
     elif p == "SETTING" and coordinator.current_day >= 19:
-        coordinator.set_manual_day(0)
+        coordinator.set_manual_day(1)
     else:
         coordinator.phase = p
         mqtt_bridge.set_phase(p)
@@ -305,7 +305,9 @@ def set_incubation_phase(payload: PhasePayload):
 def trigger_egg_turning(duration: int = 15):
     if not mqtt_bridge:
         raise HTTPException(status_code=503, detail="MQTT not ready")
-    mqtt_bridge.trigger_egg_turning(duration)
+    turned = mqtt_bridge.trigger_egg_turning(duration)
+    if turned and coordinator:
+        coordinator.log_telemetry_now(motor_override=True)
     return {"status": "success", "message": f"Egg turning triggered for {duration}s"}
 
 @app.post("/api/control/candling_light")
@@ -327,6 +329,8 @@ def control_relay(payload: RelayCommandPayload):
         "actuator": payload.actuator,
         "state": payload.state
     })
+    if payload.actuator in ("motor", "turner") and coordinator:
+        coordinator.log_telemetry_now(motor_override=payload.state)
     return {"status": "success", "actuator": payload.actuator, "state": payload.state}
 
 @app.post("/api/control/mode")

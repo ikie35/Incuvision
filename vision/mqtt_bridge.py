@@ -55,6 +55,8 @@ class MQTTBridge:
         self._turn_sync_timestamp = time.time()
         self._turn_interval_remaining = 3600
         self.has_received_live_telemetry = False
+        self.motor_turned_since_last_log = False
+        self._motor_reset_timer = None
 
     def get_telemetry(self) -> dict:
         """Returns the latest telemetry dictionary with dynamically updated next_turn_seconds to the start of the next hour."""
@@ -129,6 +131,8 @@ class MQTTBridge:
             self.latest_telemetry["o2"] = float(data["o2"])
         if "actuators" in data and isinstance(data["actuators"], dict):
             self.latest_telemetry["actuators"].update(data["actuators"])
+            if self.latest_telemetry["actuators"].get("motor", False):
+                self.motor_turned_since_last_log = True
         if "phase" in data:
             self.latest_telemetry["phase"] = data["phase"]
         if "next_turn_seconds" in data:
@@ -243,6 +247,8 @@ class MQTTBridge:
                     # Index 9: turnerRunning (1 or 0) -> Egg Turner Motor
                     if len(parts) >= 10:
                         self.latest_telemetry["actuators"]["motor"] = (parts[9] == "1")
+                        if self.latest_telemetry["actuators"]["motor"]:
+                            self.motor_turned_since_last_log = True
 
                     # Index 10: ledState (1 or 0) -> Candling LED
                     if len(parts) >= 11:
@@ -300,6 +306,8 @@ class MQTTBridge:
         m_turner = re.search(r'(?:TURNER|MOTOR):\s*(ON|OFF)', line, re.IGNORECASE)
         if m_turner:
             self.latest_telemetry["actuators"]["motor"] = (m_turner.group(1).upper() == "ON")
+            if self.latest_telemetry["actuators"]["motor"]:
+                self.motor_turned_since_last_log = True
             updated = True
 
         m_candling = re.search(r'CANDLING(?:\s+LED)?:\s*(ON|OFF)', line, re.IGNORECASE)
@@ -404,6 +412,22 @@ class MQTTBridge:
         self._turn_sync_timestamp = time.time() + duration_sec
         self._turn_interval_remaining = 3600
         self.send_command({"cmd": "TURN_EGGS", "duration": duration_sec})
+        self.motor_turned_since_last_log = True
+
+        if self._motor_reset_timer:
+            try:
+                self._motor_reset_timer.cancel()
+            except Exception:
+                pass
+
+        def _reset_motor_after_turn():
+            if not self.latest_telemetry.get("actuators", {}).get("manual", False):
+                self.latest_telemetry["actuators"]["motor"] = False
+
+        self._motor_reset_timer = threading.Timer(duration_sec, _reset_motor_after_turn)
+        self._motor_reset_timer.daemon = True
+        self._motor_reset_timer.start()
+        return True
 
     def set_phase(self, phase_str: str):
         self.latest_telemetry["phase"] = phase_str

@@ -20,7 +20,7 @@ class IncubationCoordinator:
         
         self.schedule_active = False
         self.start_time = datetime.now()
-        self.current_day = 0
+        self.current_day = 1
         self.phase = "SETTING"  # "SETTING" or "HATCHING"
         self._load_state()
 
@@ -51,12 +51,12 @@ class IncubationCoordinator:
                     data = json.load(f)
                     self.schedule_active = data.get("schedule_active", False)
                     if self.schedule_active:
-                        self.current_day = max(0, min(TOTAL_INCUBATION_DAYS, data.get("day", 0)))
+                        self.current_day = max(1, min(TOTAL_INCUBATION_DAYS, data.get("day", 1)))
                         self.phase = data.get("phase", "HATCHING" if self.current_day >= HATCHING_DAYS_START else "SETTING")
                         if "start_time" in data:
                             self.start_time = datetime.fromisoformat(data["start_time"])
                         else:
-                            self.start_time = datetime.now() - timedelta(days=self.current_day)
+                            self.start_time = datetime.now() - timedelta(days=max(0, self.current_day - 1))
                         self._update_day_and_phase()
                         print(f"[COORDINATOR] Restored active persistent incubation state: Day {self.current_day} ({self.phase})")
                         return
@@ -66,7 +66,7 @@ class IncubationCoordinator:
                 print(f"[COORDINATOR] State load failed ({e}), starting fresh.")
         self.schedule_active = False
         self.start_time = datetime.now()
-        self.current_day = 0
+        self.current_day = 1
         self.phase = "SETTING"
 
     def start(self):
@@ -80,7 +80,7 @@ class IncubationCoordinator:
             self.mqtt.send_command({"cmd": "SET_DAY", "day": self.current_day})
         else:
             self.mqtt.set_phase("SETTING")
-            self.mqtt.send_command({"cmd": "SET_DAY", "day": 0})
+            self.mqtt.send_command({"cmd": "SET_DAY", "day": 1})
         self.mqtt.send_command({"cmd": "SET_MODE", "mode": "AUTO"})
 
     def set_start_date(self, start_dt: datetime, phase: str = None):
@@ -99,8 +99,8 @@ class IncubationCoordinator:
     def set_manual_schedule(self, day: int, hours: int = 0, minutes: int = 0, phase: str = None):
         with self._lock:
             self.schedule_active = True
-            self.current_day = max(0, min(TOTAL_INCUBATION_DAYS, day))
-            offset = timedelta(days=self.current_day, hours=hours, minutes=minutes)
+            self.current_day = max(1, min(TOTAL_INCUBATION_DAYS, day))
+            offset = timedelta(days=max(0, self.current_day - 1), hours=hours, minutes=minutes)
             self.start_time = datetime.now() - offset
             if phase in ("SETTING", "HATCHING"):
                 self.phase = phase
@@ -121,8 +121,8 @@ class IncubationCoordinator:
             return
 
         elapsed = datetime.now() - self.start_time
-        calc_day = int(elapsed.total_seconds() // 86400)
-        calc_day = max(0, min(TOTAL_INCUBATION_DAYS, calc_day))
+        calc_day = int(max(0.0, elapsed.total_seconds()) // 86400) + 1
+        calc_day = max(1, min(TOTAL_INCUBATION_DAYS, calc_day))
 
         day_changed = (calc_day != self.current_day)
         self.current_day = calc_day
@@ -206,6 +206,30 @@ class IncubationCoordinator:
                 "latest_audit": self.latest_audit_result
             }
 
+    def log_telemetry_now(self, motor_override: bool = None):
+        """Immediately logs the current telemetry and actuator states to SQLite and CSV."""
+        if not self.mqtt:
+            return
+        telem = self.mqtt.latest_telemetry
+        act = telem.get("actuators", {})
+        motor_state = (
+            motor_override
+            if motor_override is not None
+            else (act.get("motor", False) or getattr(self.mqtt, "motor_turned_since_last_log", False))
+        )
+        self.mqtt.motor_turned_since_last_log = False
+        logger.log_telemetry(
+            day=self.current_day if self.schedule_active else 1,
+            temp=telem.get("temp", 37.5),
+            rh=telem.get("rh", 58.0),
+            co2=telem.get("co2", 3200),
+            o2=telem.get("o2", 20.9),
+            heater=act.get("heater", False),
+            exhaust=act.get("exhaust", False),
+            motor=motor_state,
+            phase=self.phase if self.schedule_active else "STANDBY"
+        )
+
     def _run_loop(self):
         last_lcd_update = 0
         last_log_time = time.time()
@@ -230,7 +254,7 @@ class IncubationCoordinator:
             if not self.is_auditing_now and (now - last_lcd_update >= 3.0):
                 last_lcd_update = now
                 lcd_display.display_home_screen(
-                    day=self.current_day if self.schedule_active else 0,
+                    day=self.current_day if self.schedule_active else 1,
                     temp=temp,
                     rh=rh,
                     co2=co2,
@@ -241,17 +265,7 @@ class IncubationCoordinator:
             # 2. Log Telemetry to DB & CSV every 60 seconds (1 minute interval)
             if now - last_log_time >= TELEMETRY_LOG_INTERVAL_S:
                 last_log_time = now
-                logger.log_telemetry(
-                    day=self.current_day if self.schedule_active else 0,
-                    temp=temp,
-                    rh=rh,
-                    co2=co2,
-                    o2=o2,
-                    heater=act.get("heater", False),
-                    exhaust=act.get("exhaust", False),
-                    motor=act.get("motor", False),
-                    phase=self.phase if self.schedule_active else "STANDBY"
-                )
+                self.log_telemetry_now()
 
             # 3. Emergency Overheat Watchdog: if manual mode is active and temp >= 38.0°C, force revert to AUTO
             if temp >= 38.0 and act.get("manual", False):
@@ -270,7 +284,9 @@ class IncubationCoordinator:
                     print(f"[COORDINATOR] Top of the hour ({now_dt.strftime('%H:%M')}): Triggering automatic egg turning.")
                     self.last_turned_hour = current_hour
                     if self.mqtt:
-                        self.mqtt.trigger_egg_turning(15)
+                        if self.mqtt.trigger_egg_turning(15):
+                            self.log_telemetry_now(motor_override=True)
+                            last_log_time = now
 
             # 5. Check for Automated Scheduled Candling Audits (Day 7, 10, 18 when batch is active)
             if self.schedule_active and self.current_day in CANDLING_SCHEDULE_DAYS and self.current_day not in self.completed_audits:

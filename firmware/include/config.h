@@ -44,7 +44,7 @@
 // ==========================================
 // 3. INCUBATION SETTINGS (OPERATOR OPTIMIZED)
 // ==========================================
-#define SETTING_START_DAY          0
+#define SETTING_START_DAY          1
 #define SETTING_END_DAY            18
 
 #define DEFAULT_TEMP_SETTING       37.5f  // °C Target center
