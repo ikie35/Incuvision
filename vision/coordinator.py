@@ -58,6 +58,7 @@ class IncubationCoordinator:
                         else:
                             self.start_time = datetime.now() - timedelta(days=max(0, self.current_day - 1))
                         self._update_day_and_phase()
+                        logger.sync_days_with_start_time(self.start_time)
                         print(f"[COORDINATOR] Restored active persistent incubation state: Day {self.current_day} ({self.phase})")
                         return
                     else:
@@ -91,6 +92,7 @@ class IncubationCoordinator:
             if phase in ("SETTING", "HATCHING"):
                 self.phase = phase
             self._save_state()
+            logger.sync_days_with_start_time(self.start_time)
             self.mqtt.set_phase(self.phase)
             self.mqtt.send_command({"cmd": "SET_DAY", "day": self.current_day})
             self.mqtt.send_command({"cmd": "SET_MODE", "mode": "AUTO"})
@@ -108,6 +110,7 @@ class IncubationCoordinator:
                 self.phase = "HATCHING" if self.current_day >= HATCHING_DAYS_START else "SETTING"
             print(f"[COORDINATOR] Incubation schedule applied: Day {self.current_day} ({hours:02d}:{minutes:02d} into day, Phase: {self.phase})")
             self._save_state()
+            logger.sync_days_with_start_time(self.start_time)
             self.mqtt.set_phase(self.phase)
             self.mqtt.send_command({"cmd": "SET_DAY", "day": self.current_day})
             self.mqtt.send_command({"cmd": "SET_MODE", "mode": "AUTO"})
@@ -132,6 +135,7 @@ class IncubationCoordinator:
             self.phase = new_phase
             print(f"[COORDINATOR] Automatic Phase Transition -> {self.phase} (Day {self.current_day})")
             self._save_state()
+            logger.sync_days_with_start_time(self.start_time)
             self.mqtt.set_phase(self.phase)
             self.mqtt.send_command({"cmd": "SET_DAY", "day": self.current_day})
         elif day_changed:
@@ -232,7 +236,7 @@ class IncubationCoordinator:
 
     def _run_loop(self):
         last_lcd_update = 0
-        last_log_time = time.time()
+        last_log_time = 0
 
         while self.is_running:
             now = time.time()

@@ -181,9 +181,55 @@ class DataLogger:
             print(f"[LOGGER] Error deleting latest audit: {e}")
             return False
 
+    def sync_days_with_start_time(self, start_time: datetime = None):
+        """Retroactively aligns all telemetry records in SQLite and CSV to the 1-based Day (Day 1-21) standard."""
+        if start_time is None:
+            state_path = os.path.join(os.path.dirname(str(DB_PATH)), "coordinator_state.json")
+            if os.path.exists(state_path):
+                try:
+                    with open(state_path, "r") as f:
+                        data = json.load(f)
+                        if data.get("schedule_active") and "start_time" in data:
+                            start_time = datetime.fromisoformat(data["start_time"])
+                except Exception:
+                    pass
+
+        try:
+            conn = sqlite3.connect(DB_PATH)
+            cursor = conn.cursor()
+
+            if start_time is not None:
+                cursor.execute("SELECT id, timestamp, day FROM telemetry")
+                all_rows = cursor.fetchall()
+                updates = []
+                for row_id, ts_str, old_day in all_rows:
+                    try:
+                        row_dt = datetime.strptime(ts_str, "%Y-%m-%d %H:%M:%S")
+                        elapsed_sec = (row_dt - start_time).total_seconds()
+                        if elapsed_sec >= 0:
+                            new_day = max(1, min(21, int(elapsed_sec // 86400) + 1))
+                        else:
+                            new_day = max(1, old_day or 1)
+                        if old_day != new_day:
+                            updates.append((new_day, row_id))
+                    except Exception:
+                        if old_day is None or old_day < 1:
+                            updates.append((1, row_id))
+                if updates:
+                    cursor.executemany("UPDATE telemetry SET day = ? WHERE id = ?", updates)
+            else:
+                cursor.execute("UPDATE telemetry SET day = day + 1 WHERE day >= 0 AND EXISTS (SELECT 1 FROM telemetry WHERE day = 0)")
+                cursor.execute("UPDATE telemetry SET day = 1 WHERE day < 1 OR day IS NULL")
+
+            conn.commit()
+            conn.close()
+        except Exception as e:
+            print(f"[LOGGER] Day sync error: {e}")
+
     def export_telemetry_csv_string(self, order: str = "desc") -> str:
         """Exports all telemetry records to a CSV string. Defaults to DESC (latest reading at the top)."""
         order_clause = "DESC" if order.lower() == "desc" else "ASC"
+        self.sync_days_with_start_time()
         try:
             conn = sqlite3.connect(DB_PATH)
             cursor = conn.cursor()
