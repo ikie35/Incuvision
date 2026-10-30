@@ -57,6 +57,10 @@ class MQTTBridge:
         self.has_received_live_telemetry = False
         self.motor_turned_since_last_log = False
         self._motor_reset_timer = None
+        self.desired_phase = "SETTING"
+        self.desired_temp = 37.5
+        self.desired_rh = 58.0
+        self.desired_co2 = 5000
 
     def get_telemetry(self) -> dict:
         """Returns the latest telemetry dictionary with dynamically updated next_turn_seconds to the start of the next hour."""
@@ -187,6 +191,11 @@ class MQTTBridge:
                 print(f"[SERIAL] Connecting to ESP32 on {port} @ {SERIAL_BAUDRATE} baud...")
                 self.serial_conn = serial.Serial(port, SERIAL_BAUDRATE, timeout=1.5)
                 print(f"[SERIAL] SUCCESS: Connected to ESP32 on {port}! Streaming live telemetry...")
+                # Sync active phase & setpoints after ESP32 finishes USB DTR boot (2.5s)
+                def _sync_after_connect():
+                    time.sleep(2.5)
+                    self.set_phase(self.desired_phase)
+                threading.Thread(target=_sync_after_connect, daemon=True).start()
 
                 while not self.stop_requested:
                     raw_line = self.serial_conn.readline()
@@ -431,8 +440,12 @@ class MQTTBridge:
 
     def set_phase(self, phase_str: str):
         self.latest_telemetry["phase"] = phase_str
+        self.desired_phase = phase_str
         if phase_str == "HATCHING":
             self.latest_telemetry["target_temp"] = 36.9
+            self.desired_temp = 36.9
+            self.desired_rh = 70.0
+            self.desired_co2 = 7500
             self.latest_telemetry["target_rh"] = 70.0
             self.latest_telemetry["target_co2"] = 7500
             self.latest_telemetry["next_turn_seconds"] = 0
@@ -442,6 +455,9 @@ class MQTTBridge:
             self.send_command({"cmd": "SET_SETPOINTS", "temp": 36.9, "rh": 70.0, "co2": 7500})
         else:
             self.latest_telemetry["target_temp"] = 37.5
+            self.desired_temp = 37.5
+            self.desired_rh = 58.0
+            self.desired_co2 = 5000
             self.latest_telemetry["target_rh"] = 58.0
             self.latest_telemetry["target_co2"] = 5000
             self.send_command({"cmd": "SET_PHASE", "phase": "SETTING"})
@@ -449,6 +465,9 @@ class MQTTBridge:
 
     def set_custom_setpoints(self, temp: float, rh: float, co2: int, o2: float = 20.9):
         self.latest_telemetry["target_temp"] = float(temp)
+        self.desired_temp = float(temp)
+        self.desired_rh = float(rh)
+        self.desired_co2 = int(co2)
         self.latest_telemetry["target_rh"] = float(rh)
         self.latest_telemetry["target_co2"] = int(co2)
         self.latest_telemetry["target_o2"] = float(o2)

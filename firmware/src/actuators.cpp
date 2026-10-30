@@ -68,10 +68,10 @@ void ActuatorManager::processHeating(float currentTemp) {
         state.alarmActive = false;
     }
 
-    // Dynamic precision hysteresis:
-    // lowThreshold  = targetTemp - 0.25°C (Heater turns ON below this)
-    // highThreshold = targetTemp         (Heater turns OFF once target is reached)
-    float lowThreshold  = targetTemp - 0.25f;
+    // Dynamic precision hysteresis (Temperature Priority):
+    // lowThreshold  = targetTemp - 0.15°C (Heater turns ON below this)
+    // highThreshold = targetTemp          (Heater turns OFF once target is reached)
+    float lowThreshold  = targetTemp - 0.15f;
     float highThreshold = targetTemp;
 
     // 2. High threshold cutoff: shut OFF immediately once target temperature is reached
@@ -85,8 +85,8 @@ void ActuatorManager::processHeating(float currentTemp) {
         return;
     }
 
-    // 3. Low threshold trigger: activate heater when below low limit and keep ON until target is reached
-    if (currentTemp < lowThreshold) {
+    // 3. Strict Temperature Priority: whenever below target thresholds, ensure heater is ON until targetTemp is reached
+    if (currentTemp < lowThreshold || (state.heater && currentTemp < highThreshold)) {
         if (!state.heater) {
             setRelay(PIN_RELAY_HEATER, true);
             state.heater = true;
@@ -107,21 +107,25 @@ void ActuatorManager::processVentilation(uint16_t currentCO2, float currentO2, f
         return;
     }
 
-    float maxRH = (currentPhase == PHASE_SETTING) ? (targetRH + 2.0f) : (targetRH + 5.0f);
+    // 2. STRICT TEMPERATURE PRIORITY INTERLOCK:
+    // If temperature is anywhere below targetTemp OR the PTC heater is actively heating,
+    // NEVER run the exhaust fan for humidity or O2—preserve 100% of chamber heat until targetTemp is reached!
+    if (currentTemp < targetTemp || state.heater) {
+        if (state.exhaustFan) {
+            setRelay(PIN_RELAY_EXHAUST, false);
+            state.exhaustFan = false;
+        }
+        return;
+    }
+
+    float maxRH = (currentPhase == PHASE_SETTING) ? (targetRH + 7.0f) : (targetRH + 5.0f);
     float o2Min = (currentPhase == PHASE_SETTING) ? DEFAULT_O2_MIN_SETTING : DEFAULT_O2_MIN_HATCHING;
 
-    // Thermal priority interlock:
-    // If chamber is cold (under-temperature below target - 0.25°C), heat preservation MUST take priority.
-    // The exhaust fan must NOT run for humidity or minor O2 fluctuations, which would blow all heat away!
-    bool isUnderTemp = (currentTemp < (targetTemp - 0.25f));
-
-    // Ventilation triggers:
-    // a) Critical over-temperature venting (>= targetTemp + 0.3°C)
-    //    (CO2 emergency trigger disregarded due to unreliable sensor)
-    // b) Normal ventilation (O2 < min, RH > max) ONLY permitted if chamber is NOT under-temperature
-    //    (CO2 threshold trigger disregarded due to unreliable sensor)
+    // Ventilation triggers (only evaluated when currentTemp >= targetTemp and heater is OFF):
+    // a) Over-temperature venting (>= targetTemp + 0.3°C)
+    // b) Normal ventilation (O2 < min, RH > max)
     bool criticalVent = (currentTemp >= (targetTemp + 0.3f));
-    bool normalVent = (!isUnderTemp) && (
+    bool normalVent = (
         (currentO2 > 0.0f && currentO2 < o2Min) ||
         (currentRH > maxRH)
     );

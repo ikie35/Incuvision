@@ -237,6 +237,7 @@ class IncubationCoordinator:
     def _run_loop(self):
         last_lcd_update = 0
         last_log_time = 0
+        last_thermal_priority_sync = 0
 
         while self.is_running:
             now = time.time()
@@ -279,6 +280,37 @@ class IncubationCoordinator:
                     self.mqtt.send_command({"cmd": "SET_MODE", "mode": "AUTO"})
                     self.mqtt.send_command({"cmd": "SET_RELAY", "actuator": "heater", "state": False})
                     self.mqtt.send_command({"cmd": "SET_RELAY", "actuator": "exhaust", "state": True})
+
+            # 3b. Strict Temperature Priority Supervisor (Every 10s in AUTO mode):
+            # - Ensures ESP32 target_temp is synced to the active phase (37.5°C Setting / 36.9°C Hatching)
+            # - If chamber temperature is below target_temp, suppresses humidity-triggered exhaust venting
+            #   by raising the ESP32 humidity ceiling to 90% until target_temp is reached.
+            if self.mqtt and not act.get("manual", False) and (now - last_thermal_priority_sync >= 10.0):
+                last_thermal_priority_sync = now
+                desired_t = getattr(self.mqtt, "desired_temp", 36.9 if self.phase == "HATCHING" else 37.5)
+                desired_rh = getattr(self.mqtt, "desired_rh", 70.0 if self.phase == "HATCHING" else 58.0)
+                desired_co2 = getattr(self.mqtt, "desired_co2", 7500 if self.phase == "HATCHING" else 5000)
+                reported_t = telem.get("target_temp", desired_t)
+                reported_rh = telem.get("target_rh", desired_rh)
+
+                if temp < desired_t:
+                    # Chamber is under target temperature: prioritize heating 100% and prevent RH exhaust venting
+                    if abs(reported_t - desired_t) > 0.05 or reported_rh < 85.0 or act.get("exhaust", False):
+                        self.mqtt.send_command({
+                            "cmd": "SET_SETPOINTS",
+                            "temp": desired_t,
+                            "rh": 90.0,
+                            "co2": desired_co2
+                        })
+                else:
+                    # Target temperature reached: restore normal RH target on ESP32 if it was raised
+                    if abs(reported_t - desired_t) > 0.05 or abs(reported_rh - desired_rh) > 1.0:
+                        self.mqtt.send_command({
+                            "cmd": "SET_SETPOINTS",
+                            "temp": desired_t,
+                            "rh": desired_rh,
+                            "co2": desired_co2
+                        })
 
             # 4. Top-of-the-Hour Automatic Egg Turning (XX:00:00 every hour in Setting Phase when batch is active)
             now_dt = datetime.now()
