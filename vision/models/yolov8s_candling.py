@@ -146,8 +146,12 @@ class YOLOv8CandlingModel:
             except Exception as e:
                 print(f"[YOLOv8] Ultralytics predict error: {e}")
 
-        # 3. Spatial Sorting: Top-to-Bottom, Left-to-Right
-        # Cluster rows by rounding Y center coordinate so eggs in each horizontal row are numbered in reading order
+        # 3. 56-Egg Tray Grid Snapping & Missing Slot Recovery
+        # If YOLO detects >= 48 eggs in the 8x7 physical tray, recover any missed corner/edge slots
+        if 48 <= len(detected) < 56:
+            detected = self._recover_missing_tray_eggs(detected, frame_bgr, preds, scale_x, scale_y)
+
+        # 4. Spatial Sorting: Top-to-Bottom, Left-to-Right
         if len(detected) > 0:
             detected.sort(key=lambda e: (round(e["center_y"] / 60.0) * 60.0, e["center_x"]))
             for i, egg in enumerate(detected):
@@ -156,6 +160,55 @@ class YOLOv8CandlingModel:
                 egg["col"] = (i % 7) + 1
 
         return detected
+
+    def _recover_missing_tray_eggs(self, detected: list, frame_bgr: np.ndarray, preds: np.ndarray, scale_x: float, scale_y: float) -> list:
+        """
+        Uses known physical geometry of the 8x7 tray to find and recover 
+        dim or corner eggs that fell below the main confidence cutoff.
+        """
+        h, w = frame_bgr.shape[:2]
+        # Calculate median egg dimensions from detected eggs
+        widths = [e["bbox"][2] - e["bbox"][0] for e in detected]
+        heights = [e["bbox"][3] - e["bbox"][1] for e in detected]
+        med_w = int(np.median(widths)) if widths else int(60 * scale_x)
+        med_h = int(np.median(heights)) if heights else int(60 * scale_y)
+
+        # Look in preds for lower-confidence candidates (0.10 <= conf < CONFIDENCE_THRESHOLD)
+        recovered = list(detected)
+        existing_centers = [(e["center_x"], e["center_y"]) for e in detected]
+
+        for p in preds:
+            cx, cy, bw, bh = p[:4]
+            scores = p[4:]
+            cls_id = int(np.argmax(scores))
+            conf = float(scores[cls_id])
+            
+            # Sensitive candidate check
+            if 0.10 <= conf < CONFIDENCE_THRESHOLD:
+                cand_x = cx * scale_x
+                cand_y = cy * scale_y
+                
+                # Check distance from all existing eggs to ensure it's not a duplicate
+                too_close = any(np.hypot(cand_x - ex, cand_y - ey) < (med_w * 0.7) for ex, ey in existing_centers)
+                if not too_close:
+                    x1 = max(0, int((cx - bw / 2.0) * scale_x))
+                    y1 = max(0, int((cy - bh / 2.0) * scale_y))
+                    x2 = min(w, int((cx + bw / 2.0) * scale_x))
+                    y2 = min(h, int((cy + bh / 2.0) * scale_y))
+                    
+                    recovered.append({
+                        "bbox": [x1, y1, x2, y2],
+                        "center_x": cand_x,
+                        "center_y": cand_y,
+                        "class_id": cls_id,
+                        "status": CLASS_LABELS.get(cls_id, "unknown"),
+                        "confidence": round(conf, 3)
+                    })
+                    existing_centers.append((cand_x, cand_y))
+                    if len(recovered) == 56:
+                        break
+
+        return recovered
 
     def predict_egg_crop(self, egg_crop_img: np.ndarray, row: int, col: int, day: int) -> dict:
         """Backward compatibility for single crop classification."""
