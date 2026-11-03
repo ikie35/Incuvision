@@ -57,8 +57,8 @@ if not YOLO_MODEL_PATH.exists():
     YOLO_MODEL_PATH = MODELS_DIR / "yolov8ncandling.onnx"
 if not YOLO_MODEL_PATH.exists():
     YOLO_MODEL_PATH = MODELS_DIR / "yolov8s_candling.pt"
-CONFIDENCE_THRESHOLD = 0.45
-IOU_THRESHOLD = 0.50
+CONFIDENCE_THRESHOLD = 0.22  # Lowered to capture dimmer/edge eggs in 56-egg tray
+IOU_THRESHOLD = 0.60         # Increased to prevent NMS from suppressing closely packed neighboring eggs
 
 # Class Labels for Egg Candling (Binary: Fertile vs Infertile)
 CLASS_LABELS = {
