@@ -163,19 +163,18 @@ class YOLOv8CandlingModel:
 
     def _recover_missing_tray_eggs(self, detected: list, frame_bgr: np.ndarray, preds: np.ndarray, scale_x: float, scale_y: float) -> list:
         """
-        Uses known physical geometry of the 8x7 tray to find and recover 
-        dim or corner eggs that fell below the main confidence cutoff.
+        Uses the physical 8x7 tray grid (7 columns, 8 rows) to mathematically
+        locate any missed slots (like the top-left corner) and recover them.
         """
         h, w = frame_bgr.shape[:2]
-        # Calculate median egg dimensions from detected eggs
+        recovered = list(detected)
+
+        # 1. First pass: Check raw predictions down to 0.04 confidence
+        existing_centers = [(e["center_x"], e["center_y"]) for e in detected]
         widths = [e["bbox"][2] - e["bbox"][0] for e in detected]
         heights = [e["bbox"][3] - e["bbox"][1] for e in detected]
-        med_w = int(np.median(widths)) if widths else int(60 * scale_x)
-        med_h = int(np.median(heights)) if heights else int(60 * scale_y)
-
-        # Look in preds for lower-confidence candidates (0.10 <= conf < CONFIDENCE_THRESHOLD)
-        recovered = list(detected)
-        existing_centers = [(e["center_x"], e["center_y"]) for e in detected]
+        med_w = int(np.median(widths)) if widths else int(50 * scale_x)
+        med_h = int(np.median(heights)) if heights else int(50 * scale_y)
 
         for p in preds:
             cx, cy, bw, bh = p[:4]
@@ -183,13 +182,10 @@ class YOLOv8CandlingModel:
             cls_id = int(np.argmax(scores))
             conf = float(scores[cls_id])
             
-            # Sensitive candidate check
-            if 0.10 <= conf < CONFIDENCE_THRESHOLD:
+            if 0.04 <= conf < CONFIDENCE_THRESHOLD:
                 cand_x = cx * scale_x
                 cand_y = cy * scale_y
-                
-                # Check distance from all existing eggs to ensure it's not a duplicate
-                too_close = any(np.hypot(cand_x - ex, cand_y - ey) < (med_w * 0.7) for ex, ey in existing_centers)
+                too_close = any(np.hypot(cand_x - ex, cand_y - ey) < (med_w * 0.65) for ex, ey in existing_centers)
                 if not too_close:
                     x1 = max(0, int((cx - bw / 2.0) * scale_x))
                     y1 = max(0, int((cy - bh / 2.0) * scale_y))
@@ -206,7 +202,78 @@ class YOLOv8CandlingModel:
                     })
                     existing_centers.append((cand_x, cand_y))
                     if len(recovered) == 56:
-                        break
+                        return recovered
+
+        # 2. Second pass: Geometric Grid Fitting
+        # If still < 56, cluster into the 7 columns and 8 rows to find the exact missing slot
+        if len(recovered) < 56:
+            # Sort X coordinates to find the 7 tray columns
+            xs = sorted([e["center_x"] for e in recovered])
+            # Find the 7 column cluster centers
+            cols_x = []
+            for x in xs:
+                if not any(abs(x - cx) < (med_w * 0.6) for cx in cols_x):
+                    cols_x.append(x)
+            cols_x = sorted(cols_x)
+
+            # Sort Y coordinates to find the 8 tray rows
+            ys = sorted([e["center_y"] for e in recovered])
+            rows_y = []
+            for y in ys:
+                if not any(abs(y - ry) < (med_h * 0.6) for ry in rows_y):
+                    rows_y.append(y)
+            rows_y = sorted(rows_y)
+
+            # If we identified the grid lines, check each (row, col) intersection
+            if len(cols_x) >= 6 and len(rows_y) >= 7:
+                # Interpolate if 1 column or 1 row is missing at the boundary
+                if len(cols_x) == 6:
+                    col_step = np.median(np.diff(cols_x))
+                    if cols_x[0] > (col_step * 1.2):
+                        cols_x.insert(0, cols_x[0] - col_step)
+                    else:
+                        cols_x.append(cols_x[-1] + col_step)
+
+                if len(rows_y) == 7:
+                    row_step = np.median(np.diff(rows_y))
+                    if rows_y[0] > (row_step * 1.2):
+                        rows_y.insert(0, rows_y[0] - row_step)
+                    else:
+                        rows_y.append(rows_y[-1] + row_step)
+
+                for r_y in rows_y[:8]:
+                    for c_x in cols_x[:7]:
+                        # Is there an egg already at this intersection?
+                        has_egg = any(np.hypot(c_x - ex, r_y - ey) < (med_w * 0.6) for ex, ey in existing_centers)
+                        if not has_egg:
+                            # Recover this exact missing egg cell!
+                            x1 = max(0, int(c_x - med_w / 2.0))
+                            y1 = max(0, int(r_y - med_h / 2.0))
+                            x2 = min(w, int(c_x + med_w / 2.0))
+                            y2 = min(h, int(r_y + med_h / 2.0))
+
+                            # Classify egg by analyzing the slot luminosity (dark = fertile embryo, bright amber = infertile)
+                            crop = frame_bgr[y1:y2, x1:x2]
+                            status = "fertile"
+                            cls_id = 0
+                            if crop.size > 0:
+                                hsv_crop = cv2.cvtColor(crop, cv2.COLOR_BGR2HSV)
+                                mean_val = np.mean(hsv_crop[:, :, 2])
+                                if mean_val > 115: # Bright translucent yellow/amber
+                                    status = "infertile"
+                                    cls_id = 1
+
+                            recovered.append({
+                                "bbox": [x1, y1, x2, y2],
+                                "center_x": c_x,
+                                "center_y": r_y,
+                                "class_id": cls_id,
+                                "status": status,
+                                "confidence": 0.65
+                            })
+                            existing_centers.append((c_x, r_y))
+                            if len(recovered) == 56:
+                                return recovered
 
         return recovered
 
