@@ -1,0 +1,135 @@
+# ==============================================================================
+# INCUVISION: AI MODEL DEVELOPMENT PROCESS & WORKFLOW
+# (FROM DATASET COLLECTION TO SYSTEM INTEGRATION)
+# DOCUMENT PURPOSE: Surface-Level Methodology for Manuscript Writing
+# BASED ON: Complete Project Interaction History and Development Trajectory
+# AUTHOR: Michael Ike Russel M. Ruedas
+# PROJECT: IncuVision — Smart Egg Incubation & Candling System
+# ==============================================================================
+
+--------------------------------------------------------------------------------
+EXECUTIVE SUMMARY
+--------------------------------------------------------------------------------
+This document outlines the step-by-step artificial intelligence development
+pipeline implemented in IncuVision. The methodology covers five progressive
+stages:
+  1. Dataset Collection & Assembly
+  2. Data Annotation & Cloud Management (Roboflow)
+  3. Model Training & Domain Fine-Tuning (Kaggle GPU)
+  4. Model Optimization & Format Conversion (ONNX)
+  5. Edge System Deployment, Threshold Calibration & Tray Integration (Raspberry Pi 5)
+
+================================================================================
+STAGE 1: DATASET COLLECTION
+================================================================================
+A. Base Multi-Day Candling Dataset (Foundational Knowledge):
+   - The initial training dataset consisted of 653 multi-day candled egg images.
+   - Images captured eggs at critical developmental milestones across incubation
+     (Day 3, Day 7, Day 10, Day 14, and Day 18).
+   - Purpose: Expose the neural network to wide biological variances, including
+     faint early blood islands, intricate spider-web vascular networks, opaque
+     embryo bodies, as well as clear unfertilized yolks and dead-in-shell blood rings.
+
+B. In-Situ Incubator Image Collection (Hardware Adaptation):
+   - To adapt the model to the specific physical environment of IncuVision, 20
+     high-resolution full-chamber images were captured directly inside the incubator.
+   - Setup: Captured by the top-mounted Raspberry Pi camera in a darkened chamber
+     with the high-intensity sub-tray LED candling array turned ON.
+   - Purpose: Capture the real optical properties of the chamber—including the
+     transillumination through the 56-cup yellow turning tray, specific camera
+     focal length, viewing angles, and lens vignetting.
+
+================================================================================
+STAGE 2: DATA ANNOTATION & PREPROCESSING (ROBOFLOW)
+================================================================================
+A. Cloud Annotation:
+   - The images were uploaded and managed using the Roboflow platform.
+   - Every individual egg position in the 56-egg grid was labeled using bounding
+     boxes under a binary classification scheme:
+     * 'fertile'   : Eggs showing blood vessel branching, embryo eye/shadow, or
+                     advanced opacity.
+     * 'infertile' : Clear translucent eggs with no vascular development, or
+                     floating unfertilized yolk shadows.
+
+B. Preprocessing & Augmentation Strategy:
+   - Auto-Orientation: Stripped camera EXIF tags so all images remained upright.
+   - Static Resizing: Standardized to 640 x 640 pixels with letterbox padding to
+     match YOLOv8's native input aspect ratio without distorting egg curvature.
+   - Candling-Safe Augmentation:
+     * Flips (horizontal and vertical) and slight rotations (+/- 15 degrees) were
+       applied to simulate egg placement and kinematic tray tilting.
+     * Controlled brightness variations (+/- 20%) to account for LED power fluctuations.
+     * Hue shifting was kept minimal to preserve the true red color of blood vessels.
+     * Structural distortions (like Mosaic and Cutout) were turned off to preserve
+       the regular geometric layout of the egg tray.
+
+================================================================================
+STAGE 3: MODEL TRAINING & FINE-TUNING (KAGGLE GPU)
+================================================================================
+A. Architecture Selection:
+   - Selected Model: YOLOv8 Nano ('yolov8n-detect').
+   - Rationale: Lightweight (~3.2 million parameters) with an anchor-free detection
+     head, capable of simultaneous localized detection and classification while
+     remaining fast enough for low-power edge hardware.
+
+B. Training & Fine-Tuning Execution:
+   - Platform: Cloud GPU instance in Kaggle (NVIDIA Tesla T4).
+   - Training Workflow:
+     1. Initial Run: The model was trained from pre-trained weights on the dataset.
+     2. Domain Fine-Tuning: The pre-trained candling weights ('yolov8n_candling.pt')
+        were fine-tuned on the in-situ incubator images ('finetune-skerg' dataset).
+     3. Backbone Layer Freezing: The first 10 feature-extraction layers were frozen
+        (freeze=10) with a low learning rate (lr0=0.0005) to ensure the network
+        retained its base blood vessel knowledge while adapting to the incubator.
+   - Validation Outcome:
+     * The model achieved 81.4% mAP@50 and 78.6% recall on the validation set,
+       confirming accurate classification between fertile and infertile eggs.
+
+================================================================================
+STAGE 4: MODEL OPTIMIZATION & ONNX CONVERSION
+================================================================================
+A. Conversion from PyTorch to ONNX:
+   - Native PyTorch (.pt) weights require heavy software dependencies that are
+     inefficient for real-time edge execution on a Raspberry Pi.
+   - The best fine-tuned model checkpoint was exported into Open Neural Network
+     Exchange (ONNX) format ('yolov8ncandling.onnx').
+
+B. Export Standards:
+   - Fixed static input tensor shape: 1 x 3 x 640 x 640.
+   - ONNX Opset 12: Selected as the universal cross-platform standard for full
+     compatibility with Raspberry Pi OS (Debian 12 ARM64).
+   - Graph Simplification: Simplified the model computation graph to eliminate
+     redundant operations, reducing inference latency to ~120 ms per full scan.
+
+================================================================================
+STAGE 5: SYSTEM INTEGRATION & REAL-WORLD TUNING (RASPBERRY PI 5)
+================================================================================
+A. Edge Deployment & Inference Pipeline:
+   - The ONNX model was deployed to the Raspberry Pi 5 under ONNX Runtime CPU.
+   - Candling Pipeline Workflow:
+     1. Automatic Candling Audit (Days 7, 10, 18) or manual user trigger on web app.
+     2. The incubator coordinator energizes the candling LED relay.
+     3. The camera captures the full chamber frame.
+     4. ONNX Runtime runs full-frame detection.
+     5. Detected eggs are sorted top-to-bottom, left-to-right into an 8-Row x 7-Column
+        grid (#1 to #56) and displayed on the web dashboard.
+
+B. Threshold Calibration for 56-Egg Tray Detection:
+   - Initial Issue: The default confidence threshold (0.45) frequently missed 2 to 3
+     eggs along the outer edges and corners of the tray.
+   - Root Cause: Camera lens vignetting and natural light drop-off made peripheral
+     eggs slightly dimmer, causing their raw confidence to score around 0.16–0.22.
+   - Resolution:
+     * Calibrated CONFIDENCE_THRESHOLD to 0.15.
+     * Adjusted IOU_THRESHOLD to 0.60 to prevent tightly packed neighboring eggs
+       from canceling each other out during Non-Maximum Suppression (NMS).
+     * This ensured reliable detection across all tray positions without false positives.
+
+C. Physical Seating & Optical Insights:
+   - Experimental observation showed that placing eggs with the blunt end (air cell)
+     facing UP and the narrow end seated directly over the LED aperture provided
+     maximum light penetration, ensuring clear egg illumination and high AI accuracy.
+
+================================================================================
+END OF AI DEVELOPMENT METHODOLOGY
+================================================================================
