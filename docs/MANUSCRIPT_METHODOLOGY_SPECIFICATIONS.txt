@@ -1,0 +1,218 @@
+# ==============================================================================
+# INCUVISION: MASTER TECHNICAL SPECIFICATION & METHODOLOGY SUMMARY
+# DOCUMENT PURPOSE: Comprehensive Reference for Research Manuscript & Thesis
+# AUTHOR: Michael Ike Russel M. Ruedas
+# PROJECT: IncuVision — Intelligent IoT-Enabled Egg Incubation & Candling System
+# DATE GENERATED: November 2026
+# ==============================================================================
+
+--------------------------------------------------------------------------------
+1. SYSTEM ARCHITECTURE OVERVIEW
+--------------------------------------------------------------------------------
+IncuVision is a dual-tier edge computing smart incubator system integrating:
+  1. Low-Level Embedded Tier (Firmware / Hardware Control):
+     - Microcontroller: Espressif ESP32 (NodeMCU-32S)
+     - Core Responsibilities: Real-time closed-loop environmental control
+       (temperature, relative humidity, ventilation, egg turning, sensor reading,
+       failsafe watchdogs).
+  2. High-Level Vision & Edge AI Tier (Coordinator / Supervisor):
+     - Edge Computer: Raspberry Pi 5 (8GB RAM) running Raspberry Pi OS (Debian 12)
+     - Core Responsibilities: High-level incubation schedule coordination (21-day
+       lifecycle), computer vision candling pipeline, automated fertility audit,
+       telemetry logging (SQLite + CSV), WebSocket streaming, and REST API server.
+  3. Telemetry & Messaging Bus:
+     - Eclipse Mosquitto MQTT Broker (port 1883) with transparent USB Serial
+       fallback bridge (/dev/ttyUSB0 @ 115200 baud).
+  4. Remote User Interface:
+     - Progressive Web App (PWA) with responsive dashboard, live video candling
+       stream, manual/auto actuator override controls, fertility analytics, and
+       remote tunneling via Cloudflare Tunnel.
+
+--------------------------------------------------------------------------------
+2. HARDWARE COMPONENTS & PIN ASSIGNMENTS
+--------------------------------------------------------------------------------
+A. SENSORS:
+  - DHT22 (AM2302):
+    * Primary chamber temperature and relative humidity measurement.
+    * GPIO: Pin 13
+    * Software Calibration Offsets Applied:
+      - Temperature Offset: +0.3 °C (DHT_TEMP_OFFSET_C)
+      - Relative Humidity Offset: -5.5 % RH (DHT_RH_OFFSET_PCT)
+  - Sensirion SCD30:
+    * Non-Dispersive Infrared (NDIR) CO2 sensor + backup temperature/humidity.
+    * Bus: I2C (SDA: GPIO 21, SCL: GPIO 22)
+    * Range: 400 - 10,000 ppm CO2
+  - DFRobot Electrochemical Oxygen Sensor:
+    * Bus: I2C (Address 0x73 / ADDRESS_3) with automatic fallback to 12-bit
+      ADC on GPIO 34.
+    * Calibration: Linear 0 - 25% O2 mapping.
+  - HD44780 20x4 Character LCD (with I2C Backpack PCF8574):
+    * Bus: I2C (Address 0x27 / 0x3F) on Raspberry Pi I2C-1 (Pins 3 & 5).
+    * Real-time 4-line display: Incubation Day/Phase, T/RH, CO2/O2, Actuator states.
+
+B. ACTUATORS & RELAYS (Active-LOW 4-Channel 5V Relay Module):
+  - PTC Heating Element (Chamber Heat):
+    * GPIO: Pin 14 (Active LOW)
+    * Thermal Control: Closed-loop precision hysteresis with software burst limit.
+  - 12V DC Exhaust / Ventilation Fan:
+    * GPIO: Pin 27 (Active LOW)
+    * Functions: Over-temperature evacuation, high-humidity venting, O2 intake.
+  - 220V AC Synchronous Kinematic Egg Turning Motor:
+    * GPIO: Pin 25 (Active LOW)
+    * Operation: Runs every 60 minutes for 15 seconds (Days 1 to 18).
+  - High-Intensity Candling LED Array (Sub-Tray Matrix):
+    * GPIO: Pin 26 (Active LOW)
+    * Function: Transilluminates the 56 eggs from underneath for camera vision.
+  - Continuous Circulation Fan:
+    * Hardwired 12V DC power for uniform laminar air distribution across all trays.
+
+C. CAMERA HARDWARE:
+  - Raspberry Pi Camera Module 3 / Wide-Angle Camera:
+    * Top-down overhead mounting at perpendicular viewing angle over 56-egg tray.
+    * Interfaced via libcamera / Picamera2 / OpenCV V4L2 pipeline.
+    * Resolution: 1920x1080 capture, scaled to 640x640 for AI inference.
+
+--------------------------------------------------------------------------------
+3. CONTROL LOGIC & OPERATIONAL PARAMETERS
+--------------------------------------------------------------------------------
+A. INCUBATION SCHEDULE:
+  - Total Duration: 21 Days (504 Hours)
+  - Day Counting Standard: 1-indexed (Day 1 to Day 21) across LCD, DB, CSV, and UI.
+  - Setting Phase: Day 1 through Day 18 (432 hours)
+    * Target Temperature: 37.50 °C
+    * Target Relative Humidity: 58.0 % RH
+    * Turning Motor: Enabled (automatic 1-hour interval, 15-second duration)
+  - Hatching Phase (Lockdown): Day 19 through Day 21 (72 hours)
+    * Target Temperature: 36.90 °C
+    * Target Relative Humidity: 70.0 % RH
+    * Turning Motor: Hard locked to OFF (prevent chick umbilical entanglement)
+
+B. THERMAL PRIORITY & HYSTERESIS CONTROL:
+  - Heating Hysteresis:
+    * Low Threshold: Target - 0.15 °C (Heater turns ON below 37.35 °C in Setting)
+    * High Cutoff: Target Temp (Heater turns OFF at 37.50 °C)
+  - Temperature Priority Interlock:
+    * In firmware (actuators.cpp) and supervisor (coordinator.py), the exhaust fan
+      is strictly FORBIDDEN from venting humidity or freshening air if
+      chamber temperature is below target (currentTemp < targetTemp) or if the
+      heater is currently ON.
+    * Setting Phase humidity venting deadband widened to Target + 7.0% (65.0% RH)
+      so ambient moisture does not cause premature heat dumping.
+  - Safety Failsafe:
+    * Absolute Critical Maximum: 38.00 °C (Triggers heater cutoff, full exhaust fan
+      activation, and buzzer alarm).
+    * Anti-runaway heating burst limit: Maximum 10 seconds continuous burst.
+
+--------------------------------------------------------------------------------
+4. ARTIFICIAL INTELLIGENCE & COMPUTER VISION CANDLING PIPELINE
+--------------------------------------------------------------------------------
+A. AI MODEL ARCHITECTURE:
+  - Framework: YOLOv8 Nano (Ultralytics YOLOv8n) Object Detection
+  - Model Format: Open Neural Network Exchange (ONNX) format (opset 12, static 640x640)
+  - Execution Engine: ONNX Runtime (CPU accelerated) running on Raspberry Pi 5
+  - Target Capacity: 56 eggs in an 8-Row x 7-Column kinematic tray grid.
+
+B. DATASET & ANNOTATION:
+  - Platform: Roboflow (Workspace: "ike-russel", Project: "finetune-skerg")
+  - Dataset Composition:
+    * Base Pretraining: 653 multi-day candled egg images across days 3, 7, 10, 14, 18.
+    * Domain Adaptation / Fine-Tuning: 20 raw in-situ captures from the actual
+      IncuVision incubator Pi camera under custom LED candling transillumination.
+  - Classes (Binary Classification):
+    * Class 0: 'fertile'   (Developed: active blood vessel networks, spider veins,
+                            embryo eye/body, dark opacity)
+    * Class 1: 'infertile' (Clear, unfertilized, non-viable, or early-dead yolk)
+
+C. TRAINING & FINE-TUNING METHODOLOGY:
+  - Platform: Kaggle GPU (NVIDIA Tesla T4 / P100)
+  - Base Checkpoint: 'yolov8n_candling.pt' (pre-trained on 653 candling dataset)
+  - Transfer Learning Hyperparameters:
+    * Epochs: 40
+    * Batch Size: 16
+    * Image Resolution: 640x640
+    * Optimizer: AdamW / SGD with cosine learning rate schedule
+    * Initial Learning Rate (lr0): 0.0005 (10x lower than scratch for fine-tuning)
+    * Final Learning Rate (lrf): 0.01
+    * Backbone Freezing: freeze=10 (freezes layers 0-9 to retain vascular features)
+    * Seed: 42 (deterministic=True for scientific reproducibility)
+  - Data Augmentation Policy (Egg-Candling Specific):
+    * Horizontal Flip: p=0.5
+    * Vertical Flip: p=0.5
+    * Rotation: +/- 15.0 degrees (simulates egg tray rocking angle)
+    * Translation: +/- 0.08
+    * Scaling: +/- 0.10
+    * Color Hue Jitter (hsv_h): 0.015 (strictly limited to keep veins naturally red)
+    * Saturation (hsv_s): 0.20
+    * Exposure / Brightness (hsv_v): 0.25 (simulates LED intensity drop-off)
+    * Mosaic & Mixup: 0.0 (DISABLED to preserve tray geometry and contours)
+
+D. VALIDATION PERFORMANCE METRICS:
+  - Mean Average Precision @ IoU 0.50 (mAP@50): 81.4 % (0.8137)
+  - Overall Precision: 63.3 %
+  - Overall Recall: 78.6 %
+  - Precision on Fertile class: High specificity for vascular branching.
+
+E. INFERENCE & POST-PROCESSING OPTIMIZATIONS:
+  - Dynamic Non-Maximum Suppression (NMS):
+    * Confidence Threshold: 0.15 (calibrated to detect peripheral/dimmer eggs)
+    * IoU Threshold: 0.60 (prevents suppression of closely packed adjacent eggs)
+  - Spatial Indexing:
+    * Clustered and sorted top-to-bottom, left-to-right (Row 1-8, Col 1-7).
+  - Tray Seating Insight:
+    * Eggs positioned blunt-end (air cell) UP and centered over the candling LED
+      apertures provide maximum transillumination, eliminating dark-cup shadowing.
+
+--------------------------------------------------------------------------------
+5. SOFTWARE STACK & REPOSITORY STRUCTURE
+--------------------------------------------------------------------------------
+A. PROGRAMMING LANGUAGES & FRAMEWORKS:
+  - C++17 / Arduino Framework (ESP32 Firmware via PlatformIO)
+  - Python 3.11 (Raspberry Pi Vision & Coordinator Engine)
+  - FastAPI + Uvicorn (Asynchronous REST API and WebSocket Server)
+  - ONNX Runtime 1.16+ (Edge AI Inference)
+  - OpenCV (Image processing and candling frame annotation)
+  - HTML5, CSS3, Vanilla ES6 JavaScript (Lightweight mobile PWA)
+  - SQLite3 & CSV (Dual-mode persistent telemetry and turning event logging)
+
+B. KEY FILES IN REPOSITORY:
+  - firmware/src/main.cpp            : ESP32 entry point, setup, and loop
+  - firmware/src/actuators.cpp       : Closed-loop heating, venting, turning logic
+  - firmware/src/sensors.cpp         : DHT22, SCD30, O2 sensor drivers & calibration
+  - firmware/include/config.h        : Hardware pinouts, setpoints, offsets
+  - vision/main.py                   : Coordinator launcher and process manager
+  - vision/coordinator.py            : Incubation state machine, day/phase tracker
+  - vision/candling_pipeline.py      : Camera capture & full-frame AI candling audit
+  - vision/models/yolov8s_candling.py: ONNX Runtime inference & spatial sorter
+  - vision/camera_manager.py         : Picamera2 / V4L2 USB camera driver
+  - vision/mqtt_bridge.py            : MQTT subscriber & USB Serial fallback worker
+  - vision/logger.py                 : SQLite and telemetry_log.csv data logger
+  - vision/api.py                    : FastAPI web server & WebSocket endpoints
+  - yolov8ncandling.onnx             : Fine-tuned ONNX model running on Pi 5
+  - vision/kaggle_finetune_online.py : Full reproducible Kaggle fine-tuning script
+  - app/index.html & app/app.js      : Real-time responsive user dashboard
+
+--------------------------------------------------------------------------------
+6. DATA LOGGING & AUDIT TRAIL
+--------------------------------------------------------------------------------
+- Telemetry Interval: Recorded once every 60 seconds.
+- CSV Output File: vision/telemetry_log.csv
+- SQLite Database: vision/incuvision_data.db (table: telemetry)
+- Logged Parameters:
+  * timestamp (YYYY-MM-DD HH:MM:SS)
+  * day (Day 1 to 21)
+  * phase (SETTING / HATCHING)
+  * temperature (°C)
+  * humidity (% RH)
+  * co2 (ppm)
+  * o2 (%)
+  * heater_state (ON / OFF)
+  * exhaust_state (ON / OFF)
+  * motor_state (ON / OFF - captures automatic and manual egg turning events)
+  * mode (AUTOMATIC / MANUAL)
+  * fertility_rate (%)
+- Candling Audits: Full raw and annotated photos saved with metadata timestamps in
+  vision/captures/ on Days 7, 10, and 18 (and manual user-triggered audits).
+
+==============================================================================
+END OF TECHNICAL SPECIFICATION
+==============================================================================
