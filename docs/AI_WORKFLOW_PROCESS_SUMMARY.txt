@@ -1,0 +1,103 @@
+# ==============================================================================
+# INCUVISION: AI DEVELOPMENT WORKFLOW & PIPELINE (SURFACE-LEVEL METHODOLOGY)
+# DOCUMENT PURPOSE: High-Level Step-by-Step AI Methodology for Research Manuscript
+# AUTHOR: Michael Ike Russel M. Ruedas
+# PROJECT: IncuVision — Smart Egg Candling & Fertility Classification
+# DATE: November 2026
+# ==============================================================================
+
+--------------------------------------------------------------------------------
+OVERVIEW OF THE 6-STAGE AI WORKFLOW
+--------------------------------------------------------------------------------
+The artificial intelligence pipeline in IncuVision follows a 6-stage lifecycle:
+  1. Initial Base Training (Foundational Learning)
+  2. In-Situ Image Acquisition (Raspberry Pi Camera)
+  3. Cloud Annotation & Dataset Structuring (Roboflow)
+  4. Transfer Learning & Domain Adaptation (Kaggle GPU)
+  5. Model Export & Edge Conversion (ONNX)
+  6. Edge Deployment & System Integration (Raspberry Pi 5)
+
+================================================================================
+STAGE 1: INITIAL BASE TRAINING (FOUNDATIONAL LEARNING)
+================================================================================
+- An initial YOLOv8 nano object detection model was first trained on an existing
+  dataset of 653 multi-day candled egg images (covering Days 3 through 18).
+- Goal: Teach the neural network foundational biological features of incubation:
+  * Distinguishing developed eggs (spider veins, embryo bodies, dark opacity)
+    from undeveloped/clear eggs (uniform yellow glow, floating unfertilized yolk).
+- Output: A pre-trained base model checkpoint ('yolov8n_candling.pt').
+
+================================================================================
+STAGE 2: IN-SITU IMAGE ACQUISITION (INCUBATOR CAMERA CAPTURES)
+================================================================================
+- While the base model understood general candling concepts, it needed to adapt
+  to IncuVision's specific hardware:
+  * Raspberry Pi Camera Module mounted overhead.
+  * Custom sub-tray high-intensity LED candling array.
+  * Physical 56-egg kinematic turning tray.
+- The high-intensity candling lights were energized in a darkened chamber.
+- The Raspberry Pi camera captured 20 high-resolution full-frame images of the
+  entire tray containing real eggs across different incubation days.
+- Raw, unmarked images were saved on the Raspberry Pi and exported for labeling.
+
+================================================================================
+STAGE 3: CLOUD ANNOTATION & DATASET STRUCTURING (ROBOFLOW)
+================================================================================
+- The raw incubator images were uploaded to the Roboflow computer vision platform.
+- Every visible egg in the 56-cup tray was labeled with bounding boxes under
+  two distinct classes:
+  * 'fertile': Eggs showing active vascular networks or dark embryonic masses.
+  * 'infertile': Clear eggs or unfertilized yolks with no blood vessel growth.
+- Preprocessing:
+  * Images were auto-oriented and resized to standard 640x640 resolution to match
+    YOLOv8's native input dimensions.
+- The dataset was packaged into standard YOLOv8 format for cloud training.
+
+================================================================================
+STAGE 4: TRANSFER LEARNING & DOMAIN ADAPTATION (KAGGLE GPU)
+================================================================================
+- The training was performed in a cloud GPU environment (Kaggle):
+  1. Base Weights: The pre-trained model ('yolov8n_candling.pt') was loaded as the
+     starting checkpoint.
+  2. Backbone Freezing: The initial feature-extraction layers were frozen.
+     * Purpose: Retains the general blood vessel knowledge learned from the 653
+       images while only updating the detection heads to adapt to the incubator's
+       lighting and camera angle.
+  3. Online Data Augmentations:
+     * Gentle augmentations (horizontal/vertical flips, subtle rotation, and
+       slight brightness variations) were applied during training to simulate
+       minor tray tilting and LED intensity changes.
+     * Hue shifting was kept minimal to preserve the true red color of blood vessels.
+  4. Results: The fine-tuned model achieved an 81.4% mAP@50 on validation data.
+
+================================================================================
+STAGE 5: MODEL EXPORT & EDGE OPTIMIZATION (ONNX)
+================================================================================
+- PyTorch models (.pt) require heavy Python libraries not ideal for low-power edge
+  devices.
+- The best fine-tuned model checkpoint was converted into Open Neural Network
+  Exchange (ONNX) format ('yolov8ncandling.onnx') using standard Opset 12.
+- Benefits of ONNX conversion:
+  * Enables fast, standalone CPU execution via ONNX Runtime on the Raspberry Pi 5.
+  * Eliminates heavy framework overhead and reduces scan latency to ~120 ms.
+
+================================================================================
+STAGE 6: EDGE DEPLOYMENT & SYSTEM INTEGRATION (INCUVISION APP)
+================================================================================
+- The exported ONNX model was deployed to the Raspberry Pi 5.
+- Real-Time Execution Pipeline:
+  1. Candling Trigger: When scheduled (Days 7, 10, 18) or triggered manually via
+     the web dashboard, the incubator turns ON the candling LEDs.
+  2. Capture: The camera takes a snapshot and passes it to the ONNX Runtime engine.
+  3. Threshold Tuning: Confidence was calibrated to 0.15 and IoU to 0.60 so that
+     dimmer corner eggs in the 56-egg grid are reliably detected without
+     suppressing closely packed neighboring eggs.
+  4. Spatial Ordering: Bounding boxes are automatically sorted top-to-bottom,
+     left-to-right to map each egg to its exact tray position (Rows 1–8, Cols 1–7).
+  5. UI Display & Logging: The annotated image with green ('Fertile') and orange
+     ('Infertile') boxes is displayed on the dashboard, and fertility statistics
+     are logged to the database.
+
+================================================================================
+END OF WORKFLOW SUMMARY
+================================================================================
