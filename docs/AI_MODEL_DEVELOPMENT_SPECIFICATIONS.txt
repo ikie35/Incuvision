@@ -1,0 +1,180 @@
+# ==============================================================================
+# INCUVISION: AI MODEL DEVELOPMENT, TRAINING & COMPUTER VISION SPECIFICATIONS
+# DOCUMENT PURPOSE: Detailed Methodology, Experimental Data & Hyperparameters
+#                   for Thesis / Research Manuscript (Computer Vision Chapter)
+# AUTHOR: Michael Ike Russel M. Ruedas
+# PROJECT: IncuVision — Intelligent Egg Candling & Fertility Assessment AI
+# DATE GENERATED: November 2026
+# ==============================================================================
+
+--------------------------------------------------------------------------------
+1. OBJECT DETECTION ARCHITECTURE & FRAMEWORK SELECTION
+--------------------------------------------------------------------------------
+- Model Architecture: YOLOv8 Nano (Ultralytics YOLOv8n-detect)
+- Selection Rationale:
+  * Computational Efficiency: ~3.2 Million parameters; lightweight footprint
+    ideal for real-time edge execution on embedded ARM processors.
+  * Anchor-Free Detection Head: Directly predicts bounding box centers and
+    dimensions, providing superior generalization over varying egg shapes
+    and tilted orientations in tray cups compared to older anchor-based models.
+  * Task: Multi-Object Detection across the entire 56-egg incubator chamber frame
+    (simultaneous localized bounding-box regression and fertility classification).
+
+- Deployment Format:
+  * Runtime Engine: Open Neural Network Exchange (ONNX) Runtime
+  * Quantization/Precision: FP32 Static Tensor Shape (1 x 3 x 640 x 640)
+  * ONNX Opset: Opset 12 (Universal compatibility standard for Linux ARM64 /
+    Raspberry Pi OS Debian 12 without operator mismatch)
+  * Edge Platform: Raspberry Pi 5 (8GB) utilizing CPU NEON/ARM SIMD optimization
+  * Model File: yolov8ncandling.onnx (~12.7 MB)
+
+--------------------------------------------------------------------------------
+2. DATASET COMPOSITION, ANNOTATION & DOMAIN ADAPTATION
+--------------------------------------------------------------------------------
+A. Two-Stage Dataset Strategy:
+   1. Stage 1 (Base Pre-training Dataset):
+      - Sample Size: 653 multi-day candling images
+      - Temporal Coverage: Incubation Days 3, 7, 10, 14, and 18
+      - Purpose: Learn foundational biological development features:
+        * Blood vessel branching (spider-vein network)
+        * Embryo eye spot and embryonic movement mass
+        * Air cell expansion and fluid opacity gradients
+      - Resulting Pre-trained Weights: yolov8n_candling.pt
+
+   2. Stage 2 (In-Situ Domain Adaptation Dataset):
+      - Sample Size: 20 full-frame images captured directly inside the IncuVision
+        chamber by the overhead Raspberry Pi Camera Module.
+      - Annotation Platform: Roboflow
+        * Workspace: "ike-russel"
+        * Project: "finetune-skerg" (Version 2)
+      - Total Labeled Instances: ~1,100 individual egg annotations across the
+        56-cup kinematic turning tray grid.
+      - Purpose: Adapt detection heads to the specific physical lighting, LED
+        candling wavelength, lens distortion, and optical angles of the
+        IncuVision chamber.
+
+B. Class Ontology (Binary Classification):
+   - Class 0: 'fertile'
+     * Visual Criteria: Clear network of branching blood vessels, visible dark
+       embryo body, spider-like vascular structures, or dark opaque development
+       (Day 7+).
+   - Class 1: 'infertile'
+     * Visual Criteria: Clear translucent appearance, uniform bright yellow/orange
+       illumination, floating unorganized yolk shadow, blood rings (early dead),
+       or lack of vascularization.
+
+C. Image Pre-processing (Roboflow):
+   - Auto-Orientation: Applied (strips camera EXIF rotation tags)
+   - Resize: Static 640 x 640 with letterbox black padding (preserves 1:1 aspect
+     ratio of round eggs without elliptical distortion)
+
+--------------------------------------------------------------------------------
+3. TRAINING & FINE-TUNING METHODOLOGY (KAGGLE GPU)
+--------------------------------------------------------------------------------
+A. Compute Environment:
+   - Platform: Kaggle Notebooks
+   - Accelerator: NVIDIA Tesla T4 GPU (16GB VRAM) / CUDA 12.x
+   - Base Weights Path: /kaggle/input/datasets/ikerussel/finetune/yolov8n_candling.pt
+   - Code Artifact: vision/kaggle_finetune_online.py
+
+B. Transfer Learning & Layer Freezing Strategy:
+   - Backbone Freezing (freeze = 10):
+     * The first 10 layers (Conv, C2f, SPPF backbone layers 0 through 9) were
+       frozen during fine-tuning.
+     * Rationale: Prevents "catastrophic forgetting" of the generalized vascular
+       and embryo features learned from the 653-image dataset, while forcing
+       the detection heads (layers 11-22) to learn the IncuVision chamber's
+       specific geometry and LED illumination levels.
+
+C. Hyperparameters & Optimization Configuration:
+   - Epochs: 40 (Early stopping triggered at Epoch 24 via patience=15)
+   - Batch Size: 16
+   - Image Resolution (imgsz): 640 x 640
+   - Optimizer: Auto-selected SGD / AdamW with momentum (0.937)
+   - Weight Decay: 0.0005
+   - Initial Learning Rate (lr0): 0.0005 (10x lower than scratch training to
+     prevent destructive gradient updates)
+   - Final Learning Rate Factor (lrf): 0.01 (cosine decay)
+   - Warmup: 3.0 warmup epochs (warmup_momentum=0.8, warmup_bias_lr=0.1)
+   - Box Loss Weight (box): 7.5
+   - Class Loss Weight (cls): 0.5
+   - DFL Loss Weight (dfl): 1.5
+   - Reproducibility Seed: 42 (deterministic = True)
+
+D. Online Candling-Safe Data Augmentation Policy:
+   * To prevent destroying subtle candling cues (e.g., hue shifts turning red
+     blood vessels green), augmentations were constrained to biological bounds:
+   - Horizontal Flip (fliplr): 0.5 (Eggs have bilateral symmetry)
+   - Vertical Flip (flipud): 0.5 (Simulates arbitrary egg placement)
+   - Rotation (degrees): +/- 15.0° (Simulates kinematic tray tilting 45°/15°)
+   - Translation (translate): +/- 0.08 (Simulates slight tray shift)
+   - Scale (scale): +/- 0.10 (Simulates minor egg size variance)
+   - Hue Shift (hsv_h): 0.015 (STRICTLY MINIMAL: preserves natural red vessel tones)
+   - Saturation (hsv_s): 0.20 (Simulates shell pigment variations)
+   - Brightness / Exposure (hsv_v): 0.25 (Simulates LED intensity variations)
+   - Mosaic: 0.0 (DISABLED: Preserves regular 8x7 grid geometry)
+   - MixUp: 0.0 (DISABLED: Prevents artificial overlapping egg artifacts)
+   - Copy-Paste: 0.0 (DISABLED)
+   - Random Erasing (erasing): 0.40
+
+--------------------------------------------------------------------------------
+4. EXPERIMENTAL VALIDATION & PERFORMANCE METRICS
+--------------------------------------------------------------------------------
+A. Best Model Evaluation Checkpoint (Epoch 24):
+   - Mean Average Precision @ IoU 0.50 (mAP@50)     : 81.37 % (0.81369)
+   - Mean Average Precision @ IoU 0.50:0.95 (mAP)   : 59.00 % (0.59003)
+   - Overall Recall                                : 78.57 % (0.78571)
+   - Overall Precision                             : 63.25 % (0.63250)
+
+B. Loss Convergence Trajectory:
+   - Training Box Loss        : Decreased from 1.3835 (Epoch 20) -> 0.9947 (Epoch 24)
+   - Training Class Loss (cls): Decreased from 0.9430 -> 0.9110
+   - Training DFL Loss        : Decreased from 1.0814 -> 0.9379
+   - Validation Box Loss      : Converged at 1.1087
+   - Validation Class Loss    : Converged at 1.5155
+   - Validation DFL Loss      : Converged at 0.9565
+
+C. Saved Evaluation Artifacts (in incuvision_training_result/candling_online_finetune_results/):
+   - confusion_matrix.png & confusion_matrix_normalized.png
+   - BoxPR_curve.png (Precision-Recall curve)
+   - BoxF1_curve.png (F1 Score vs Confidence threshold curve)
+   - BoxP_curve.png & BoxR_curve.png (Precision / Recall vs Confidence)
+   - results.csv (Full epoch-by-epoch loss and metrics log)
+   - results.png (Composite loss and mAP progression plots)
+   - labels.jpg (Ground truth spatial and class distribution)
+
+--------------------------------------------------------------------------------
+5. INFERENCE PIPELINE & EDGE OPTIMIZATIONS (RASPBERRY PI 5)
+--------------------------------------------------------------------------------
+A. ONNX Runtime Execution:
+   - Pre-processing:
+     * Frame acquired via OpenCV / Picamera2 (1920x1080 BGR)
+     * Resized to 640x640: cv2.dnn.blobFromImage(resized, 1/255.0, swapRB=True)
+   - Inference Output Tensor:
+     * Dimensions: (1, 6, 8400) -> Transposed to (8400, 6)
+     * Format: [cx, cy, width, height, p_fertile, p_infertile]
+   - Non-Maximum Suppression (NMS) Calibrated Thresholds:
+     * CONFIDENCE_THRESHOLD = 0.15
+       (Optimized from default 0.45 down to 0.15 to reliably capture dimmer
+        peripheral and corner eggs subject to camera lens vignetting).
+     * IOU_THRESHOLD = 0.60
+       (Tuned from 0.50 to 0.60 to prevent NMS from suppressing closely packed
+        neighboring eggs in the 8x7 tray cups).
+   - Inference Latency on Raspberry Pi 5:
+     * Average inference latency: ~110 - 145 ms per full-chamber scan.
+
+B. Spatial Sorting & Indexing Algorithm:
+   - After NMS filtering, detected eggs are dynamically sorted top-to-bottom,
+     left-to-right into human-readable tray reading order:
+     * Clustering formula: key = (round(center_y / 60.0) * 60.0, center_x)
+     * Eggs are labeled #1 through #56 with their corresponding Row (1-8)
+       and Column (1-7) assignment for individual egg tracking over 21 days.
+
+C. Physical Seating & Optical Insights for Candling:
+   - Egg Orientation: Eggs positioned blunt-end (air cell) UP and small-end DOWN
+     resting directly over the sub-tray LED aperture maximize light transmission
+     through the egg yolk and embryo, eliminating dark cup-shadow false negatives.
+
+==============================================================================
+END OF AI DEVELOPMENT TECHNICAL SPECIFICATIONS
+==============================================================================
