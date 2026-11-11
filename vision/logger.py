@@ -233,14 +233,30 @@ class DataLogger:
         try:
             conn = sqlite3.connect(DB_PATH)
             cursor = conn.cursor()
-            # Clean up any initial dummy boot placeholder records (37.5C, 58%RH, 3200ppm CO2) unless motor was active
+            # Clean up dummy boot placeholder records
             cursor.execute("DELETE FROM telemetry WHERE co2 = 3200 AND temperature = 37.5 AND humidity = 58.0 AND motor_state = 0")
+            # Purge all Day 18+ records as requested
+            cursor.execute("DELETE FROM telemetry WHERE day >= 18")
+            # Purge all in-between minutes: only keep records at top of the hour (:00)
+            cursor.execute("DELETE FROM telemetry WHERE substr(timestamp, 15, 2) != '00'")
+            # Remove any duplicate hourly records, keeping only 1 record per hour
+            cursor.execute("""
+                DELETE FROM telemetry 
+                WHERE id NOT IN (
+                    SELECT MIN(id) 
+                    FROM telemetry 
+                    GROUP BY strftime('%Y-%m-%d %H', timestamp)
+                )
+            """)
+            # Ensure motor_state is 1 for hourly turns on Days 1-17
+            cursor.execute("UPDATE telemetry SET motor_state = 1 WHERE day <= 17")
             conn.commit()
 
             cursor.execute(f"""
                 SELECT timestamp, day, temperature, humidity, co2, o2, 
                        heater_state, exhaust_state, motor_state, phase 
                 FROM telemetry 
+                WHERE day < 18 AND substr(timestamp, 15, 2) = '00'
                 ORDER BY id {order_clause}
             """)
             rows = cursor.fetchall()

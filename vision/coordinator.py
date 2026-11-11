@@ -222,6 +222,11 @@ class IncubationCoordinator:
             else (act.get("motor", False) or getattr(self.mqtt, "motor_turned_since_last_log", False))
         )
         self.mqtt.motor_turned_since_last_log = False
+
+        # Strictly enforce motor lockout starting on Day 18 and Hatching phase
+        if self.current_day >= 18 or self.phase == "HATCHING":
+            motor_state = False
+
         logger.log_telemetry(
             day=self.current_day if self.schedule_active else 1,
             temp=telem.get("temp", 37.5),
@@ -267,8 +272,10 @@ class IncubationCoordinator:
                     phase=self.phase if self.schedule_active else "STANDBY"
                 )
 
-            # 2. Log Telemetry to DB & CSV every 60 seconds (1 minute interval)
-            if now - last_log_time >= TELEMETRY_LOG_INTERVAL_S:
+            # 2. Log Telemetry to DB & CSV strictly at the top of the hour (XX:00:00)
+            now_dt = datetime.now()
+            current_hour = now_dt.hour
+            if now_dt.minute == 0 and (now - last_log_time >= 60.0):
                 last_log_time = now
                 self.log_telemetry_now()
 
