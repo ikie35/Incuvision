@@ -166,8 +166,8 @@ void ActuatorManager::processEggTurning() {
         return;
     }
 
-    // In manual override mode, do not automatically trigger hourly cycle
-    if (manualOverride) {
+    // In manual override mode or Hatching Phase, do not trigger automatic turns
+    if (manualOverride || currentPhase == PHASE_HATCHING) {
         return;
     }
 
@@ -178,14 +178,16 @@ void ActuatorManager::processEggTurning() {
         if (localtime_r(&nowSec, &timeinfo)) {
             if (timeinfo.tm_min == 0 && lastTurnedHour != timeinfo.tm_hour) {
                 lastTurnedHour = timeinfo.tm_hour;
+                lastTurnTimestamp = now;
                 Serial.printf("[ACTUATORS] Top of the hour (%02d:00): Triggering hourly egg turning cycle...\n", timeinfo.tm_hour);
                 triggerEggTurnManual(DEFAULT_TURNING_DURATION_S);
                 return;
             }
         }
     } else {
-        // Fallback to interval timer if NTP is not yet synchronized
+        // Fallback to interval timer ONLY if NTP wall clock is not yet synchronized
         if (now - lastTurnTimestamp >= (DEFAULT_TURNING_INTERVAL_S * 1000UL)) {
+            lastTurnTimestamp = now;
             Serial.println("[ACTUATORS] Triggering hourly egg turning cycle (interval fallback)...");
             triggerEggTurnManual(DEFAULT_TURNING_DURATION_S);
         }

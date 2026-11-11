@@ -45,14 +45,14 @@
 // 3. INCUBATION SETTINGS (OPERATOR OPTIMIZED)
 // ==========================================
 #define SETTING_START_DAY          1
-#define SETTING_END_DAY            18
+#define SETTING_END_DAY            17
 
 #define DEFAULT_TEMP_SETTING       37.5f  // °C Target center
 #define DEFAULT_RH_SETTING         58.0f  // % Target center
 #define DEFAULT_CO2_MAX_SETTING    5000   // ppm
 #define DEFAULT_O2_MIN_SETTING     19.5f  // % (Normal atmospheric air is ~20.9%)
 
-#define HATCHING_START_DAY         19
+#define HATCHING_START_DAY         18     // Lockdown begins starting on Day 18 (Turning strictly OFF)
 #define HATCHING_END_DAY           21
 
 #define DEFAULT_TEMP_HATCHING      36.9f  // °C Target center
