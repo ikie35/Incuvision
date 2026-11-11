@@ -480,8 +480,21 @@ async function toggleActuatorMode() {
     }
 }
 
+function getEffectiveIncubationDay() {
+    if (appliedSchedule && appliedSchedule.active && appliedSchedule.startTime) {
+        const start = new Date(appliedSchedule.startTime);
+        if (!isNaN(start.getTime())) {
+            const elapsedMs = Math.max(0, Date.now() - start.getTime());
+            const completed = Math.floor(elapsedMs / 86400000);
+            return Math.min(21, completed + 1);
+        }
+    }
+    return currentDay || 1;
+}
+
 function getSecondsToNextTurn() {
-    if (currentPhase === 'HATCHING' || currentDay >= 18) {
+    const effDay = getEffectiveIncubationDay();
+    if (currentPhase === 'HATCHING' || effDay >= 18) {
         return 0;
     }
     const now = new Date();
@@ -494,24 +507,25 @@ function updateTurningDisplay() {
     if (!turnEl) return;
 
     if (!appliedSchedule || !appliedSchedule.active) {
-        turnEl.innerText = "STANDBY";
+        turnEl.innerText = 'STANDBY';
         return;
     }
 
-    if (currentPhase === 'HATCHING' || currentDay >= 18) {
-        turnEl.innerText = "OFF (HATCH)";
+    const effDay = getEffectiveIncubationDay();
+    if (currentPhase === 'HATCHING' || effDay >= 18) {
+        turnEl.innerText = 'OFF (HATCH)';
         return;
     }
 
     if (isHardwareTurning) {
-        turnEl.innerText = "TURNING...";
+        turnEl.innerText = 'TURNING...';
         return;
     }
 
     const secs = getSecondsToNextTurn();
     const m = Math.floor(secs / 60).toString().padStart(2, '0');
     const s = (secs % 60).toString().padStart(2, '0');
-    turnEl.innerText = `${m}:${s}`;
+    turnEl.innerText = m + ':' + s;
 }
 
 async function manualEggTurn() {
