@@ -45,15 +45,16 @@
 // 3. INCUBATION SETTINGS (OPERATOR OPTIMIZED)
 // ==========================================
 #define SETTING_START_DAY          1
-#define SETTING_END_DAY            17
+#define SETTING_END_DAY            18     // Day 1 to 18 (Setting phase targets: 37.5°C, 58% RH)
 
 #define DEFAULT_TEMP_SETTING       37.5f  // °C Target center
 #define DEFAULT_RH_SETTING         58.0f  // % Target center
 #define DEFAULT_CO2_MAX_SETTING    5000   // ppm
 #define DEFAULT_O2_MIN_SETTING     19.5f  // % (Normal atmospheric air is ~20.9%)
 
-#define HATCHING_START_DAY         18     // Lockdown begins starting on Day 18 (Turning strictly OFF)
+#define HATCHING_START_DAY         19     // Hatching begins on Day 19 (Targets: 36.9°C, 70% RH)
 #define HATCHING_END_DAY           21
+#define TURNING_END_DAY            17     // Turning strictly stopped starting on Day 18
 
 #define DEFAULT_TEMP_HATCHING      36.9f  // °C Target center
 #define DEFAULT_RH_HATCHING        70.0f  // % Target center

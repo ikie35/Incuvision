@@ -312,10 +312,10 @@ class IncubationCoordinator:
                             "co2": desired_co2
                         })
 
-            # 4. Top-of-the-Hour Automatic Egg Turning (XX:00:00 every hour in Setting Phase Days 1-17 when batch is active; STOPPED starting Day 18)
+            # 4. Top-of-the-Hour Automatic Egg Turning (XX:00:00 every hour on Days 1-17; STOPPED starting on Day 18)
             now_dt = datetime.now()
             current_hour = now_dt.hour
-            if self.schedule_active and self.phase != "HATCHING" and self.current_day < HATCHING_DAYS_START and not self.is_auditing_now:
+            if self.schedule_active and self.phase != "HATCHING" and self.current_day <= 17 and not self.is_auditing_now:
                 if now_dt.minute == 0 and self.last_turned_hour != current_hour:
                     print(f"[COORDINATOR] Top of the hour ({now_dt.strftime('%H:%M')}): Triggering automatic egg turning.")
                     self.last_turned_hour = current_hour

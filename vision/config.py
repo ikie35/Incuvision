@@ -37,8 +37,9 @@ LCD_ROWS = 4
 # Incubation Schedule & Parameters
 TOTAL_INCUBATION_DAYS = 21
 SETTING_START_DAY = 1
-SETTING_DAYS_END = 17       # Day 1 to 17 (Egg setting phase; turning active)
-HATCHING_DAYS_START = 18    # Day 18 to 21 (Lockdown phase; turning STOPPED starting on Day 18)
+SETTING_DAYS_END = 18       # Day 1 to 18 (Setting phase targets: 37.5°C, 58% RH)
+HATCHING_DAYS_START = 19    # Day 19 to 21 (Hatching phase targets: 36.9°C, 70% RH)
+TURNING_DAYS_END = 17       # Turning is active Days 1 to 17; STOPPED starting on Day 18 (Day 18-21 no turning)
 
 # Automated Candling Audit Schedule (Days)
 CANDLING_SCHEDULE_DAYS = [7, 10, 18]

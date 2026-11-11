@@ -220,7 +220,7 @@ function handleIncomingTelemetry(data) {
         }
     }
 
-    if (currentDay >= 18) {
+    if (currentDay >= 19) {
         currentPhase = 'HATCHING';
     }
 
@@ -266,10 +266,10 @@ function handleIncomingTelemetry(data) {
     if (!protocolStateInitialized) {
         protocolState.day = currentDay;
         protocolState.phase = currentPhase;
-        protocolState.temp = (currentPhase === 'HATCHING' || currentDay >= 18) ? 36.9 : 37.5;
-        protocolState.rh = (currentPhase === 'HATCHING' || currentDay >= 18) ? 70.0 : 58.0;
-        protocolState.co2 = (currentPhase === 'HATCHING' || currentDay >= 18) ? 7500 : 5000;
-        protocolState.o2 = (currentPhase === 'HATCHING' || currentDay >= 18) ? 20.5 : 20.9;
+        protocolState.temp = (currentPhase === 'HATCHING' || currentDay >= 19) ? 36.9 : 37.5;
+        protocolState.rh = (currentPhase === 'HATCHING' || currentDay >= 19) ? 70.0 : 58.0;
+        protocolState.co2 = (currentPhase === 'HATCHING' || currentDay >= 19) ? 7500 : 5000;
+        protocolState.o2 = (currentPhase === 'HATCHING' || currentDay >= 19) ? 20.5 : 20.9;
         
         if (appliedSchedule && appliedSchedule.startTime) {
             initScheduleInputs(new Date(appliedSchedule.startTime));
@@ -851,7 +851,7 @@ function addDashboardNotification({ type = 'warning', category = 'system', msg, 
 }
 
 function evaluateSmartAlerts(temp, rh, o2, actuators) {
-    const isHatching = (currentPhase === 'HATCHING' || currentDay >= 18);
+    const isHatching = (currentPhase === 'HATCHING' || currentDay >= 19);
     const targetTemp = isHatching ? 36.9 : 37.5;
     const targetRH = isHatching ? 70.0 : 58.0;
     const co2Limit = isHatching ? 7500 : 5000;
@@ -1039,7 +1039,7 @@ function renderAlertsList() {
     if (!listEl) return;
 
     if (!notificationHistory || notificationHistory.length === 0) {
-        const isHatching = (currentPhase === 'HATCHING' || currentDay >= 18);
+        const isHatching = (currentPhase === 'HATCHING' || currentDay >= 19);
         listEl.innerHTML = `
             <div class="alert-empty-card">
                 <div class="alert-empty-icon">
@@ -2217,7 +2217,7 @@ function renderProtocolCards() {
     const turnVal = document.getElementById('dispTurnerStatus');
     const turnSub = document.getElementById('dispTurnerSub');
     const turnCard = document.getElementById('cardTurnerTrigger');
-    const isSystemHatching = (currentPhase === 'HATCHING' || currentDay >= 18);
+    const isSystemHatching = (currentPhase === 'HATCHING' || currentDay >= 19);
 
     if (turnVal && turnSub) {
         if (isSystemHatching && appliedSchedule && appliedSchedule.active) {
